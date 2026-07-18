@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Training & Placement Management System – Enterprise-grade platform for campus placements, internships, higher studies, and recruiter drives.">
+    <meta name="theme-color" content="#4F46E5">
+    <title>TPMS – Training & Placement Management System</title>
+    
+    <!-- Tailwind CSS v3 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            indigo: '#4F46E5',
+                            violet: '#7C3AED',
+                            cyan:   '#06B6D4',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'Poppins', 'system-ui', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Premium Custom Styles -->
+    <link rel="stylesheet" href="styles.css">
+    
+    <!-- ApexCharts -->
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="min-h-screen bg-[var(--bg-main)] text-[var(--text-primary)]">
+
+    <!-- ============================================================
+         ROOT APP CONTAINER
+         ============================================================ -->
+    <div id="app-root" class="relative min-h-screen flex flex-col">
+
+        <!-- ============================================================
+             TOP NAVBAR
+             ============================================================ -->
+        <nav id="top-navbar" class="hidden fixed top-0 left-0 right-0 h-16 bg-glass border-glass border-b z-30 px-4 md:px-6"
+             style="display:none !important;">
+            <div class="h-full flex items-center justify-between gap-4">
+
+                <!-- Left: Hamburger + Logo -->
+                <div class="flex items-center gap-3 min-w-0">
+                    <button id="hamburger-btn"
+                            class="lg:hidden navbar-btn flex-shrink-0"
+                            aria-label="Toggle menu">
+                        <i data-lucide="menu" class="w-4 h-4"></i>
+                    </button>
+                    <div class="flex items-center gap-2.5 flex-shrink-0">
+                        <div class="w-8 h-8 rounded-lg gradient-bg flex items-center justify-center text-white font-bold text-sm shadow-md flex-shrink-0">
+                            T
+                        </div>
+                        <div class="hidden sm:block">
+                            <span class="font-bold text-sm tracking-tight text-[var(--text-primary)] leading-tight block">TPMS</span>
+                            <span class="text-[10px] text-[var(--text-faint)] leading-tight">Portal</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Center: Global Search -->
+                <div id="navbar-search-container" class="relative max-w-sm w-full hidden md:block">
+                    <span class="search-icon">
+                        <i data-lucide="search" class="w-3.5 h-3.5"></i>
+                    </span>
+                    <input type="text"
+                           id="global-search"
+                           placeholder="Search students, jobs, companies…"
+                           class="search-input text-xs py-2"
+                           autocomplete="off" />
+                </div>
+
+                <!-- Right: Actions -->
+                <div class="flex items-center gap-2 flex-shrink-0">
+                    <!-- Theme Toggle -->
+                    <button id="theme-toggle" class="navbar-btn" aria-label="Toggle theme">
+                        <i data-lucide="moon" class="w-4 h-4"></i>
+                    </button>
+
+                    <!-- Notifications -->
+                    <div class="relative">
+                        <button id="notifications-btn"
+                                class="navbar-btn relative"
+                                aria-label="Notifications">
+                            <i data-lucide="bell" class="w-4 h-4"></i>
+                            <span class="absolute top-1 right-1 w-2 h-2 rounded-full bg-[var(--danger)] ring-2 ring-white dark:ring-[var(--bg-main)] animate-pulse-slow"></span>
+                        </button>
+
+                        <!-- Notifications Dropdown -->
+                        <div id="notifications-dropdown"
+                             class="hidden absolute right-0 mt-2 w-80 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-2xl shadow-[var(--shadow-xl)] overflow-hidden z-50"
+                             style="animation: slideDown 0.25s var(--ease-smooth);">
+
+                            <!-- Dropdown Header -->
+                            <div class="flex items-center justify-between px-4 py-3 border-b border-[var(--border-color)]">
+                                <span class="font-bold text-xs text-[var(--text-primary)]">Notifications</span>
+                                <span class="badge badge-primary text-[10px]">3 New</span>
+                            </div>
+
+                            <!-- Notification Items -->
+                            <div class="max-h-60 overflow-y-auto px-2 py-2">
+                                <div class="notification-item rounded-lg px-2">
+                                    <span class="notification-dot bg-[var(--primary)] mt-1.5"></span>
+                                    <div class="min-w-0">
+                                        <p class="text-xs font-semibold text-[var(--text-primary)]">Interview Scheduled</p>
+                                        <p class="text-[11px] text-[var(--text-muted)] mt-0.5 leading-relaxed">Google Software Engineer Interview round set for Sneha Reddy.</p>
+                                        <p class="text-[10px] text-[var(--text-faint)] mt-1">10 mins ago</p>
+                                    </div>
+                                </div>
+                                <div class="notification-item rounded-lg px-2">
+                                    <span class="notification-dot bg-[var(--secondary)] mt-1.5"></span>
+                                    <div class="min-w-0">
+                                        <p class="text-xs font-semibold text-[var(--text-primary)]">New Company Registered</p>
+                                        <p class="text-[11px] text-[var(--text-muted)] mt-0.5 leading-relaxed">Intel Corp registered as a recruiting partner.</p>
+                                        <p class="text-[10px] text-[var(--text-faint)] mt-1">1 hour ago</p>
+                                    </div>
+                                </div>
+                                <div class="notification-item rounded-lg px-2">
+                                    <span class="notification-dot bg-[var(--success)] mt-1.5"></span>
+                                    <div class="min-w-0">
+                                        <p class="text-xs font-semibold text-[var(--text-primary)]">Offer Letter Published</p>
+                                        <p class="text-[11px] text-[var(--text-muted)] mt-0.5 leading-relaxed">Microsoft results published: Rahul Verma selected at 45 LPA.</p>
+                                        <p class="text-[10px] text-[var(--text-faint)] mt-1">3 hours ago</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Footer -->
+                            <div class="border-t border-[var(--border-color)] px-4 py-2.5">
+                                <button class="text-xs font-semibold text-[var(--primary)] hover:underline w-full text-center">
+                                    View all notifications
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Profile / User -->
+                    <div class="relative flex-shrink-0">
+                        <button id="profile-btn"
+                                class="flex items-center gap-2.5 pl-2 pr-3 py-1.5 rounded-xl border border-[var(--border-color)] bg-[var(--bg-card)] hover:bg-[var(--bg-hover)] hover:border-[rgba(79,70,229,0.30)] transition-all duration-200 shadow-[var(--shadow-xs)]"
+                                aria-label="Profile menu">
+                            <img id="user-avatar"
+                                 src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=facearea&facepad=2&w=80&h=80&q=80"
+                                 class="avatar avatar-ring w-7 h-7"
+                                 alt="User avatar" />
+                            <div class="hidden sm:block text-left">
+                                <p class="text-xs font-bold text-[var(--text-primary)] leading-tight" id="user-role-label">Admin</p>
+                                <p class="text-[10px] text-[var(--text-faint)] leading-tight">Portal Admin</p>
+                            </div>
+                            <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-[var(--text-faint)] hidden sm:block"></i>
+                        </button>
+
+                        <!-- Profile Dropdown -->
+                        <div id="profile-dropdown" class="profile-dropdown hidden">
+                            <div class="px-4 py-3 border-b border-[var(--border-color)]">
+                                <p class="text-xs font-bold text-[var(--text-primary)]" id="profile-dropdown-name">TPO Administrator</p>
+                                <p class="text-[11px] text-[var(--text-faint)]">admin@tpms.edu</p>
+                            </div>
+                            <div class="py-1">
+                                <a href="#" data-view="settings" class="profile-dropdown-item">
+                                    <i data-lucide="user" class="w-4 h-4"></i> Profile Settings
+                                </a>
+                                <a href="#" data-view="settings" class="profile-dropdown-item">
+                                    <i data-lucide="shield-check" class="w-4 h-4"></i> Security
+                                </a>
+                                <div class="my-1 mx-3 h-px bg-[var(--border-color)]"></div>
+                                <a href="#" onclick="app.logout(event)" class="profile-dropdown-item danger">
+                                    <i data-lucide="log-out" class="w-4 h-4"></i> Sign Out
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- ============================================================
+             LEFT SIDEBAR PANEL
+             ============================================================ -->
+        <aside id="sidebar"
+               class="hidden fixed top-0 left-0 bottom-0 bg-glass border-glass border-r z-40 transform lg:translate-x-0 -translate-x-full transition-transform duration-300 ease-in-out flex flex-col"
+               style="width: var(--sidebar-width);">
+
+            <!-- Sidebar Header / Brand -->
+            <div class="flex items-center justify-between px-5 py-4 border-b border-[var(--border-color)] flex-shrink-0">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl gradient-bg flex items-center justify-center text-white font-black text-base shadow-[var(--shadow-brand)] flex-shrink-0">T</div>
+                    <div>
+                        <span class="font-bold text-sm text-[var(--text-primary)] block leading-tight">TPMS Portal</span>
+                        <span class="text-[10px] text-[var(--text-faint)]">State Tech University</span>
+                    </div>
+                </div>
+                <button id="sidebar-close-btn" class="lg:hidden navbar-btn w-7 h-7" aria-label="Close sidebar">
+                    <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                </button>
+            </div>
+
+            <!-- Sidebar Navigation Links -->
+            <div class="flex-1 overflow-y-auto px-3 py-4 space-y-1">
+                <nav id="sidebar-links" class="space-y-1">
+                    <!-- Populated dynamically via app.js -->
+                </nav>
+            </div>
+
+            <!-- Sidebar Footer -->
+            <div class="px-3 pb-4 flex-shrink-0 space-y-3">
+                <!-- Theme Toggle -->
+                <button id="theme-toggle-sidebar"
+                        class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border border-[var(--border-color)] bg-[var(--bg-card)] hover:bg-[var(--bg-hover)] text-xs font-semibold text-[var(--text-secondary)] transition-all">
+                    <i data-lucide="moon" class="w-4 h-4"></i>
+                    <span>Switch Appearance</span>
+                </button>
+
+                <!-- Version -->
+                <div class="text-center text-[10px] text-[var(--text-faint)]">TPMS v2.0 · Enterprise</div>
+            </div>
+        </aside>
+
+        <!-- Mobile Overlay -->
+        <div id="sidebar-overlay"
+             class="hidden fixed inset-0 bg-black/40 z-35 backdrop-blur-sm lg:hidden transition-opacity">
+        </div>
+
+        <!-- ============================================================
+             MAIN CONTENT WRAPPER
+             ============================================================ -->
+        <main id="main-content-wrapper" class="flex-1 w-full flex flex-col transition-all duration-300">
+            <div id="main-content">
+                <!-- Dynamic content rendered here -->
+            </div>
+        </main>
+
+        <!-- ============================================================
+             GLOBAL MODAL OVERLAY
+             ============================================================ -->
+        <div id="admin-modal-overlay"
+             class="hidden fixed inset-0 z-50"
+             style="background: rgba(8,13,26,0.70); backdrop-filter: blur(6px);">
+            <div class="h-full flex items-center justify-center p-4">
+                <div class="w-full max-w-lg bg-[var(--bg-card)] border border-[var(--border-color)] rounded-[var(--radius-2xl)] shadow-[var(--shadow-xl)] relative animate-scale-in overflow-hidden">
+                    <!-- Top accent stripe -->
+                    <div class="absolute top-0 left-0 right-0 h-1 gradient-bg"></div>
+
+                    <!-- Modal Header -->
+                    <div class="flex items-center justify-between px-6 pt-5 pb-4 border-b border-[var(--border-color)]">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg gradient-bg-soft flex items-center justify-center">
+                                <i data-lucide="edit-3" class="w-4 h-4 text-[var(--primary)]"></i>
+                            </div>
+                            <h3 class="font-bold text-sm text-[var(--text-primary)]" id="admin-modal-title">Form</h3>
+                        </div>
+                        <button onclick="closeAdminModal()"
+                                class="navbar-btn w-8 h-8"
+                                aria-label="Close modal">
+                            <i data-lucide="x" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+
+                    <!-- Modal Body -->
+                    <div id="admin-modal-body" class="px-6 py-5 max-h-[70vh] overflow-y-auto">
+                        <!-- Dynamic content -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================================
+             TOAST NOTIFICATION CONTAINER
+             ============================================================ -->
+        <div id="toast-container"
+             class="fixed bottom-5 right-5 flex flex-col gap-2.5 z-[9999] pointer-events-none"
+             style="max-width: 360px;">
+        </div>
+
+    </div><!-- #app-root -->
+
+    <!-- ============================================================
+         SCRIPT MODULES (load order matters)
+         ============================================================ -->
+    <script src="js/mockData.js"></script>
+    <script src="js/landing.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/admin.js"></script>
+    <script src="js/student.js"></script>
+    <script src="js/company.js"></script>
+    <script src="js/modules.js"></script>
+    <script src="js/reports.js"></script>
+    <script src="js/settings.js"></script>
+    <script src="js/app.js"></script>
+
+</body>
+</html>
