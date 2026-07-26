@@ -365,7 +365,7 @@ h6 { font-size: 0.875rem; }
 .sidebar-nav-item {
     display: block;
     position: relative;
-    margin: 3px 12px;
+    margin: 4px 12px;
 }
 
 .sidebar-nav-link {
@@ -376,10 +376,11 @@ h6 { font-size: 0.875rem; }
     font-size: 0.88rem;
     font-weight: 500;
     border-radius: 10px;
-    transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 220ms cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     text-decoration: none;
     background: transparent;
+    border-left: 4px solid transparent;
 }
 
 .sidebar-nav-link .nav-icon {
@@ -402,29 +403,31 @@ h6 { font-size: 0.875rem; }
     text-overflow: ellipsis;
 }
 
-/* Hover State */
+/* Hover State - Smooth Slide & Icon Accent */
 .sidebar-nav-link:hover {
     color: #ffffff;
-    background: rgba(255, 255, 255, 0.08);
-    transform: translateX(3px);
+    background: rgba(255, 255, 255, 0.09);
+    transform: translateX(4px);
 }
 
 .sidebar-nav-link:hover .nav-icon {
-    color: #ffffff;
-    transform: scale(1.1);
+    color: #60a5fa;
+    transform: scale(1.12);
 }
 
-/* Active State - Premium ERP Rounded Highlight with Subtle Glow */
+/* Active State - Premium Gradient Background, Left Border Accent & Bold Text */
 .sidebar-nav-link.active {
     color: #ffffff !important;
-    background: var(--primary-gradient, linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)) !important;
-    font-weight: 600;
-    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
-    transform: translateX(2px);
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.95) 0%, rgba(29, 78, 216, 0.95) 100%) !important;
+    font-weight: 700 !important;
+    border-left: 4px solid #60a5fa !important;
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.45);
+    transform: translateX(3px);
 }
 
 .sidebar-nav-link.active .nav-icon {
     color: #ffffff !important;
+    transform: scale(1.05);
 }
 
 /* Submenu Styling */

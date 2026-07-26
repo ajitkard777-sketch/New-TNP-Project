@@ -113,8 +113,33 @@ class AdminController {
         $search = sanitize($_GET['search'] ?? '');
         $status = sanitize($_GET['status'] ?? '');
         $page = max(1, (int)($_GET['page'] ?? 1));
+
+        $activeTab = sanitize($_GET['tab'] ?? 'pending');
+        if (!in_array($activeTab, ['pending', 'verified', 'rejected'])) {
+            $activeTab = 'pending';
+        }
+
+        $totalCount = $this->companyModel->getTotalCount();
+        $pendingCount = $this->companyModel->getPendingCount();
+        $verifiedCount = $this->companyModel->getApprovedCount();
+        $rejectedCount = $this->companyModel->getRejectedCount();
+        $suspendedCount = $this->companyModel->getSuspendedCount();
+
         $total = $this->companyModel->count($search, $status);
         $pagination = getPagination($total, $page);
+
+        $pendingCompanies = $this->companyModel->getByApprovalStatus('pending', $search);
+        $verifiedCompanies = $this->companyModel->getByApprovalStatus('approved', $search);
+        $rejectedCompanies = $this->companyModel->getByApprovalStatus('rejected', $search);
+        $suspendedCompanies = $this->companyModel->getByApprovalStatus('suspended', $search);
+
+        // Attach job count and application count to verified companies
+        foreach ($verifiedCompanies as &$vc) {
+            $vc['job_count'] = (int)$this->db->fetchColumn("SELECT COUNT(*) FROM jobs WHERE company_id = ?", [$vc['id']]);
+            $vc['application_count'] = (int)$this->db->fetchColumn("SELECT COUNT(*) FROM applications a JOIN jobs j ON a.job_id = j.id WHERE j.company_id = ?", [$vc['id']]);
+        }
+        unset($vc);
+
         $companies = $this->companyModel->getAll($pagination['offset'], $pagination['per_page'], $search, $status);
         require_once VIEWS_PATH . '/admin/companies.php';
     }
@@ -123,18 +148,63 @@ class AdminController {
         $this->companyModel->approve($id);
         $company = $this->companyModel->findById($id);
         if ($company) {
-            $this->db->update("UPDATE users SET status = 'active' WHERE id = ?", [$company['user_id']]);
-            $this->db->insert("INSERT INTO notifications (user_id, title, message, type, category) VALUES (?, ?, ?, ?, ?)",
-                [$company['user_id'], 'Registration Approved!', 'Your company registration has been approved. You can now post jobs.', 'success', 'system']);
+            $this->db->insert(
+                "INSERT INTO notifications (user_id, title, message, type, category) VALUES (?, ?, ?, ?, ?)",
+                [$company['user_id'], 'Registration Approved!', 'Your company registration has been approved. You can now log in and post jobs.', 'success', 'system']
+            );
+            // SMS Notification - Company Verified
+            require_once ROOT_PATH . '/services/SmsService.php';
+            SmsService::getInstance()->sendCompanyVerified($company);
         }
         logActivity('approve_company', 'company', "Approved company: " . ($company['company_name'] ?? ''));
-        setFlash('success', 'Company approved!');
+        setFlash('success', 'Company approved successfully!');
         redirect('/admin/companies');
     }
 
     public function rejectCompany($id): void {
-        $this->companyModel->reject($id);
+        $reason = sanitize($_POST['rejection_reason'] ?? '');
+        $this->companyModel->reject($id, $reason);
+        $company = $this->companyModel->findById($id);
+        if ($company) {
+            $msg = 'Your company registration was rejected.';
+            if ($reason) {
+                $msg .= ' Reason: ' . $reason;
+            }
+            $this->db->insert(
+                "INSERT INTO notifications (user_id, title, message, type, category) VALUES (?, ?, ?, ?, ?)",
+                [$company['user_id'], 'Registration Rejected', $msg, 'danger', 'system']
+            );
+        }
+        logActivity('reject_company', 'company', "Rejected company: " . ($company['company_name'] ?? ''));
         setFlash('success', 'Company rejected.');
+        redirect('/admin/companies');
+    }
+
+    public function suspendCompany($id): void {
+        $this->companyModel->suspend($id);
+        $company = $this->companyModel->findById($id);
+        if ($company) {
+            $this->db->insert(
+                "INSERT INTO notifications (user_id, title, message, type, category) VALUES (?, ?, ?, ?, ?)",
+                [$company['user_id'], 'Account Suspended', 'Your company account has been suspended by the administrator.', 'warning', 'system']
+            );
+        }
+        logActivity('suspend_company', 'company', "Suspended company: " . ($company['company_name'] ?? ''));
+        setFlash('success', 'Company account suspended.');
+        redirect('/admin/companies');
+    }
+
+    public function unsuspendCompany($id): void {
+        $this->companyModel->unsuspend($id);
+        $company = $this->companyModel->findById($id);
+        if ($company) {
+            $this->db->insert(
+                "INSERT INTO notifications (user_id, title, message, type, category) VALUES (?, ?, ?, ?, ?)",
+                [$company['user_id'], 'Account Activated', 'Your company account suspension has been lifted.', 'success', 'system']
+            );
+        }
+        logActivity('unsuspend_company', 'company', "Activated company: " . ($company['company_name'] ?? ''));
+        setFlash('success', 'Company account re-activated.');
         redirect('/admin/companies');
     }
 
@@ -144,6 +214,7 @@ class AdminController {
             $this->db->delete("DELETE FROM companies WHERE id = ?", [$id]);
             $this->db->delete("DELETE FROM users WHERE id = ?", [$company['user_id']]);
         }
+        logActivity('delete_company', 'company', "Deleted company: " . ($company['company_name'] ?? ''));
         setFlash('success', 'Company deleted.');
         redirect('/admin/companies');
     }
@@ -172,6 +243,10 @@ class AdminController {
             // Global notification for students
             $this->db->insert("INSERT INTO notifications (user_id, title, message, type, category, is_global) VALUES (NULL, ?, ?, ?, ?, 1)",
                 ['New Job: ' . $job['title'], $job['company_name'] . ' is hiring for ' . $job['title'], 'info', 'job']);
+
+            // SMS Notification - Job Posted
+            require_once ROOT_PATH . '/services/SmsService.php';
+            SmsService::getInstance()->sendJobPosted($job, $company);
         }
         setFlash('success', 'Job approved and live!');
         redirect('/admin/jobs');
@@ -258,18 +333,39 @@ class AdminController {
         $app = $this->db->fetchOne("SELECT a.*, j.company_id, j.title as job_title FROM applications a JOIN jobs j ON a.job_id = j.id WHERE a.id = ?", [$appId]);
         if (!$app) { setFlash('danger', 'Application not found.'); redirect('/admin/interviews'); return; }
 
-        $this->db->insert("INSERT INTO interviews (student_id, company_id, job_id, round, interview_date, interview_time, mode, venue, meeting_link, instructions, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'scheduled')",
-            [$app['student_id'], $app['company_id'], $app['job_id'], $data['round'] ?? 'Round 1', $data['interview_date'], $data['interview_time'], $data['mode'] ?? 'offline', $data['venue'] ?? null, $data['meeting_link'] ?? null, $data['instructions'] ?? null]);
+        $callLetterFile = null;
+        if (isset($_FILES['call_letter_file']) && $_FILES['call_letter_file']['error'] === UPLOAD_ERR_OK) {
+            $f = $_FILES['call_letter_file'];
+            $dir = UPLOADS_PATH . '/call_letters/';
+            if (!is_dir($dir)) @mkdir($dir, 0777, true);
+            $callLetterFile = generateFileName($f['name'], 'call_letter_' . $app['student_id']);
+            move_uploaded_file($f['tmp_name'], $dir . $callLetterFile);
+        }
+
+        $this->db->insert("INSERT INTO interviews (student_id, company_id, job_id, round, interview_date, interview_time, mode, venue, meeting_link, instructions, required_documents, call_letter_path, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'scheduled')",
+            [
+                $app['student_id'],
+                $app['company_id'],
+                $app['job_id'],
+                $data['round'] ?? 'Round 1',
+                $data['interview_date'],
+                $data['interview_time'],
+                $data['mode'] ?? 'offline',
+                $data['venue'] ?? null,
+                $data['meeting_link'] ?? null,
+                $data['instructions'] ?? null,
+                $data['required_documents'] ?? null,
+                $callLetterFile
+            ]);
 
         $this->jobModel->updateApplicationStatus($appId, 'interview');
 
         $student = $this->db->fetchOne("SELECT user_id FROM students WHERE id = ?", [$app['student_id']]);
         if ($student) {
-            $this->db->insert("INSERT INTO notifications (user_id, title, message, type, category) VALUES (?, ?, ?, ?, ?)",
-                [$student['user_id'], 'Interview Scheduled by Admin', "Interview for {$app['job_title']} on " . formatDate($data['interview_date']), 'info', 'interview']);
+            createNotification($student['user_id'], 'Interview Scheduled', "Your interview for {$app['job_title']} has been scheduled on " . formatDate($data['interview_date']) . ".", 'info', 'interview', url('/student/interviews'));
         }
 
-        setFlash('success', 'Interview scheduled successfully by Admin!');
+        setFlash('success', 'Interview scheduled successfully!');
         redirect('/admin/interviews');
     }
 
@@ -279,8 +375,18 @@ class AdminController {
         if (!$interview) { setFlash('danger', 'Interview not found.'); redirect('/admin/interviews'); return; }
 
         $data = sanitizeArray($_POST);
+        $callLetterFile = $interview['call_letter_path'];
+
+        if (isset($_FILES['call_letter_file']) && $_FILES['call_letter_file']['error'] === UPLOAD_ERR_OK) {
+            $f = $_FILES['call_letter_file'];
+            $dir = UPLOADS_PATH . '/call_letters/';
+            if (!is_dir($dir)) @mkdir($dir, 0777, true);
+            $callLetterFile = generateFileName($f['name'], 'call_letter_' . $interview['student_id']);
+            move_uploaded_file($f['tmp_name'], $dir . $callLetterFile);
+        }
+
         $this->db->update(
-            "UPDATE interviews SET round = ?, interview_date = ?, interview_time = ?, mode = ?, venue = ?, meeting_link = ?, instructions = ?, status = 'rescheduled' WHERE id = ?",
+            "UPDATE interviews SET round = ?, interview_date = ?, interview_time = ?, mode = ?, venue = ?, meeting_link = ?, instructions = ?, required_documents = ?, call_letter_path = ?, status = 'rescheduled' WHERE id = ?",
             [
                 $data['round'] ?? $interview['round'],
                 $data['interview_date'] ?? $interview['interview_date'],
@@ -289,14 +395,15 @@ class AdminController {
                 $data['venue'] ?? null,
                 $data['meeting_link'] ?? null,
                 $data['instructions'] ?? null,
+                $data['required_documents'] ?? $interview['required_documents'],
+                $callLetterFile,
                 $id
             ]
         );
 
         $student = $this->db->fetchOne("SELECT user_id FROM students WHERE id = ?", [$interview['student_id']]);
         if ($student) {
-            $this->db->insert("INSERT INTO notifications (user_id, title, message, type, category) VALUES (?, ?, ?, ?, ?)",
-                [$student['user_id'], 'Interview Rescheduled', "Your interview has been rescheduled for " . formatDate($data['interview_date']), 'info', 'interview']);
+            createNotification($student['user_id'], 'Interview Rescheduled', "Your interview has been rescheduled for " . formatDate($data['interview_date']) . ".", 'info', 'interview', url('/student/interviews'));
         }
 
         setFlash('success', 'Interview updated successfully.');
@@ -421,4 +528,215 @@ class AdminController {
         $pageTitle = 'System Settings';
         require_once VIEWS_PATH . '/admin/settings.php';
     }
+
+    // ============ SMS Settings & Notification History ============
+    public function smsSettings(): void {
+        $pageTitle = 'SMS Module Settings';
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            CsrfMiddleware::requireValidToken();
+            $data = sanitizeArray($_POST);
+
+            $settingsToSave = [
+                'sms_enabled'          => isset($_POST['sms_enabled']) ? '1' : '0',
+                'default_provider'     => $data['default_provider'] ?? 'twilio',
+                'max_retries'          => (string)((int)($data['max_retries'] ?? 3)),
+
+                'twilio_account_sid'   => $data['twilio_account_sid'] ?? '',
+                'twilio_auth_token'    => $data['twilio_auth_token'] ?? '',
+                'twilio_from_number'   => $data['twilio_from_number'] ?? '',
+
+                'fast2sms_api_key'     => $data['fast2sms_api_key'] ?? '',
+                'fast2sms_sender_id'   => $data['fast2sms_sender_id'] ?? '',
+                'fast2sms_route'       => $data['fast2sms_route'] ?? 'v3',
+
+                'msg91_auth_key'       => $data['msg91_auth_key'] ?? '',
+                'msg91_sender_id'      => $data['msg91_sender_id'] ?? '',
+                'msg91_route'          => $data['msg91_route'] ?? '4',
+
+                'template_company_verified'    => $data['template_company_verified'] ?? '',
+                'template_job_posted'          => $data['template_job_posted'] ?? '',
+                'template_student_shortlisted' => $data['template_student_shortlisted'] ?? '',
+                'template_interview_scheduled' => $data['template_interview_scheduled'] ?? '',
+                'template_offer_released'      => $data['template_offer_released'] ?? '',
+                'template_password_reset'      => $data['template_password_reset'] ?? '',
+            ];
+
+            foreach ($settingsToSave as $k => $v) {
+                $this->db->query(
+                    "INSERT INTO sms_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?",
+                    [$k, $v, $v]
+                );
+            }
+
+            logActivity('update_sms_settings', 'admin', 'Updated SMS Module Settings');
+            setFlash('success', 'SMS Module settings saved successfully!');
+            redirect('/admin/sms-settings');
+            return;
+        }
+
+        // Fetch current DB settings
+        $rows = $this->db->fetchAll("SELECT setting_key, setting_value FROM sms_settings");
+        $settings = [];
+        foreach ($rows as $r) {
+            $settings[$r['setting_key']] = $r['setting_value'];
+        }
+
+        require_once ROOT_PATH . '/services/SmsService.php';
+        $smsService = SmsService::getInstance();
+
+        require_once VIEWS_PATH . '/admin/sms-settings.php';
+    }
+
+    public function smsLogs(): void {
+        $pageTitle = 'SMS Notification History';
+        $page = max(1, (int)($_GET['page'] ?? 1));
+        $perPage = 20;
+
+        $search = sanitize($_GET['search'] ?? '');
+        $status = sanitize($_GET['status'] ?? '');
+        $event = sanitize($_GET['event'] ?? '');
+        $provider = sanitize($_GET['provider'] ?? '');
+
+        $where = ["1=1"];
+        $params = [];
+
+        if ($search !== '') {
+            $where[] = "(recipient_phone LIKE ? OR message LIKE ?)";
+            $params[] = "%$search%";
+            $params[] = "%$search%";
+        }
+        if ($status !== '') {
+            $where[] = "status = ?";
+            $params[] = $status;
+        }
+        if ($event !== '') {
+            $where[] = "event_type = ?";
+            $params[] = $event;
+        }
+        if ($provider !== '') {
+            $where[] = "provider = ?";
+            $params[] = $provider;
+        }
+
+        $whereSql = implode(' AND ', $where);
+
+        $total = (int)$this->db->fetchColumn("SELECT COUNT(*) FROM sms_logs WHERE $whereSql", $params);
+        $pagination = getPagination($total, $page, $perPage);
+
+        $query = "SELECT l.*, u.email as user_email FROM sms_logs l LEFT JOIN users u ON l.user_id = u.id WHERE $whereSql ORDER BY l.created_at DESC LIMIT {$pagination['per_page']} OFFSET {$pagination['offset']}";
+        $logs = $this->db->fetchAll($query, $params);
+
+        require_once VIEWS_PATH . '/admin/sms-logs.php';
+    }
+
+    public function retrySms($logId): void {
+        require_once ROOT_PATH . '/services/SmsService.php';
+        $result = SmsService::getInstance()->retryLog((int)$logId);
+
+        if ($result['success']) {
+            setFlash('success', $result['message']);
+        } else {
+            setFlash('danger', $result['message']);
+        }
+
+        redirect('/admin/sms-logs');
+    }
+
+    // ============ Placement Calendar ============
+    public function calendar(): void {
+        $pageTitle = 'Placement Calendar Management';
+        $companies = $this->db->fetchAll("SELECT id, company_name FROM companies WHERE is_approved = 1 ORDER BY company_name");
+        $jobs = $this->db->fetchAll("SELECT id, title, company_id FROM jobs WHERE status = 'active' ORDER BY title");
+        require_once VIEWS_PATH . '/admin/calendar.php';
+    }
+
+    public function createCalendarEvent(): void {
+        CsrfMiddleware::requireValidToken();
+        $data = sanitizeArray($_POST);
+
+        $title = $data['title'] ?? '';
+        $eventType = $data['event_type'] ?? 'activity';
+        $eventDate = $data['event_date'] ?? '';
+        $startTime = $data['start_time'] ?? null;
+        $endTime = $data['end_time'] ?? null;
+        $venue = $data['venue'] ?? '';
+        $organizer = $data['organizer'] ?? 'T&P Cell';
+        $description = $data['description'] ?? '';
+        $companyId = !empty($data['company_id']) ? (int)$data['company_id'] : null;
+        $jobId = !empty($data['job_id']) ? (int)$data['job_id'] : null;
+        $registrationLink = $data['registration_link'] ?? '';
+        $color = $data['color'] ?? '#3b82f6';
+
+        if (empty($title) || empty($eventDate)) {
+            setFlash('danger', 'Event title and event date are required.');
+            redirect('/admin/calendar');
+            return;
+        }
+
+        $this->db->insert(
+            "INSERT INTO placement_calendar_events (event_type, title, description, event_date, start_time, end_time, venue, organizer, company_id, job_id, registration_link, color, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            [$eventType, $title, $description, $eventDate, $startTime ?: null, $endTime ?: null, $venue, $organizer, $companyId, $jobId, $registrationLink, $color, $_SESSION['user_id']]
+        );
+
+        // Notify students globally
+        createNotification(NULL, 'New Event: ' . $title, "A new event '$title' has been scheduled on " . formatDate($eventDate) . ".", 'info', 'placement', url('/student/calendar'), true);
+
+        setFlash('success', 'Calendar event created successfully!');
+        redirect('/admin/calendar');
+    }
+
+    public function deleteCalendarEvent($id): void {
+        $this->db->delete("DELETE FROM placement_calendar_events WHERE id = ?", [(int)$id]);
+        setFlash('success', 'Calendar event deleted.');
+        redirect('/admin/calendar');
+    }
+
+    // ============ Achievements Verification ============
+    public function achievements(): void {
+        $pageTitle = 'Student Achievements Verification';
+        $status = sanitize($_GET['status'] ?? '');
+        $params = [];
+        $where = "1=1";
+        if ($status) { $where .= " AND a.status = ?"; $params[] = $status; }
+
+        $achievements = $this->db->fetchAll(
+            "SELECT a.*, s.first_name, s.last_name, s.branch, s.enrollment_no, u.email
+             FROM student_achievements a
+             JOIN students s ON a.student_id = s.id
+             JOIN users u ON s.user_id = u.id
+             WHERE $where
+             ORDER BY a.created_at DESC",
+            $params
+        );
+
+        require_once VIEWS_PATH . '/admin/achievements.php';
+    }
+
+    public function verifyAchievement($id): void {
+        CsrfMiddleware::requireValidToken();
+        $achId = (int)$id;
+        $status = sanitize($_POST['status'] ?? 'verified');
+        $remarks = sanitize($_POST['admin_remarks'] ?? '');
+
+        $ach = $this->db->fetchOne("SELECT a.*, s.user_id FROM student_achievements a JOIN students s ON a.student_id = s.id WHERE a.id = ?", [$achId]);
+        if (!$ach) {
+            setFlash('danger', 'Achievement record not found.');
+            redirect('/admin/achievements');
+            return;
+        }
+
+        $this->db->update("UPDATE student_achievements SET status = ?, admin_remarks = ? WHERE id = ?", [$status, $remarks, $achId]);
+
+        $title = $status === 'verified' ? 'Achievement Verified!' : 'Achievement Status Updated';
+        $msg = $status === 'verified'
+            ? "Your achievement '{$ach['title']}' has been verified by the Placement Cell."
+            : "Your achievement '{$ach['title']}' status set to " . ucfirst($status) . ". Remarks: " . ($remarks ?: 'None');
+
+        createNotification($ach['user_id'], $title, $msg, $status === 'verified' ? 'success' : 'warning', 'system', url('/student/achievements'));
+
+        setFlash('success', 'Achievement status updated to ' . ucfirst($status));
+        redirect('/admin/achievements');
+    }
 }
+

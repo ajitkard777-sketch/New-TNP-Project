@@ -3,7 +3,7 @@
  */
 
 const TPMS = {
-    baseUrl: document.querySelector('meta[name="base-url"]')?.content || '/team1',
+    baseUrl: document.querySelector('meta[name="base-url"]')?.content || '/Internship%20Project/New-TNP-Project',
     csrfToken: document.querySelector('meta[name="csrf-token"]')?.content || '',
 
     init() {
@@ -12,6 +12,7 @@ const TPMS = {
         this.initToasts();
         this.initAjaxDefaults();
         this.initNotifications();
+        this.initNotificationSearch();
         this.initSearch();
         this.initDropdowns();
         this.initFormValidation();
@@ -263,33 +264,25 @@ const TPMS = {
     initNotifications() {
         this.fetchNotifications();
         setInterval(() => this.fetchNotifications(), 30000);
-
-        // Toggle dropdown
-        const btn = document.querySelector('.notification-toggle');
-        const dropdown = document.querySelector('.notification-dropdown');
-        
-        if (btn && dropdown) {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                dropdown.classList.toggle('show');
-                document.querySelector('.search-results-dropdown')?.classList.remove('show');
-            });
-
-            document.addEventListener('click', () => {
-                dropdown.classList.remove('show');
-            });
-
-            dropdown.addEventListener('click', (e) => e.stopPropagation());
-        }
     },
 
     fetchNotifications() {
         if (typeof $ === 'undefined') return;
-        
+
         $.get(this.baseUrl + '/notifications/fetch', (response) => {
             if (response.success) {
                 this.updateNotificationBadge(response.count);
                 this.updateNotificationDropdown(response.notifications);
+            }
+        }).fail(() => {});
+
+        $.get(this.baseUrl + '/messages/unread-count', (response) => {
+            if (response && response.success) {
+                const count = parseInt(response.unread_count || 0);
+                document.querySelectorAll('.chat-unread-badge').forEach(b => {
+                    b.textContent = count > 99 ? '99+' : count;
+                    b.style.display = count > 0 ? 'inline-block' : 'none';
+                });
             }
         }).fail(() => {});
     },
@@ -317,33 +310,162 @@ const TPMS = {
         }
 
         list.innerHTML = notifications.slice(0, 5).map(n => `
-            <a href="${n.link || '#'}" class="notification-item ${n.is_read ? '' : 'unread'}" 
-               onclick="TPMS.markNotificationRead(${n.id})">
+            <a href="${this.baseUrl}/notifications/read-redirect/${n.id}" class="notification-item ${n.is_read ? '' : 'unread'}">
                 <div class="n-icon bg-${this.getNotificationColor(n.type)}-soft">
                     <i class="fas fa-${this.getNotificationIcon(n.type)} text-${this.getNotificationColor(n.type)}"></i>
                 </div>
                 <div class="n-content">
                     <div class="n-title">${this.escapeHtml(n.title)}</div>
                     <div class="n-text">${this.escapeHtml(n.message)}</div>
-                    <div class="n-time"><i class="far fa-clock me-1"></i>${n.time_ago}</div>
+                    <div class="n-time"><i class="far fa-clock me-1"></i>${n.time_ago || ''}</div>
                 </div>
             </a>
         `).join('');
     },
 
-    markNotificationRead(id) {
+    markNotificationRead(id, btnElem = null) {
+        let originalHtml = '';
+        if (btnElem) {
+            originalHtml = btnElem.innerHTML;
+            btnElem.disabled = true;
+            btnElem.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>';
+        }
+
         if (typeof $ !== 'undefined') {
-            $.post(this.baseUrl + '/notifications/mark-read/' + id);
+            $.post(this.baseUrl + '/notifications/mark-read/' + id, { csrf_token: this.csrfToken }, (res) => {
+                if (res && res.success) {
+                    // Update card UI if present on page
+                    const item = document.getElementById('notif-item-' + id);
+                    if (item) {
+                        item.classList.remove('bg-light', 'border-primary', 'border-start', 'border-3', 'unread');
+                        item.classList.add('bg-white');
+                        const unreadBadge = item.querySelector('.unread-pill');
+                        if (unreadBadge) unreadBadge.remove();
+                    }
+
+                    if (btnElem) {
+                        btnElem.className = 'btn btn-sm btn-light text-muted disabled border-0';
+                        btnElem.innerHTML = '<i class="fas fa-check text-success me-1"></i> Read';
+                    }
+
+                    if (typeof res.count !== 'undefined') {
+                        this.updateNotificationBadge(res.count);
+                    } else {
+                        this.fetchNotifications();
+                    }
+
+                    this.showToast(res.message || 'Notification marked as read', 'success');
+                } else {
+                    if (btnElem) {
+                        btnElem.disabled = false;
+                        btnElem.innerHTML = originalHtml;
+                    }
+                    this.showToast('Failed to update notification status', 'error');
+                }
+            }).fail(() => {
+                if (btnElem) {
+                    btnElem.disabled = false;
+                    btnElem.innerHTML = originalHtml;
+                }
+                this.showToast('Server error marking notification as read', 'error');
+            });
         }
     },
 
-    markAllNotificationsRead() {
+    markAllNotificationsRead(btnElem = null) {
+        let originalHtml = '';
+        if (btnElem) {
+            originalHtml = btnElem.innerHTML;
+            btnElem.disabled = true;
+            btnElem.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Processing...';
+        }
+
         if (typeof $ !== 'undefined') {
-            $.post(this.baseUrl + '/notifications/mark-all-read', () => {
-                this.fetchNotifications();
-                this.showToast('All notifications marked as read', 'success');
+            $.post(this.baseUrl + '/notifications/mark-all-read', { csrf_token: this.csrfToken }, (res) => {
+                if (res && res.success) {
+                    // Update all items on screen
+                    document.querySelectorAll('.notif-card').forEach(item => {
+                        item.classList.remove('bg-light', 'border-primary', 'border-start', 'border-3', 'unread');
+                        item.classList.add('bg-white');
+                        const badge = item.querySelector('.unread-pill');
+                        if (badge) badge.remove();
+                    });
+
+                    document.querySelectorAll('.btn-mark-read').forEach(btn => {
+                        btn.className = 'btn btn-sm btn-light text-muted disabled border-0';
+                        btn.innerHTML = '<i class="fas fa-check text-success me-1"></i> Read';
+                    });
+
+                    this.updateNotificationBadge(0);
+                    this.showToast('All notifications marked as read', 'success');
+
+                    if (btnElem) {
+                        btnElem.disabled = false;
+                        btnElem.innerHTML = '<i class="fas fa-check-double me-1"></i> All Read';
+                    }
+                } else {
+                    if (btnElem) {
+                        btnElem.disabled = false;
+                        btnElem.innerHTML = originalHtml;
+                    }
+                    this.showToast('Failed to mark notifications as read', 'error');
+                }
+            }).fail(() => {
+                if (btnElem) {
+                    btnElem.disabled = false;
+                    btnElem.innerHTML = originalHtml;
+                }
+                this.showToast('Server error processing request', 'error');
             });
         }
+    },
+
+    initNotificationSearch() {
+        const searchInput = document.getElementById('notifSearchInput');
+        const categoryFilter = document.getElementById('notifCategoryFilter');
+        const emptyState = document.getElementById('notifEmptyState');
+        const searchEmptyState = document.getElementById('notifSearchEmptyState');
+
+        if (!searchInput && !categoryFilter) return;
+
+        const filterNotifications = () => {
+            const query = (searchInput ? searchInput.value : '').trim().toLowerCase();
+            const selectedCat = (categoryFilter ? categoryFilter.value : 'all').toLowerCase();
+            const cards = document.querySelectorAll('.notif-card');
+            let visibleCount = 0;
+
+            cards.forEach(card => {
+                const title = (card.getAttribute('data-title') || card.textContent || '').toLowerCase();
+                const message = (card.getAttribute('data-message') || '').toLowerCase();
+                const company = (card.getAttribute('data-company') || '').toLowerCase();
+                const category = (card.getAttribute('data-category') || '').toLowerCase();
+                const type = (card.getAttribute('data-type') || '').toLowerCase();
+
+                const matchesQuery = !query || title.includes(query) || message.includes(query) || company.includes(query) || category.includes(query) || type.includes(query);
+                const matchesCategory = selectedCat === 'all' || category === selectedCat || type === selectedCat;
+
+                if (matchesQuery && matchesCategory) {
+                    card.style.display = 'block';
+                    visibleCount++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+
+            if (searchEmptyState) {
+                if (visibleCount === 0 && cards.length > 0) {
+                    searchEmptyState.style.display = 'block';
+                    if (emptyState) emptyState.style.display = 'none';
+                } else {
+                    searchEmptyState.style.display = 'none';
+                }
+            }
+        };
+
+        if (searchInput) searchInput.addEventListener('input', filterNotifications);
+        if (categoryFilter) categoryFilter.addEventListener('change', filterNotifications);
+
+        filterNotifications();
     },
 
     getNotificationIcon(type) {

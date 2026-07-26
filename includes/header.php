@@ -96,6 +96,7 @@ if (!function_exists('resolveCurrentPageKey')) {
                 case 'withdraw':
                     return 'applications';
                 case 'register-training':
+                case 'cancel-training':
                     return 'trainings';
                 case 'register-higher-study':
                     return 'higher-studies';

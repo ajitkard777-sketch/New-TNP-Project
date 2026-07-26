@@ -7,7 +7,17 @@
  * Redirect to a URL
  */
 function redirect(string $path): void {
-    header('Location: ' . BASE_URL . $path);
+    if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+        header('Location: ' . $path);
+        exit;
+    }
+    
+    $baseUrl = rtrim(BASE_URL, '/');
+    if (!empty($baseUrl) && str_starts_with($path, $baseUrl)) {
+        $path = substr($path, strlen($baseUrl));
+    }
+    
+    header('Location: ' . $baseUrl . '/' . ltrim($path, '/'));
     exit;
 }
 
@@ -86,7 +96,8 @@ function jsonResponse(array $data, int $statusCode = 200): void {
  * Generate URL
  */
 function url(string $path = ''): string {
-    return BASE_URL . '/' . ltrim($path, '/');
+    // rtrim prevents double-slash when BASE_URL already has no trailing slash
+    return rtrim(BASE_URL, '/') . '/' . ltrim($path, '/');
 }
 
 /**
@@ -467,3 +478,72 @@ function formatFileSize(int $bytes): string {
 if (!defined('DB_NAME')) {
     define('DB_NAME', 'team1');
 }
+
+/**
+ * Check if a student is eligible for a job and return status and reasons
+ */
+function checkStudentJobEligibility(array $job, ?array $student): array {
+    if (!$student) {
+        return ['is_eligible' => false, 'reasons' => ['Student profile missing']];
+    }
+    
+    $reasons = [];
+    $isEligible = true;
+    
+    // CGPA check
+    $minCgpa = (float)($job['eligibility_cgpa'] ?? 0);
+    $studentCgpa = (float)($student['cgpa'] ?? 0);
+    if ($minCgpa > 0 && $studentCgpa < $minCgpa) {
+        $isEligible = false;
+        $reasons[] = "CGPA {$studentCgpa} is below required minimum {$minCgpa}";
+    }
+    
+    // Backlog check
+    $maxBacklogs = (int)($job['eligibility_backlogs'] ?? 0);
+    $studentBacklogs = (int)($student['active_backlogs'] ?? ($student['backlogs'] ?? 0));
+    if ($maxBacklogs >= 0 && $studentBacklogs > $maxBacklogs) {
+        $isEligible = false;
+        $reasons[] = "Active backlogs ({$studentBacklogs}) exceed maximum allowed ({$maxBacklogs})";
+    }
+    
+    // Branch check
+    $eligBranchesStr = trim($job['eligibility_branches'] ?? '');
+    if (!empty($eligBranchesStr) && strtolower($eligBranchesStr) !== 'all') {
+        $allowedBranches = array_map('trim', explode(',', strtolower($eligBranchesStr)));
+        $studentBranch = strtolower(trim($student['branch'] ?? ''));
+        $matched = false;
+        foreach ($allowedBranches as $ab) {
+            if ($studentBranch === $ab || str_contains($studentBranch, $ab) || str_contains($ab, $studentBranch)) {
+                $matched = true;
+                break;
+            }
+        }
+        if (!$matched) {
+            $isEligible = false;
+            $reasons[] = "Branch '" . ($student['branch'] ?? 'N/A') . "' is not in allowed list (" . implode(', ', array_map('ucfirst', $allowedBranches)) . ")";
+        }
+    }
+    
+    return [
+        'is_eligible' => $isEligible,
+        'reasons' => $reasons
+    ];
+}
+
+/**
+ * Create a notification for a user or globally
+ */
+function createNotification(?int $userId, string $title, string $message, string $type = 'info', string $category = 'system', ?string $link = null, bool $isGlobal = false): bool {
+    try {
+        $db = Database::getInstance();
+        $db->insert(
+            "INSERT INTO notifications (user_id, title, message, type, category, link, is_global) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            [$userId, $title, $message, $type, $category, $link, $isGlobal ? 1 : 0]
+        );
+        return true;
+    } catch (Exception $e) {
+        error_log("Notification Creation Error: " . $e->getMessage());
+        return false;
+    }
+}
+

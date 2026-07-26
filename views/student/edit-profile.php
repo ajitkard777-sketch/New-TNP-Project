@@ -28,25 +28,32 @@
 
         <!-- Resume -->
         <div class="card mb-4">
-            <div class="card-header"><h6><i class="fas fa-file-pdf me-2 text-danger"></i>Resume</h6></div>
+            <div class="card-header"><h6><i class="fas fa-file-pdf me-2 text-danger"></i>Resume Document</h6></div>
             <div class="card-body">
-                <?php if ($student['resume_path']): ?>
-                <div class="alert alert-success py-2 px-3" style="font-size:0.82rem">
-                    <i class="fas fa-check-circle me-1"></i> 
-                    <?= htmlspecialchars($student['resume_original_name'] ?? 'Resume uploaded') ?>
-                </div>
-                <div class="d-flex gap-2 mb-3">
-                    <a href="<?= url('/student/preview-resume') ?>" target="_blank" class="btn btn-outline-primary btn-sm flex-fill"><i class="fas fa-eye me-1"></i> Preview</a>
-                    <a href="<?= url('/student/download-resume') ?>" class="btn btn-success btn-sm flex-fill"><i class="fas fa-download me-1"></i> Download</a>
-                    <a href="<?= url('/student/delete-resume') ?>" class="btn btn-danger btn-sm" data-confirm="Delete your resume?"><i class="fas fa-trash"></i></a>
-                </div>
+                <?php if (!empty($student['resume_path'])): ?>
+                    <div class="p-2 bg-light rounded mb-3 small d-flex justify-content-between align-items-center border">
+                        <div class="text-truncate" style="max-width:180px;">
+                            <i class="fas fa-file-pdf text-danger me-1"></i>
+                            <strong><?= htmlspecialchars($student['resume_original_name'] ?: 'Resume.pdf') ?></strong>
+                        </div>
+                        <a href="<?= url('/student/delete-resume') ?>" class="text-danger small" data-confirm="Delete resume?"><i class="fas fa-trash"></i></a>
+                    </div>
                 <?php endif; ?>
-                <form action="<?= url('/student/upload-resume') ?>" method="POST" enctype="multipart/form-data">
+
+                <form action="<?= url('/student/upload-resume') ?>" method="POST" enctype="multipart/form-data" class="mb-3">
                     <?= CsrfMiddleware::tokenField() ?>
-                    <input type="file" name="resume" accept=".pdf" class="form-control form-control-sm mb-2">
-                    <button type="submit" class="btn btn-primary btn-sm w-100"><i class="fas fa-upload me-1"></i> <?= $student['resume_path'] ? 'Replace Resume' : 'Upload Resume' ?></button>
+                    <label class="form-label small fw-semibold">Upload PDF Resume</label>
+                    <input type="file" name="resume" accept=".pdf" class="form-control form-control-sm mb-2" required>
+                    <button type="submit" class="btn btn-danger btn-sm w-100"><i class="fas fa-upload me-1"></i> Upload Resume PDF</button>
                 </form>
-                <small class="text-muted d-block mt-2">Only PDF files. Max 5MB.</small>
+
+                <div class="p-3 bg-light rounded text-center border-top">
+                    <i class="fas fa-magic text-primary mb-1" style="font-size:1.5rem;"></i>
+                    <h6 class="fw-bold mb-1" style="font-size:0.85rem;">ATS Resume Builder</h6>
+                    <a href="<?= url('/student/resume-builder') ?>" class="btn btn-outline-primary btn-sm w-100 fw-semibold mt-1">
+                        <i class="fas fa-pen me-1"></i> Open Resume Builder
+                    </a>
+                </div>
             </div>
         </div>
 
@@ -115,6 +122,7 @@
                                 <div class="col-12"><label class="form-label">Address</label><textarea class="form-control" name="address" rows="2"><?= htmlspecialchars($student['address'] ?? '') ?></textarea></div>
                                 <div class="col-md-6"><label class="form-label">City</label><input type="text" class="form-control" name="city" value="<?= htmlspecialchars($student['city'] ?? '') ?>"></div>
                                 <div class="col-md-6"><label class="form-label">State</label><input type="text" class="form-control" name="state" value="<?= htmlspecialchars($student['state'] ?? '') ?>"></div>
+                                <div class="col-12"><label class="form-label">Preferred Work Location(s)</label><input type="text" class="form-control" name="preferred_location" value="<?= htmlspecialchars($student['preferred_location'] ?? '') ?>" placeholder="e.g. Pune, Mumbai, Bangalore, Remote"></div>
                                 <div class="col-md-4"><label class="form-label">LinkedIn</label><input type="url" class="form-control" name="linkedin" value="<?= htmlspecialchars($student['linkedin'] ?? '') ?>" placeholder="https://linkedin.com/in/..."></div>
                                 <div class="col-md-4"><label class="form-label">GitHub</label><input type="url" class="form-control" name="github" value="<?= htmlspecialchars($student['github'] ?? '') ?>" placeholder="https://github.com/..."></div>
                                 <div class="col-md-4"><label class="form-label">Portfolio</label><input type="url" class="form-control" name="portfolio" value="<?= htmlspecialchars($student['portfolio'] ?? '') ?>"></div>

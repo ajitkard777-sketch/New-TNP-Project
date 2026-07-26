@@ -117,14 +117,28 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // OTP inputs auto-focus
+    // OTP inputs auto-focus & sync
     const otpInputs = document.querySelectorAll('.otp-input');
+    const syncOtp = () => {
+        const otpHidden = document.getElementById('otp');
+        if (otpHidden && otpInputs.length > 0) {
+            let otpVal = '';
+            otpInputs.forEach(inp => otpVal += inp.value.trim());
+            otpHidden.value = otpVal;
+        }
+    };
+
     otpInputs.forEach((input, index) => {
-        input.addEventListener('keyup', function(e) {
+        input.addEventListener('input', function() {
+            this.value = this.value.replace(/[^0-9]/g, '');
             if (this.value.length === 1 && index < otpInputs.length - 1) {
                 otpInputs[index + 1].focus();
             }
-            if (e.key === 'Backspace' && index > 0) {
+            syncOtp();
+        });
+
+        input.addEventListener('keydown', function(e) {
+            if (e.key === 'Backspace' && !this.value && index > 0) {
                 otpInputs[index - 1].focus();
             }
         });
@@ -136,24 +150,18 @@ document.addEventListener('DOMContentLoaded', () => {
             otpInputs.forEach((inp, i) => {
                 if (digits[i]) inp.value = digits[i];
             });
-            // Combine into hidden field
-            const otpHidden = document.getElementById('otp');
-            if (otpHidden) {
-                otpHidden.value = digits.join('').substring(0, otpInputs.length);
+            const lastFilled = Math.min(digits.length, otpInputs.length) - 1;
+            if (lastFilled >= 0 && otpInputs[lastFilled]) {
+                otpInputs[lastFilled].focus();
             }
+            syncOtp();
         });
     });
 
-    // Combine OTP fields before submit
     const otpForm = document.getElementById('otp-form');
     if (otpForm) {
         otpForm.addEventListener('submit', function() {
-            const otpHidden = document.getElementById('otp');
-            if (otpHidden) {
-                let otp = '';
-                otpInputs.forEach(inp => otp += inp.value);
-                otpHidden.value = otp;
-            }
+            syncOtp();
         });
     }
 

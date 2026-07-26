@@ -23,13 +23,42 @@ class StudentController {
         $student = $this->student;
         $pageTitle = 'Student Dashboard';
 
-        // Stats
+        // Stats for Top Summary Cards
+        $jobsAvailableCount = (int)$this->db->fetchColumn("SELECT COUNT(*) FROM jobs WHERE status = 'active' AND (application_deadline IS NULL OR application_deadline >= CURDATE())");
         $applicationCount = (int)$this->db->fetchColumn("SELECT COUNT(*) FROM applications WHERE student_id = ?", [$student['id']]);
-        $shortlistedCount = (int)$this->db->fetchColumn("SELECT COUNT(*) FROM applications WHERE student_id = ? AND status = 'shortlisted'", [$student['id']]);
+        
+        $activeJobs = $this->db->fetchAll("SELECT * FROM jobs WHERE status = 'active' AND (application_deadline IS NULL OR application_deadline >= CURDATE())");
+        $eligibleJobsCount = 0;
+        foreach ($activeJobs as $j) {
+            $check = checkStudentJobEligibility($j, $student);
+            if ($check['is_eligible']) {
+                $eligibleJobsCount++;
+            }
+        }
+
+        $interviewCount = (int)$this->db->fetchColumn("SELECT COUNT(*) FROM interviews WHERE student_id = ? AND (status = 'scheduled' OR status = 'rescheduled') AND interview_date >= CURDATE()", [$student['id']]);
         $selectedCount = (int)$this->db->fetchColumn("SELECT COUNT(*) FROM applications WHERE student_id = ? AND status = 'selected'", [$student['id']]);
-        $interviewCount = (int)$this->db->fetchColumn("SELECT COUNT(*) FROM interviews WHERE student_id = ? AND status = 'scheduled'", [$student['id']]);
-        $trainingCount = (int)$this->db->fetchColumn("SELECT COUNT(*) FROM training_registrations WHERE student_id = ?", [$student['id']]);
-        $bookmarkCount = (int)$this->db->fetchColumn("SELECT COUNT(*) FROM bookmarks WHERE student_id = ?", [$student['id']]);
+        $notificationCount = (int)$this->db->fetchColumn("SELECT COUNT(*) FROM notifications WHERE (user_id = ? OR is_global = 1)", [$_SESSION['user_id']]);
+
+        // Specific Stats for Dashboard Integration Cards
+        $upcomingInterviewsCount = $interviewCount;
+        $upcomingDrivesCount = $jobsAvailableCount;
+        $totalAchievementsCount = (int)$this->db->fetchColumn("SELECT COUNT(*) FROM student_achievements WHERE student_id = ?", [$student['id']]);
+
+        $firstDayOfMonth = date('Y-m-01');
+        $lastDayOfMonth = date('Y-m-t');
+        $eventsThisMonth = $this->studentModel->getPlacementCalendarEvents($firstDayOfMonth, $lastDayOfMonth, $student['id']);
+        $eventsThisMonthCount = count($eventsThisMonth);
+
+        // Student Data Collections for Cards
+        $projects = $this->studentModel->getProjects($student['id']);
+        $certifications = $this->studentModel->getCertifications($student['id']);
+        $languages = $this->studentModel->getLanguages($student['id']);
+        $achievements = $this->studentModel->getAchievements($student['id']);
+
+        // AI Recommended Jobs
+        require_once ROOT_PATH . '/services/JobRecommendationService.php';
+        $recommendedJobs = JobRecommendationService::getInstance()->getRecommendedJobs($student, 6);
 
         // Recent jobs
         $recentJobs = $this->db->fetchAll(
@@ -97,6 +126,7 @@ class StudentController {
             'backlogs' => $data['backlogs'] ?? 0,
             'active_backlogs' => $data['active_backlogs'] ?? 0,
             'skills' => $data['skills'] ?? null,
+            'preferred_location' => $data['preferred_location'] ?? null,
             'bio' => $data['bio'] ?? null,
             'linkedin' => $data['linkedin'] ?? null,
             'github' => $data['github'] ?? null,
@@ -141,24 +171,27 @@ class StudentController {
         // Delete old photo
         if ($this->student['profile_photo']) {
             $oldPath = UPLOADS_PATH . '/profile_photos/' . $this->student['profile_photo'];
-            if (file_exists($oldPath)) unlink($oldPath);
+            if (file_exists($oldPath)) @unlink($oldPath);
         }
 
+        $dir = UPLOADS_PATH . '/profile_photos/';
+        if (!is_dir($dir)) @mkdir($dir, 0777, true);
+
         $fileName = generateFileName($file['name'], 'student_' . $this->student['id']);
-        $destination = UPLOADS_PATH . '/profile_photos/' . $fileName;
+        $destination = $dir . $fileName;
         move_uploaded_file($file['tmp_name'], $destination);
 
         $this->studentModel->updateByUserId($_SESSION['user_id'], ['profile_photo' => $fileName]);
         $this->studentModel->updateProfileCompletion($this->student['id']);
         setFlash('success', 'Profile photo updated successfully!');
-        redirect('/student/profile/edit');
+        redirectBack();
     }
 
     public function uploadResume(): void {
         CsrfMiddleware::requireValidToken();
         if (!isset($_FILES['resume']) || $_FILES['resume']['error'] !== UPLOAD_ERR_OK) {
-            setFlash('danger', 'Please select a PDF file.');
-            redirect('/student/profile/edit');
+            setFlash('danger', 'Please select a PDF file to upload.');
+            redirectBack();
             return;
         }
 
@@ -166,23 +199,26 @@ class StudentController {
         $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
         if ($ext !== 'pdf') {
             setFlash('danger', 'Only PDF files are allowed for resume.');
-            redirect('/student/profile/edit');
+            redirectBack();
             return;
         }
         if ($file['size'] > MAX_FILE_SIZE) {
             setFlash('danger', 'File size exceeds 5MB limit.');
-            redirect('/student/profile/edit');
+            redirectBack();
             return;
         }
 
+        $dir = UPLOADS_PATH . '/resume/';
+        if (!is_dir($dir)) @mkdir($dir, 0777, true);
+
         // Delete old resume
         if ($this->student['resume_path']) {
-            $oldPath = UPLOADS_PATH . '/resume/' . $this->student['resume_path'];
-            if (file_exists($oldPath)) unlink($oldPath);
+            $oldPath = $dir . $this->student['resume_path'];
+            if (file_exists($oldPath)) @unlink($oldPath);
         }
 
         $fileName = generateFileName($file['name'], 'resume_' . $this->student['id']);
-        $destination = UPLOADS_PATH . '/resume/' . $fileName;
+        $destination = $dir . $fileName;
         move_uploaded_file($file['tmp_name'], $destination);
 
         $this->studentModel->updateByUserId($_SESSION['user_id'], [
@@ -191,17 +227,17 @@ class StudentController {
         ]);
         $this->studentModel->updateProfileCompletion($this->student['id']);
         setFlash('success', 'Resume uploaded successfully!');
-        redirect('/student/profile/edit');
+        redirectBack();
     }
 
     public function deleteResume(): void {
         if ($this->student['resume_path']) {
             $path = UPLOADS_PATH . '/resume/' . $this->student['resume_path'];
-            if (file_exists($path)) unlink($path);
+            if (file_exists($path)) @unlink($path);
             $this->studentModel->updateByUserId($_SESSION['user_id'], ['resume_path' => null, 'resume_original_name' => null]);
             setFlash('success', 'Resume deleted.');
         }
-        redirect('/student/profile/edit');
+        redirectBack();
     }
 
     public function downloadResume(): void {
@@ -236,28 +272,31 @@ class StudentController {
     public function uploadDocument(): void {
         CsrfMiddleware::requireValidToken();
         if (!isset($_FILES['document']) || $_FILES['document']['error'] !== UPLOAD_ERR_OK) {
-            setFlash('danger', 'Please select a file.');
-            redirect('/student/profile/edit');
+            setFlash('danger', 'Please select a document file.');
+            redirectBack();
             return;
         }
 
         $file = $_FILES['document'];
         if ($file['size'] > MAX_FILE_SIZE) {
             setFlash('danger', 'File size exceeds 5MB limit.');
-            redirect('/student/profile/edit');
+            redirectBack();
             return;
         }
 
+        $dir = UPLOADS_PATH . '/documents/';
+        if (!is_dir($dir)) @mkdir($dir, 0777, true);
+
         $fileName = generateFileName($file['name'], 'doc_' . $this->student['id']);
-        $destination = UPLOADS_PATH . '/documents/' . $fileName;
+        $destination = $dir . $fileName;
         move_uploaded_file($file['tmp_name'], $destination);
 
         $docType = sanitize($_POST['document_type'] ?? 'other');
         $this->db->insert("INSERT INTO documents (user_id, document_type, original_name, file_path, file_size, mime_type, description) VALUES (?, ?, ?, ?, ?, ?, ?)",
-            [$_SESSION['user_id'], $docType, $file['name'], 'documents/' . $fileName, $file['size'], mime_content_type($file['tmp_name']), sanitize($_POST['document_description'] ?? '')]);
+            [$_SESSION['user_id'], $docType, $file['name'], 'documents/' . $fileName, $file['size'], mime_content_type($destination), sanitize($_POST['document_description'] ?? '')]);
 
         setFlash('success', 'Document uploaded successfully!');
-        redirect('/student/profile/edit');
+        redirectBack();
     }
 
     public function deleteDocument($id): void {
@@ -268,7 +307,7 @@ class StudentController {
             $this->db->delete("DELETE FROM documents WHERE id = ?", [$id]);
             setFlash('success', 'Document deleted.');
         }
-        redirect('/student/profile/edit');
+        redirectBack();
     }
 
     public function jobs(): void {
@@ -293,7 +332,7 @@ class StudentController {
         $params[] = $pagination['offset'];
 
         $jobs = $this->db->fetchAll(
-            "SELECT j.*, c.company_name, c.logo, c.city as company_city,
+            "SELECT j.*, c.company_name, c.logo, c.city as company_city, c.user_id as company_user_id, c.is_approved as company_approved,
              (SELECT COUNT(*) FROM applications a WHERE a.job_id = j.id) as application_count,
              (SELECT COUNT(*) FROM applications a WHERE a.job_id = j.id AND a.student_id = ?) as has_applied,
              (SELECT COUNT(*) FROM bookmarks b WHERE b.job_id = j.id AND b.student_id = ?) as is_bookmarked
@@ -301,41 +340,93 @@ class StudentController {
             array_merge([$student['id'], $student['id']], $params)
         );
 
+        // Calculate AI recommendation match scores and mandatory eligibility for all jobs
+        require_once ROOT_PATH . '/services/JobRecommendationService.php';
+        $recService = JobRecommendationService::getInstance();
+
+        foreach ($jobs as &$j) {
+            $match = $recService->calculateMatch($student, $j);
+            $eligibility = $recService->checkEligibility($student, $j);
+
+            $j['match_score']       = $match['score'];
+            $j['match_label']       = $match['match_label'];
+            $j['match_badge_class'] = $match['badge_class'];
+            $j['match_explanation'] = $match['explanation'];
+            $j['matched_skills']    = $match['matched_skills'];
+            $j['eligibility']        = $eligibility;
+        }
+        unset($j);
+
+        // Sort jobs by match score descending (Top recommended at top)
+        usort($jobs, function ($a, $b) {
+            return $b['match_score'] <=> $a['match_score'];
+        });
+
         require_once VIEWS_PATH . '/student/jobs.php';
     }
 
     public function applyJob($jobId): void {
         if (!$jobId) { redirect('/student/jobs'); return; }
 
-        $job = $this->db->fetchOne("SELECT * FROM jobs WHERE id = ? AND status = 'active'", [$jobId]);
+        $job = $this->db->fetchOne("SELECT j.*, c.company_name, c.user_id as company_user_id FROM jobs j JOIN companies c ON j.company_id = c.id WHERE j.id = ?", [$jobId]);
         if (!$job) { setFlash('danger', 'Job not found or closed.'); redirect('/student/jobs'); return; }
 
         // Check already applied
-        $existing = $this->db->fetchColumn("SELECT COUNT(*) FROM applications WHERE student_id = ? AND job_id = ?", [$this->student['id'], $jobId]);
-        if ($existing) { setFlash('warning', 'You have already applied for this job.'); redirect('/student/jobs'); return; }
+        $existingApp = $this->db->fetchOne("SELECT * FROM applications WHERE student_id = ? AND job_id = ?", [$this->student['id'], $jobId]);
+        if ($existingApp) {
+            if ($existingApp['status'] === 'withdrawn') {
+                $this->db->update("UPDATE applications SET status = 'applied', applied_at = CURRENT_TIMESTAMP, resume_snapshot = ? WHERE id = ?",
+                    [$this->student['resume_path'], $existingApp['id']]);
+                
+                $this->db->insert("INSERT INTO notifications (user_id, title, message, type, category) VALUES (?, ?, ?, ?, ?)",
+                    [$_SESSION['user_id'], 'Application Re-submitted', "Your application for '{$job['title']}' at {$job['company_name']} has been re-submitted.", 'success', 'job']);
 
-        // Check eligibility
-        if ($job['eligibility_cgpa'] > 0 && $this->student['cgpa'] < $job['eligibility_cgpa']) {
-            setFlash('danger', 'You do not meet the CGPA requirement for this job.'); redirect('/student/jobs'); return;
-        }
+                if (!empty($job['company_user_id'])) {
+                    $studentName = trim(($this->student['first_name'] ?? '') . ' ' . ($this->student['last_name'] ?? ''));
+                    $this->db->insert("INSERT INTO notifications (user_id, title, message, type, category) VALUES (?, ?, ?, ?, ?)",
+                        [$job['company_user_id'], 'Student Re-applied', "{$studentName} has re-applied for '{$job['title']}'.", 'info', 'application']);
+                }
 
-        if ($job['eligibility_branches']) {
-            $branches = array_map('trim', explode(',', $job['eligibility_branches']));
-            if (!in_array($this->student['branch'], $branches)) {
-                setFlash('danger', 'Your branch is not eligible for this job.'); redirect('/student/jobs'); return;
+                logActivity('reapply_job', 'application', "Re-applied for job: {$job['title']}");
+                if (isAjax()) { jsonResponse(['success' => true, 'message' => 'Application re-submitted successfully!']); }
+                setFlash('success', 'Application re-submitted successfully!');
+                redirect('/student/applications');
+                return;
+            } else {
+                if (isAjax()) { jsonResponse(['success' => false, 'message' => 'You have already applied for this job.']); }
+                setFlash('warning', 'You have already applied for this job.');
+                redirect('/student/applications');
+                return;
             }
         }
 
-        if ($job['eligibility_backlogs'] < $this->student['active_backlogs']) {
-            setFlash('danger', 'You have more active backlogs than allowed.'); redirect('/student/jobs'); return;
+        // Strict Server-Side Eligibility Validation
+        require_once ROOT_PATH . '/services/JobRecommendationService.php';
+        $recService = JobRecommendationService::getInstance();
+        $eligibility = $recService->checkEligibility($this->student, $job);
+
+        if (!$eligibility['is_eligible']) {
+            $msg = 'Not Eligible: ' . implode(' | ', $eligibility['reasons']);
+            if (isAjax()) { jsonResponse(['success' => false, 'message' => $msg], 400); }
+            setFlash('danger', $msg);
+            redirect('/student/jobs');
+            return;
         }
 
+        // Save application
         $this->db->insert("INSERT INTO applications (student_id, job_id, status, resume_snapshot) VALUES (?, ?, 'applied', ?)",
             [$this->student['id'], $jobId, $this->student['resume_path']]);
 
-        // Notification
+        // Student Notification
         $this->db->insert("INSERT INTO notifications (user_id, title, message, type, category) VALUES (?, ?, ?, ?, ?)",
-            [$_SESSION['user_id'], 'Application Submitted', "You have successfully applied for {$job['title']}.", 'success', 'job']);
+            [$_SESSION['user_id'], 'Application Submitted Successfully', "Your application for '{$job['title']}' at {$job['company_name']} has been submitted.", 'success', 'job']);
+
+        // Company Recruiter Notification
+        if (!empty($job['company_user_id'])) {
+            $studentName = trim(($this->student['first_name'] ?? '') . ' ' . ($this->student['last_name'] ?? ''));
+            $this->db->insert("INSERT INTO notifications (user_id, title, message, type, category) VALUES (?, ?, ?, ?, ?)",
+                [$job['company_user_id'], 'New Student Applied', "{$studentName} has applied for '{$job['title']}'.", 'info', 'application']);
+        }
 
         logActivity('apply_job', 'application', "Applied for job: {$job['title']}");
         if (isAjax()) { jsonResponse(['success' => true, 'message' => 'Application submitted successfully!']); }
@@ -354,9 +445,15 @@ class StudentController {
         $pageTitle = 'My Applications';
         $student = $this->student;
         $applications = $this->db->fetchAll(
-            "SELECT a.*, j.title as job_title, j.salary_min, j.salary_max, j.location, j.job_type, c.company_name, c.logo
-             FROM applications a JOIN jobs j ON a.job_id = j.id JOIN companies c ON j.company_id = c.id
-             WHERE a.student_id = ? ORDER BY a.applied_at DESC",
+            "SELECT a.*, j.title as job_title, j.salary_min, j.salary_max, j.location, j.job_type, j.status as job_status, j.description as job_description, j.skills_required, j.work_mode,
+                    c.company_name, c.logo, c.user_id as company_user_id,
+                    i.interview_date, i.interview_time, i.status as interview_status, i.round as interview_round
+             FROM applications a
+             JOIN jobs j ON a.job_id = j.id
+             JOIN companies c ON j.company_id = c.id
+             LEFT JOIN interviews i ON i.student_id = a.student_id AND i.job_id = a.job_id
+             WHERE a.student_id = ?
+             ORDER BY a.applied_at DESC",
             [$student['id']]
         );
         require_once VIEWS_PATH . '/student/applications.php';
@@ -367,7 +464,7 @@ class StudentController {
         $student = $this->student;
         $trainings = $this->db->fetchAll(
             "SELECT t.*, f.name as faculty_name,
-             (SELECT COUNT(*) FROM training_registrations tr WHERE tr.training_id = t.id AND tr.student_id = ?) as is_registered
+             (SELECT COUNT(*) FROM training_registrations tr WHERE tr.training_id = t.id AND tr.student_id = ? AND tr.status != 'cancelled') as is_registered
              FROM trainings t LEFT JOIN faculty f ON t.faculty_id = f.id WHERE t.status IN ('upcoming', 'ongoing') ORDER BY t.start_date ASC",
             [$student['id']]
         );
@@ -380,17 +477,161 @@ class StudentController {
     }
 
     public function registerTraining($trainingId): void {
-        if (!$trainingId) { redirect('/student/trainings'); return; }
+        $trainingId = (int)$trainingId;
+        if (!$trainingId) {
+            if (isAjax()) { jsonResponse(['success' => false, 'message' => 'Invalid training program.'], 400); }
+            redirect('/student/trainings');
+            return;
+        }
+
         $training = $this->db->fetchOne("SELECT * FROM trainings WHERE id = ?", [$trainingId]);
-        if (!$training) { setFlash('danger', 'Training not found.'); redirect('/student/trainings'); return; }
-        if ($training['registered_count'] >= $training['capacity']) { setFlash('danger', 'Training is full.'); redirect('/student/trainings'); return; }
+        if (!$training) {
+            if (isAjax()) { jsonResponse(['success' => false, 'message' => 'Training program not found.'], 404); }
+            setFlash('danger', 'Training not found.');
+            redirect('/student/trainings');
+            return;
+        }
 
-        $existing = $this->db->fetchColumn("SELECT COUNT(*) FROM training_registrations WHERE training_id = ? AND student_id = ?", [$trainingId, $this->student['id']]);
-        if ($existing) { setFlash('warning', 'Already registered.'); redirect('/student/trainings'); return; }
+        if ((int)$training['registered_count'] >= (int)$training['capacity']) {
+            if (isAjax()) { jsonResponse(['success' => false, 'message' => 'Training capacity is full.'], 400); }
+            setFlash('danger', 'Training is full.');
+            redirect('/student/trainings');
+            return;
+        }
 
-        $this->db->insert("INSERT INTO training_registrations (training_id, student_id) VALUES (?, ?)", [$trainingId, $this->student['id']]);
-        $this->db->update("UPDATE trainings SET registered_count = registered_count + 1 WHERE id = ?", [$trainingId]);
-        setFlash('success', 'Registered for training successfully!');
+        $activeReg = $this->db->fetchOne(
+            "SELECT * FROM training_registrations WHERE training_id = ? AND student_id = ? AND status != 'cancelled'",
+            [$trainingId, $this->student['id']]
+        );
+        if ($activeReg) {
+            if (isAjax()) { jsonResponse(['success' => false, 'message' => 'You are already registered for this training program.'], 400); }
+            setFlash('warning', 'Already registered for this training program.');
+            redirect('/student/trainings');
+            return;
+        }
+
+        $cancelledReg = $this->db->fetchOne(
+            "SELECT * FROM training_registrations WHERE training_id = ? AND student_id = ? AND status = 'cancelled'",
+            [$trainingId, $this->student['id']]
+        );
+
+        if ($cancelledReg) {
+            $this->db->update(
+                "UPDATE training_registrations SET status = 'registered', created_at = CURRENT_TIMESTAMP WHERE id = ?",
+                [$cancelledReg['id']]
+            );
+        } else {
+            $this->db->insert(
+                "INSERT INTO training_registrations (training_id, student_id, status) VALUES (?, ?, 'registered')",
+                [$trainingId, $this->student['id']]
+            );
+        }
+
+        $this->db->update(
+            "UPDATE trainings SET registered_count = registered_count + 1 WHERE id = ?",
+            [$trainingId]
+        );
+
+        // Send Notification to Student
+        $startDateFormatted = formatDate($training['start_date'], 'd M Y');
+        $trainerName = !empty($training['trainer_name']) ? $training['trainer_name'] : 'T&P Cell';
+        $notifTitle = 'Training Registration Confirmed';
+        $notifMsg = '✅ Successfully registered for "' . $training['title'] . '". Trainer: ' . $trainerName . '. Starts on ' . $startDateFormatted . '.';
+
+        $notifCreated = createNotification(
+            $_SESSION['user_id'],
+            $notifTitle,
+            $notifMsg,
+            'success',
+            'training',
+            '/student/trainings',
+            false
+        );
+
+        if (!$notifCreated) {
+            error_log("Training Notification Error: Failed to create registration notification for user #" . $_SESSION['user_id'] . " training #" . $trainingId);
+        }
+
+        $successMsg = 'Successfully registered for "' . $training['title'] . '". Starts on ' . $startDateFormatted . '.';
+
+        if (isAjax()) {
+            jsonResponse([
+                'success'     => true,
+                'message'     => $successMsg,
+                'training_id' => $trainingId
+            ]);
+        }
+
+        setFlash('success', $successMsg);
+        redirect('/student/trainings');
+    }
+
+    public function cancelTraining($trainingId): void {
+        $trainingId = (int)$trainingId;
+        if (!$trainingId) {
+            if (isAjax()) { jsonResponse(['success' => false, 'message' => 'Invalid training program.'], 400); }
+            redirect('/student/trainings');
+            return;
+        }
+
+        $reg = $this->db->fetchOne(
+            "SELECT tr.*, t.title, t.start_date, t.registered_count 
+             FROM training_registrations tr 
+             JOIN trainings t ON tr.training_id = t.id 
+             WHERE tr.training_id = ? AND tr.student_id = ? AND tr.status != 'cancelled'",
+            [$trainingId, $this->student['id']]
+        );
+
+        if (!$reg) {
+            if (isAjax()) { jsonResponse(['success' => false, 'message' => 'Active registration not found.'], 404); }
+            setFlash('danger', 'Active registration not found.');
+            redirect('/student/trainings');
+            return;
+        }
+
+        $today = date('Y-m-d');
+        if ($today >= $reg['start_date']) {
+            $msg = 'Training already started. Cancellation not allowed.';
+            if (isAjax()) { jsonResponse(['success' => false, 'message' => $msg], 400); }
+            setFlash('danger', $msg);
+            redirect('/student/trainings');
+            return;
+        }
+
+        $this->db->update(
+            "UPDATE training_registrations SET status = 'cancelled' WHERE id = ?",
+            [$reg['id']]
+        );
+
+        $this->db->update(
+            "UPDATE trainings SET registered_count = GREATEST(0, registered_count - 1) WHERE id = ?",
+            [$trainingId]
+        );
+
+        $notifCreated = createNotification(
+            $_SESSION['user_id'],
+            'Training Registration Cancelled',
+            'You have cancelled your registration for "' . $reg['title'] . '".',
+            'warning',
+            'training',
+            '/student/trainings',
+            false
+        );
+
+        if (!$notifCreated) {
+            error_log("Training Notification Error: Failed to create cancellation notification for user #" . $_SESSION['user_id'] . " training #" . $trainingId);
+        }
+
+        $msg = 'Training registration cancelled successfully.';
+        if (isAjax()) {
+            jsonResponse([
+                'success'     => true,
+                'message'     => $msg,
+                'training_id' => $trainingId
+            ]);
+        }
+
+        setFlash('success', $msg);
         redirect('/student/trainings');
     }
 
@@ -507,64 +748,392 @@ class StudentController {
         redirect('/student/change-password');
     }
 
-    // Project, Certification, Language, Achievement CRUD via AJAX
+    // Project, Certification, Language, Achievement CRUD
     public function addProject(): void {
         CsrfMiddleware::requireValidToken();
         $data = sanitizeArray($_POST);
-        if (empty($data['title'])) { setFlash('danger', 'Project title is required.'); redirect('/student/profile/edit'); return; }
+        if (empty($data['title'])) { setFlash('danger', 'Project title is required.'); redirectBack(); return; }
         $this->studentModel->addProject($this->student['id'], $data);
-        setFlash('success', 'Project added!');
-        redirect('/student/profile/edit');
+        $this->studentModel->updateProfileCompletion($this->student['id']);
+        setFlash('success', 'Project added successfully!');
+        redirectBack();
     }
 
     public function deleteProject($id): void {
         $this->studentModel->deleteProject($id, $this->student['id']);
+        $this->studentModel->updateProfileCompletion($this->student['id']);
         setFlash('success', 'Project deleted.');
-        redirect('/student/profile/edit');
+        redirectBack();
     }
 
     public function addCertification(): void {
         CsrfMiddleware::requireValidToken();
         $data = sanitizeArray($_POST);
-        if (empty($data['title'])) { setFlash('danger', 'Certificate title is required.'); redirect('/student/profile/edit'); return; }
+        if (empty($data['title'])) { setFlash('danger', 'Certificate title is required.'); redirectBack(); return; }
         $this->studentModel->addCertification($this->student['id'], $data);
-        setFlash('success', 'Certification added!');
-        redirect('/student/profile/edit');
+        $this->studentModel->updateProfileCompletion($this->student['id']);
+        setFlash('success', 'Certification added successfully!');
+        redirectBack();
     }
 
     public function deleteCertification($id): void {
         $this->studentModel->deleteCertification($id, $this->student['id']);
+        $this->studentModel->updateProfileCompletion($this->student['id']);
         setFlash('success', 'Certification deleted.');
-        redirect('/student/profile/edit');
+        redirectBack();
     }
 
     public function addLanguage(): void {
         CsrfMiddleware::requireValidToken();
         $data = sanitizeArray($_POST);
-        if (empty($data['language'])) { setFlash('danger', 'Language is required.'); redirect('/student/profile/edit'); return; }
+        if (empty($data['language'])) { setFlash('danger', 'Language is required.'); redirectBack(); return; }
         $this->studentModel->addLanguage($this->student['id'], $data);
+        $this->studentModel->updateProfileCompletion($this->student['id']);
         setFlash('success', 'Language added!');
-        redirect('/student/profile/edit');
+        redirectBack();
     }
 
     public function deleteLanguage($id): void {
         $this->studentModel->deleteLanguage($id, $this->student['id']);
+        $this->studentModel->updateProfileCompletion($this->student['id']);
         setFlash('success', 'Language deleted.');
-        redirect('/student/profile/edit');
+        redirectBack();
     }
 
     public function addAchievement(): void {
         CsrfMiddleware::requireValidToken();
         $data = sanitizeArray($_POST);
-        if (empty($data['title'])) { setFlash('danger', 'Achievement title is required.'); redirect('/student/profile/edit'); return; }
+        if (empty($data['title'])) { setFlash('danger', 'Achievement title is required.'); redirectBack(); return; }
         $this->studentModel->addAchievement($this->student['id'], $data);
+        $this->studentModel->updateProfileCompletion($this->student['id']);
         setFlash('success', 'Achievement added!');
-        redirect('/student/profile/edit');
+        redirectBack();
     }
 
     public function deleteAchievement($id): void {
         $this->studentModel->deleteAchievement($id, $this->student['id']);
+        $this->studentModel->updateProfileCompletion($this->student['id']);
         setFlash('success', 'Achievement deleted.');
-        redirect('/student/profile/edit');
+        redirectBack();
+    }
+
+    public function companies(): void {
+        $student = $this->student;
+        $pageTitle = 'Companies Directory';
+        $search = sanitize($_GET['search'] ?? '');
+        
+        $where = "c.is_approved = 1";
+        $params = [];
+        if ($search) {
+            $where .= " AND (c.company_name LIKE ? OR c.industry LIKE ? OR c.city LIKE ?)";
+            $params = ["%$search%", "%$search%", "%$search%"];
+        }
+        
+        $companies = $this->db->fetchAll("
+            SELECT c.*, u.email as hr_email,
+                   (SELECT COUNT(*) FROM jobs j WHERE j.company_id = c.id AND j.status = 'active') as open_jobs_count
+            FROM companies c
+            LEFT JOIN users u ON c.user_id = u.id
+            WHERE $where
+            ORDER BY c.company_name ASC
+        ", $params);
+
+        require_once VIEWS_PATH . '/student/companies.php';
+    }
+
+    public function mockTests(): void {
+        $student = $this->student;
+        $pageTitle = 'Mock Tests & Practice';
+        $tests = $this->db->fetchAll("SELECT t.*, (SELECT COUNT(*) FROM mock_test_questions q WHERE q.test_id = t.id) as question_count FROM mock_tests t ORDER BY t.id ASC");
+        $results = $this->db->fetchAll(
+            "SELECT r.*, t.title as test_title, t.category
+             FROM mock_test_results r
+             JOIN mock_tests t ON r.test_id = t.id
+             WHERE r.student_id = ?
+             ORDER BY r.submitted_at DESC",
+            [$student['id']]
+        );
+        require_once VIEWS_PATH . '/student/mock-tests.php';
+    }
+
+    public function startMockTest($testId): void {
+        $student = $this->student;
+        $test = $this->db->fetchOne("SELECT * FROM mock_tests WHERE id = ?", [$testId]);
+        if (!$test) {
+            setFlash('danger', 'Mock test not found.');
+            redirect('/student/mock-tests');
+            return;
+        }
+
+        $questions = $this->db->fetchAll("SELECT * FROM mock_test_questions WHERE test_id = ? ORDER BY id ASC", [$testId]);
+        $pageTitle = $test['title'];
+        require_once VIEWS_PATH . '/student/mock-test-session.php';
+    }
+
+    public function submitMockTest($testId): void {
+        $student = $this->student;
+        $test = $this->db->fetchOne("SELECT * FROM mock_tests WHERE id = ?", [$testId]);
+        if (!$test) {
+            if (isAjax()) { jsonResponse(['success' => false, 'message' => 'Mock test not found.'], 404); }
+            redirect('/student/mock-tests');
+            return;
+        }
+
+        $questions = $this->db->fetchAll("SELECT * FROM mock_test_questions WHERE test_id = ?", [$testId]);
+        $userAnswers = $_POST['answers'] ?? [];
+        $timeTaken = (int)($_POST['time_taken'] ?? 0);
+
+        $totalQuestions = count($questions);
+        $correct = 0;
+        $wrong = 0;
+        $unanswered = 0;
+
+        foreach ($questions as $q) {
+            $qid = $q['id'];
+            if (!isset($userAnswers[$qid]) || $userAnswers[$qid] === '' || $userAnswers[$qid] === null) {
+                $unanswered++;
+            } elseif (strtolower($userAnswers[$qid]) === strtolower($q['correct_option'])) {
+                $correct++;
+            } else {
+                $wrong++;
+            }
+        }
+
+        $score = $correct * 1;
+        $percentage = $totalQuestions > 0 ? round(($correct / $totalQuestions) * 100, 2) : 0.00;
+
+        $resultId = $this->db->insert(
+            "INSERT INTO mock_test_results (student_id, test_id, score, total_questions, correct_answers, wrong_answers, unanswered, percentage, time_taken_seconds) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            [$student['id'], $testId, $score, $totalQuestions, $correct, $wrong, $unanswered, $percentage, $timeTaken]
+        );
+
+        $_SESSION['last_mock_answers_' . $resultId] = $userAnswers;
+
+        if (isAjax()) {
+            jsonResponse(['success' => true, 'redirect' => url('/student/mock-test-result/' . $resultId)]);
+        } else {
+            setFlash('success', 'Mock test submitted successfully!');
+            redirect('/student/mock-test-result/' . $resultId);
+        }
+    }
+
+    public function mockTestResult($resultId): void {
+        $student = $this->student;
+        $result = $this->db->fetchOne(
+            "SELECT r.*, t.title as test_title, t.category, t.duration_minutes
+             FROM mock_test_results r
+             JOIN mock_tests t ON r.test_id = t.id
+             WHERE r.id = ? AND r.student_id = ?",
+            [$resultId, $student['id']]
+        );
+
+        if (!$result) {
+            setFlash('danger', 'Test result not found.');
+            redirect('/student/mock-tests');
+            return;
+        }
+
+        $questions = $this->db->fetchAll("SELECT * FROM mock_test_questions WHERE test_id = ? ORDER BY id ASC", [$result['test_id']]);
+        $userAnswers = $_SESSION['last_mock_answers_' . $resultId] ?? [];
+        $pageTitle = 'Mock Test Results — ' . $result['test_title'];
+
+        require_once VIEWS_PATH . '/student/mock-test-result.php';
+    }
+
+    public function resumeBuilder(): void {
+        $student = $this->student;
+        $pageTitle = 'Enterprise ATS Resume Generator';
+        $projects = $this->studentModel->getProjects($student['id']);
+        
+        $uploadedCerts = $this->studentModel->getCertificates($student['id']);
+        $legacyCerts = $this->studentModel->getCertifications($student['id']);
+        
+        // Merge certificates into unified array
+        $certifications = [];
+        foreach ($uploadedCerts as $uc) {
+            $certifications[] = [
+                'title' => $uc['name'],
+                'issuing_org' => $uc['issuing_organization'] ?? '',
+                'issue_date' => $uc['issue_date'],
+                'credential_id' => $uc['credential_id'],
+                'credential_url' => $uc['credential_url']
+            ];
+        }
+        foreach ($legacyCerts as $lc) {
+            $certifications[] = [
+                'title' => $lc['title'],
+                'issuing_org' => $lc['issuing_org'] ?? '',
+                'issue_date' => $lc['issue_date'],
+                'credential_id' => $lc['credential_id'],
+                'credential_url' => $lc['credential_url']
+            ];
+        }
+
+        $languages = $this->studentModel->getLanguages($student['id']);
+        $achievements = $this->studentModel->getAchievements($student['id']);
+
+        $hackathons = array_filter($achievements, fn($a) => ($a['category'] ?? '') === 'Hackathon');
+        $workshops = array_filter($achievements, fn($a) => in_array($a['category'] ?? '', ['Workshop', 'Seminar']));
+        $competitions = array_filter($achievements, fn($a) => in_array($a['category'] ?? '', ['Coding Competition', 'Project Competition', 'Technical Event', 'Sports', 'Innovation']));
+
+        $trainings = $this->db->fetchAll(
+            "SELECT t.*, tr.created_at as registered_at FROM training_registrations tr JOIN trainings t ON tr.training_id = t.id WHERE tr.student_id = ? ORDER BY t.start_date DESC",
+            [$student['id']]
+        );
+        $internships = $this->db->fetchAll(
+            "SELECT a.*, j.title as job_title, j.location, j.job_type, c.company_name
+             FROM applications a JOIN jobs j ON a.job_id = j.id JOIN companies c ON j.company_id = c.id
+             WHERE a.student_id = ? AND a.status IN ('selected', 'interview', 'shortlisted')
+             ORDER BY a.applied_at DESC",
+            [$student['id']]
+        );
+        require_once VIEWS_PATH . '/student/resume-builder.php';
+    }
+
+    public function saveResumeAccent(): void {
+        $color = trim($_POST['accent_color'] ?? '#2563eb');
+        if (!preg_match('/^#[a-fA-F0-9]{6}$/', $color)) {
+            $color = '#2563eb';
+        }
+        $this->db->update("UPDATE students SET resume_accent_color = ? WHERE id = ?", [$color, $this->student['id']]);
+        if (isAjax()) {
+            jsonResponse(['success' => true, 'accent_color' => $color]);
+        } else {
+            redirect('/student/resume-builder');
+        }
+    }
+
+    public function recommendations(): void {
+        $student = $this->student;
+        $pageTitle = 'AI Job Recommendations';
+        require_once ROOT_PATH . '/services/JobRecommendationService.php';
+        $recommendedJobs = JobRecommendationService::getInstance()->getRecommendedJobs($student, 12);
+        require_once VIEWS_PATH . '/student/recommendations.php';
+    }
+
+    // ==========================================
+    // MODULE 1: INTERVIEW SCHEDULE & CALL LETTER
+    // ==========================================
+    public function downloadCallLetter($id): void {
+        $student = $this->student;
+        $interviewId = (int)$id;
+        $interview = $this->db->fetchOne(
+            "SELECT i.*, j.title as job_title, c.company_name, c.logo as company_logo
+             FROM interviews i JOIN jobs j ON i.job_id = j.id JOIN companies c ON i.company_id = c.id
+             WHERE i.id = ? AND i.student_id = ?",
+            [$interviewId, $student['id']]
+        );
+
+        if (!$interview) {
+            setFlash('danger', 'Interview schedule not found.');
+            redirect('/student/interviews');
+            return;
+        }
+
+        if (!empty($interview['call_letter_path'])) {
+            $filePath = UPLOADS_PATH . '/call_letters/' . $interview['call_letter_path'];
+            if (file_exists($filePath)) {
+                $ext = getFileExtension($interview['call_letter_path']);
+                header('Content-Type: ' . ($ext === 'pdf' ? 'application/pdf' : 'application/octet-stream'));
+                header('Content-Disposition: attachment; filename="Call_Letter_' . preg_replace('/[^A-Za-z0-9_]/', '_', $interview['company_name']) . '.' . $ext . '"');
+                readfile($filePath);
+                exit;
+            }
+        }
+
+        $pageTitle = 'Call Letter - ' . $interview['company_name'];
+        require_once VIEWS_PATH . '/student/call-letter-template.php';
+    }
+
+    // ==========================================
+    // MODULE 2: ACHIEVEMENTS MODULE
+    // ==========================================
+    public function achievements(): void {
+        $student = $this->student;
+        $pageTitle = 'My Achievements';
+        $search = sanitize($_GET['search'] ?? '');
+        $category = sanitize($_GET['category'] ?? '');
+
+        $achievements = $this->studentModel->getAchievements($student['id'], $search, $category);
+        $totalAchievements = count($achievements);
+        $verifiedCount = (int)$this->db->fetchColumn("SELECT COUNT(*) FROM student_achievements WHERE student_id = ? AND status = 'verified'", [$student['id']]);
+        $pendingCount = (int)$this->db->fetchColumn("SELECT COUNT(*) FROM student_achievements WHERE student_id = ? AND status = 'pending'", [$student['id']]);
+
+        require_once VIEWS_PATH . '/student/achievements.php';
+    }
+
+    public function editAchievement(): void {
+        CsrfMiddleware::requireValidToken();
+        $student = $this->student;
+        $achId = (int)($_POST['achievement_id'] ?? 0);
+        $title = sanitize($_POST['title'] ?? '');
+        $category = sanitize($_POST['category'] ?? 'Others');
+        $description = sanitize($_POST['description'] ?? '');
+        $achievementDate = sanitize($_POST['achievement_date'] ?? '');
+        $organizer = sanitize($_POST['organizer'] ?? '');
+        $positionRank = sanitize($_POST['position_rank'] ?? '');
+
+        if (!$achId || empty($title)) {
+            setFlash('danger', 'Invalid achievement request.');
+            redirect('/student/achievements');
+            return;
+        }
+
+        $updateData = [
+            'title' => $title,
+            'category' => $category,
+            'description' => $description,
+            'achievement_date' => $achievementDate ?: null,
+            'organizer' => $organizer,
+            'position_rank' => $positionRank,
+            'status' => 'pending'
+        ];
+
+        if (isset($_FILES['certificate_file']) && $_FILES['certificate_file']['error'] === UPLOAD_ERR_OK) {
+            $f = $_FILES['certificate_file'];
+            $ext = getFileExtension($f['name']);
+            if (in_array($ext, ['pdf', 'jpg', 'jpeg', 'png'])) {
+                $dir = UPLOADS_PATH . '/achievements/';
+                if (!is_dir($dir)) @mkdir($dir, 0777, true);
+                $certFileName = generateFileName($f['name'], 'ach_cert_' . $student['id']);
+                move_uploaded_file($f['tmp_name'], $dir . $certFileName);
+                $updateData['certificate_file'] = $certFileName;
+            }
+        }
+
+        if (isset($_FILES['achievement_image']) && $_FILES['achievement_image']['error'] === UPLOAD_ERR_OK) {
+            $img = $_FILES['achievement_image'];
+            $ext = getFileExtension($img['name']);
+            if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp'])) {
+                $dir = UPLOADS_PATH . '/achievements/';
+                if (!is_dir($dir)) @mkdir($dir, 0777, true);
+                $imageFileName = generateFileName($img['name'], 'ach_img_' . $student['id']);
+                move_uploaded_file($img['tmp_name'], $dir . $imageFileName);
+                $updateData['achievement_image'] = $imageFileName;
+            }
+        }
+
+        $this->studentModel->updateAchievement($achId, $student['id'], $updateData);
+        setFlash('success', 'Achievement updated successfully and submitted for re-verification.');
+        redirect('/student/achievements');
+    }
+
+    // ==========================================
+    // MODULE 3: PLACEMENT CALENDAR
+    // ==========================================
+    public function calendar(): void {
+        $student = $this->student;
+        $pageTitle = 'Placement Calendar';
+        require_once VIEWS_PATH . '/student/calendar.php';
+    }
+
+    public function getCalendarEvents(): void {
+        $student = $this->student;
+        $startDate = sanitize($_GET['start'] ?? '');
+        $endDate = sanitize($_GET['end'] ?? '');
+
+        $events = $this->studentModel->getPlacementCalendarEvents($startDate, $endDate, $student['id']);
+        jsonResponse(['success' => true, 'events' => $events]);
     }
 }
+

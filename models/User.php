@@ -99,33 +99,96 @@ class User {
     }
 
     /**
-     * Set OTP
+     * Set OTP for user
      */
     public function setOTP(int $id, string $otp): void {
         $expiresAt = date('Y-m-d H:i:s', time() + OTP_EXPIRY);
+        $now = date('Y-m-d H:i:s');
         $this->db->update(
-            "UPDATE users SET otp = ?, otp_expires_at = ? WHERE id = ?",
-            [$otp, $expiresAt, $id]
+            "UPDATE users SET otp = ?, otp_expires_at = ?, otp_resend_last_at = ?, otp_attempts = 0, otp_resend_count = otp_resend_count + 1 WHERE id = ?",
+            [$otp, $expiresAt, $now, $id]
         );
     }
 
     /**
-     * Verify OTP
+     * Check if user can resend OTP (60-second cooldown)
      */
-    public function verifyOTP(int $id, string $otp): bool {
-        $user = $this->db->fetchOne(
-            "SELECT otp, otp_expires_at FROM users WHERE id = ? AND otp = ? AND otp_expires_at > NOW()",
-            [$id, $otp]
-        );
-        
-        if ($user) {
-            $this->db->update(
-                "UPDATE users SET otp = NULL, otp_expires_at = NULL, email_verified = 1 WHERE id = ?",
-                [$id]
-            );
-            return true;
+    public function canResendOTP(int $id, int $cooldown = 60): array {
+        $user = $this->db->fetchOne("SELECT otp_resend_last_at FROM users WHERE id = ?", [$id]);
+        if (!$user || empty($user['otp_resend_last_at'])) {
+            return ['can_resend' => true, 'remaining_seconds' => 0];
         }
-        return false;
+        $elapsed = time() - strtotime($user['otp_resend_last_at']);
+        if ($elapsed < $cooldown) {
+            return [
+                'can_resend' => false,
+                'remaining_seconds' => $cooldown - $elapsed
+            ];
+        }
+        return ['can_resend' => true, 'remaining_seconds' => 0];
+    }
+
+    /**
+     * Verify OTP with security checks (attempts, expiry, match)
+     */
+    public function verifyOTP(int $id, string $otp): array {
+        $user = $this->db->fetchOne(
+            "SELECT otp, otp_expires_at, otp_attempts FROM users WHERE id = ?",
+            [$id]
+        );
+
+        if (!$user || empty($user['otp'])) {
+            return [
+                'success' => false,
+                'message' => 'No active OTP found. Please request a new OTP.'
+            ];
+        }
+
+        if ((int)$user['otp_attempts'] >= 5) {
+            return [
+                'success' => false,
+                'message' => 'Maximum verification attempts exceeded. Please click "Resend OTP" to receive a new code.',
+                'exceeded' => true
+            ];
+        }
+
+        if (strtotime($user['otp_expires_at']) <= time()) {
+            return [
+                'success' => false,
+                'message' => 'OTP has expired. Please click "Resend OTP" for a new code.',
+                'expired' => true
+            ];
+        }
+
+        if ($user['otp'] !== $otp) {
+            $newAttempts = (int)$user['otp_attempts'] + 1;
+            $this->db->update("UPDATE users SET otp_attempts = ? WHERE id = ?", [$newAttempts, $id]);
+            $remaining = 5 - $newAttempts;
+
+            if ($remaining <= 0) {
+                return [
+                    'success' => false,
+                    'message' => 'Incorrect OTP. Maximum attempts reached. Please click "Resend OTP" for a new code.',
+                    'exceeded' => true
+                ];
+            }
+
+            return [
+                'success' => false,
+                'message' => "Incorrect OTP. You have {$remaining} attempt(s) remaining."
+            ];
+        }
+
+        // OTP matches! Clear OTP fields and mark email verified.
+        $this->db->update(
+            "UPDATE users SET otp = NULL, otp_expires_at = NULL, otp_resend_last_at = NULL, otp_attempts = 0, email_verified = 1 WHERE id = ?",
+            [$id]
+        );
+
+        return [
+            'success' => true,
+            'message' => 'Email verified successfully!'
+        ];
     }
 
     /**

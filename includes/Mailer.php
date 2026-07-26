@@ -230,4 +230,128 @@ HTML;
 </html>
 HTML;
     }
+
+    /**
+     * Send OTP Verification Email
+     *
+     * @param string $toEmail
+     * @param string $toName
+     * @param string $otp
+     * @param string $role ('student' or 'company')
+     * @return bool
+     */
+    public static function sendOtp(string $toEmail, string $toName, string $otp, string $role = 'student'): bool {
+        try {
+            $mail = self::create();
+            $mail->addAddress($toEmail, $toName);
+            $mail->Subject = 'Verify Your Email Address - TPMS OTP Code';
+            $mail->Body    = self::otpTemplate($toName, $otp, $role);
+            $mail->AltBody = "Hi {$toName},\n\nYour 6-digit OTP for TPMS email verification is: {$otp}\n\nThis OTP is valid for 10 minutes. Please do not share it with anyone.\n\n- TPMS Team";
+
+            $mail->send();
+            return true;
+        } catch (Exception $e) {
+            error_log('Mailer Error (sendOtp): ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * HTML template for OTP email
+     */
+    private static function otpTemplate(string $name, string $otp, string $role): string {
+        $appName = APP_FULL_NAME;
+        $year    = date('Y');
+        $roleTitle = ucfirst($role);
+
+        // Separate OTP into formatted digits
+        $digits = str_split($otp);
+        $otpBoxes = '';
+        foreach ($digits as $digit) {
+            $otpBoxes .= '<span style="display:inline-block;width:38px;height:48px;line-height:48px;margin:0 3px;background:#f3f4f6;border:2px solid #4f46e5;border-radius:8px;font-size:22px;font-weight:800;color:#1e1b4b;text-align:center;box-shadow:0 2px 4px rgba(0,0,0,0.05);">' . $digit . '</span>';
+        }
+
+        return <<<HTML
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TPMS Email Verification Code</title>
+</head>
+<body style="margin:0;padding:0;background:#f0f4ff;font-family:'Segoe UI',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f0f4ff;padding:40px 0;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 8px 30px rgba(0,0,0,0.08);">
+
+          <!-- Header -->
+          <tr>
+            <td style="background:linear-gradient(135deg,#4f46e5,#3b82f6);padding:36px 40px;text-align:center;">
+              <div style="width:64px;height:64px;background:rgba(255,255,255,0.2);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;margin-bottom:12px;">
+                <span style="font-size:30px;">✉️</span>
+              </div>
+              <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:800;letter-spacing:-0.5px;">Email Verification Code</h1>
+              <p style="margin:6px 0 0;color:rgba(255,255,255,0.85);font-size:14px;">{$appName} ({$roleTitle} Portal)</p>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding:36px 40px;">
+              <p style="margin:0 0 16px;font-size:16px;color:#1f2937;">Hello <strong>{$name}</strong>,</p>
+              <p style="margin:0 0 24px;font-size:15px;color:#4b5563;line-height:1.6;">
+                Thank you for registering on TPMS. Please use the following 6-digit One-Time Password (OTP) to verify your email address and activate your account access:
+              </p>
+
+              <!-- OTP Box -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
+                <tr>
+                  <td align="center" style="background:#f8fafc;border:1px dashed #cbd5e1;border-radius:12px;padding:24px;">
+                    <div style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;">Your 6-Digit OTP Code</div>
+                    <div>
+                      {$otpBoxes}
+                    </div>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Notice Box -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+                <tr>
+                  <td style="background:#eff6ff;border-left:4px solid #3b82f6;border-radius:8px;padding:14px 18px;">
+                    <p style="margin:0;font-size:13px;color:#1e40af;line-height:1.5;">
+                      ⏱️ <strong>Note:</strong> This OTP is valid for <strong>10 minutes</strong>.<br>
+                      🛡️ For security, do not share this code with anyone. TPMS staff will never ask for your OTP.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin:0;font-size:13px;color:#9ca3af;line-height:1.5;">
+                If you did not request this registration, you can safely ignore this email.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background:#f9fafb;border-top:1px solid #f3f4f6;padding:20px 40px;text-align:center;">
+              <p style="margin:0 0 4px;font-size:13px;color:#6b7280;">
+                Sent by <strong>TPMS</strong> — {$appName}
+              </p>
+              <p style="margin:0;font-size:12px;color:#9ca3af;">
+                © {$year} TPMS. All rights reserved.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+HTML;
+    }
 }

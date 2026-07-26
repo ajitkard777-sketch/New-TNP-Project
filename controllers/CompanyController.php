@@ -169,10 +169,19 @@ class CompanyController {
         }
 
         // Notify student
-        $student = $this->db->fetchOne("SELECT user_id FROM students WHERE id = ?", [$app['student_id']]);
+        $student = $this->db->fetchOne("SELECT s.*, u.email as user_email FROM students s JOIN users u ON s.user_id = u.id WHERE s.id = ?", [$app['student_id']]);
         if ($student) {
             $this->db->insert("INSERT INTO notifications (user_id, title, message, type, category) VALUES (?, ?, ?, ?, ?)",
                 [$student['user_id'], 'Application Update', "Your application for {$app['job_title']} has been {$status}.", $status === 'selected' ? 'success' : ($status === 'rejected' ? 'danger' : 'info'), 'job']);
+
+            // SMS Event Notifications: Shortlisted & Offer Released
+            require_once ROOT_PATH . '/services/SmsService.php';
+            $sms = SmsService::getInstance();
+            if ($status === 'shortlisted') {
+                $sms->sendStudentShortlisted($student, $app['job_title'], $this->company['company_name']);
+            } elseif ($status === 'selected') {
+                $sms->sendOfferLetterReleased($student, $app['job_title'], $this->company['company_name']);
+            }
         }
 
         if (isAjax()) { jsonResponse(['success' => true, 'message' => 'Status updated']); }
@@ -191,10 +200,22 @@ class CompanyController {
 
         $this->jobModel->updateApplicationStatus($appId, 'interview');
 
-        $student = $this->db->fetchOne("SELECT user_id FROM students WHERE id = ?", [$app['student_id']]);
+        $student = $this->db->fetchOne("SELECT s.*, u.email as user_email FROM students s JOIN users u ON s.user_id = u.id WHERE s.id = ?", [$app['student_id']]);
         if ($student) {
             $this->db->insert("INSERT INTO notifications (user_id, title, message, type, category) VALUES (?, ?, ?, ?, ?)",
                 [$student['user_id'], 'Interview Scheduled', "Interview for your application on " . formatDate($data['interview_date']), 'info', 'interview']);
+
+            // SMS Event Notification: Interview Scheduled
+            require_once ROOT_PATH . '/services/SmsService.php';
+            $jobTitle = $this->db->fetchColumn("SELECT title FROM jobs WHERE id = ?", [$app['job_id']]) ?: 'Job Position';
+            SmsService::getInstance()->sendInterviewScheduled(
+                $student,
+                $jobTitle,
+                $this->company['company_name'],
+                formatDate($data['interview_date']),
+                date('h:i A', strtotime($data['interview_time'])),
+                $data['mode'] ?? 'offline'
+            );
         }
 
         setFlash('success', 'Interview scheduled!');
@@ -272,4 +293,67 @@ class CompanyController {
         setFlash('success', 'Interview cancelled.');
         redirect('/company/interviews');
     }
+
+    public function downloadStudentResume($studentId): void {
+        $student = $this->db->fetchOne("SELECT * FROM students WHERE id = ?", [$studentId]);
+        if (!$student) {
+            setFlash('danger', 'Student not found.');
+            redirect('/company/dashboard');
+            return;
+        }
+
+        // Verify company authorization (student must have applied to a job of this company)
+        $hasApplied = (int)$this->db->fetchColumn(
+            "SELECT COUNT(*) FROM applications a JOIN jobs j ON a.job_id = j.id WHERE a.student_id = ? AND j.company_id = ?",
+            [$studentId, $this->company['id']]
+        );
+
+        if (!$hasApplied) {
+            setFlash('danger', 'Unauthorized access to student resume.');
+            redirect('/company/dashboard');
+            return;
+        }
+
+        if (empty($student['resume_path'])) {
+            setFlash('warning', 'Student has not uploaded a resume yet.');
+            redirect($_SERVER['HTTP_REFERER'] ?? url('/company/dashboard'));
+            return;
+        }
+
+        $filePath = UPLOADS_PATH . '/resumes/' . $student['resume_path'];
+        if (!file_exists($filePath)) {
+            setFlash('danger', 'Resume file not found on server.');
+            redirect($_SERVER['HTTP_REFERER'] ?? url('/company/dashboard'));
+            return;
+        }
+
+        logActivity('download_resume', 'company', "Downloaded resume for student #{$studentId}");
+
+        if (ob_get_level()) { ob_end_clean(); }
+
+        $filename = !empty($student['resume_original_name'])
+            ? $student['resume_original_name']
+            : ($student['first_name'] . '_' . $student['last_name'] . '_Resume.pdf');
+
+        $mime = mime_content_type($filePath) ?: 'application/pdf';
+        header('Content-Description: File Transfer');
+        header('Content-Type: ' . $mime);
+        header('Content-Disposition: attachment; filename="' . basename($filename) . '"');
+        header('Expires: 0');
+        header('Cache-Control: must-revalidate');
+        header('Pragma: public');
+        header('Content-Length: ' . filesize($filePath));
+        readfile($filePath);
+        exit;
+    }
+
+    public function notifications(): void {
+        $pageTitle = 'Notifications';
+        $notifications = $this->db->fetchAll(
+            "SELECT * FROM notifications WHERE user_id = ? OR is_global = 1 ORDER BY created_at DESC LIMIT 100",
+            [$_SESSION['user_id']]
+        );
+        require_once VIEWS_PATH . '/company/notifications.php';
+    }
 }
+

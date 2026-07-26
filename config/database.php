@@ -98,7 +98,14 @@ class Database {
      */
     public function insert(string $sql, array $params = []): int {
         $this->query($sql, $params);
-        return (int) $this->connection->lastInsertId();
+        return (int)$this->connection->lastInsertId();
+    }
+
+    /**
+     * Get last inserted ID
+     */
+    public function lastInsertId(): int {
+        return (int)$this->connection->lastInsertId();
     }
 
     /**

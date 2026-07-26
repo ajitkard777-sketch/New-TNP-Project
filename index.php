@@ -19,7 +19,31 @@ require_once __DIR__ . '/middleware/RoleMiddleware.php';
 // Load helpers
 require_once __DIR__ . '/includes/helpers.php';
 
-// Generate CSRF token if not exists
+// =====================================================
+// AUTO-MIGRATION — runs pending DB migrations on startup
+// Uses a cache file to avoid overhead on every request.
+// =====================================================
+require_once __DIR__ . '/database/Migrator.php';
+(function () {
+    $lockFile       = __DIR__ . '/cache/migrations.lock';
+    $migrationsDir  = __DIR__ . '/database/migrations/';
+    $migrationCount = count(glob($migrationsDir . '*.php') ?: []);
+    $lockData       = file_exists($lockFile) ? (int) file_get_contents($lockFile) : -1;
+
+    // Only instantiate Migrator if there are new migration files
+    if ($lockData !== $migrationCount) {
+        try {
+            $migrator = new Migrator();
+            $migrator->runSilent();
+            // Update lock file with current migration count
+            @file_put_contents($lockFile, $migrationCount);
+        } catch (Exception $e) {
+            error_log('TPMS Auto-Migration Error: ' . $e->getMessage());
+        }
+    }
+})();
+
+
 CsrfMiddleware::generateToken();
 
 // Get the URL
@@ -134,6 +158,12 @@ switch ($page) {
         }
         break;
 
+    case 'resend-otp':
+        require_once __DIR__ . '/controllers/AuthController.php';
+        $controller = new AuthController();
+        $controller->resendOtp();
+        break;
+
     case 'logout':
         require_once __DIR__ . '/controllers/AuthController.php';
         $controller = new AuthController();
@@ -171,6 +201,7 @@ switch ($page) {
             case 'applications': $controller->applications(); break;
             case 'trainings': $controller->trainings(); break;
             case 'register-training': $controller->registerTraining($param); break;
+            case 'cancel-training': $controller->cancelTraining($param); break;
             case 'higher-studies': $controller->higherStudies(); break;
             case 'notifications': $controller->notifications(); break;
             case 'interviews': $controller->interviews(); break;
@@ -186,7 +217,24 @@ switch ($page) {
             case 'add-language': $controller->addLanguage(); break;
             case 'delete-language': $controller->deleteLanguage($param); break;
             case 'add-achievement': $controller->addAchievement(); break;
+            case 'edit-achievement': $controller->editAchievement(); break;
             case 'delete-achievement': $controller->deleteAchievement($param); break;
+            case 'achievements': $controller->achievements(); break;
+            case 'calendar': $controller->calendar(); break;
+            case 'calendar-events': $controller->getCalendarEvents(); break;
+            case 'download-call-letter': $controller->downloadCallLetter($param); break;
+            case 'companies': $controller->companies(); break;
+            case 'mock-tests': $controller->mockTests(); break;
+            case 'mock-test': $controller->startMockTest($param); break;
+            case 'submit-mock-test': $controller->submitMockTest($param); break;
+            case 'mock-test-result': $controller->mockTestResult($param); break;
+            case 'resume-builder': $controller->resumeBuilder(); break;
+            case 'save-resume-accent': $controller->saveResumeAccent(); break;
+            case 'recommendations': $controller->recommendations(); break;
+            case 'messages':
+                require_once __DIR__ . '/controllers/MessageController.php';
+                (new MessageController())->index();
+                break;
             default: $controller->dashboard(); break;
         }
         break;
@@ -228,7 +276,33 @@ switch ($page) {
                 break;
             case 'interviews': $controller->interviews(); break;
             case 'interview-result': $controller->updateInterviewResult($param); break;
+            case 'download-resume': $controller->downloadStudentResume($param); break;
+            case 'notifications': $controller->notifications(); break;
+            case 'messages':
+                require_once __DIR__ . '/controllers/MessageController.php';
+                (new MessageController())->index();
+                break;
             default: $controller->dashboard(); break;
+        }
+        break;
+
+    // ========================
+    // MESSAGING API / AJAX ROUTES
+    // ========================
+    case 'messages':
+        AuthMiddleware::requireLogin();
+        require_once __DIR__ . '/controllers/MessageController.php';
+        $msgCtrl = new MessageController();
+
+        switch ($action) {
+            case 'conversations': $msgCtrl->getConversations(); break;
+            case 'history':       $msgCtrl->getHistory(); break;
+            case 'send':          $msgCtrl->send(); break;
+            case 'poll':          $msgCtrl->poll(); break;
+            case 'typing':        $msgCtrl->typing(); break;
+            case 'unread-count':  $msgCtrl->unreadCount(); break;
+            case 'download':      $msgCtrl->downloadFile((int)$param); break;
+            default:              $msgCtrl->index(); break;
         }
         break;
 
@@ -251,6 +325,8 @@ switch ($page) {
             case 'companies': $controller->companies(); break;
             case 'approve-company': $controller->approveCompany($param); break;
             case 'reject-company': $controller->rejectCompany($param); break;
+            case 'suspend-company': $controller->suspendCompany($param); break;
+            case 'unsuspend-company': $controller->unsuspendCompany($param); break;
             case 'delete-company': $controller->deleteCompany($param); break;
             case 'jobs': $controller->jobs(); break;
             case 'approve-job': $controller->approveJob($param); break;
@@ -267,6 +343,11 @@ switch ($page) {
             case 'edit-interview': $controller->updateInterview($param); break;
             case 'cancel-interview': $controller->cancelInterview($param); break;
             case 'interview-result': $controller->updateInterviewResult($param); break;
+            case 'calendar': $controller->calendar(); break;
+            case 'create-calendar-event': $controller->createCalendarEvent(); break;
+            case 'delete-calendar-event': $controller->deleteCalendarEvent($param); break;
+            case 'achievements': $controller->achievements(); break;
+            case 'verify-achievement': $controller->verifyAchievement($param); break;
             case 'approvals': $controller->approvals(); break;
             case 'notifications': $controller->notifications(); break;
             case 'send-notification': $controller->sendNotification(); break;
@@ -276,6 +357,9 @@ switch ($page) {
             case 'reports': $controller->reports(); break;
             case 'logs': $controller->logs(); break;
             case 'settings': $controller->settings(); break;
+            case 'sms-settings': $controller->smsSettings(); break;
+            case 'sms-logs': $controller->smsLogs(); break;
+            case 'sms-retry': $controller->retrySms($param); break;
             default: $controller->dashboard(); break;
         }
         break;
@@ -305,6 +389,10 @@ switch ($page) {
             $controller->markAllRead();
         } elseif ($action === 'count') {
             $controller->getUnreadCount();
+        } elseif ($action === 'read-redirect') {
+            $controller->readAndRedirect($param);
+        } elseif ($action === 'search') {
+            $controller->search();
         }
         break;
 

@@ -81,38 +81,47 @@ class AuthController {
             return;
         }
 
-        // Check status
-        if ($user['status'] === 'blocked') {
-            setFlash('danger', 'Your account has been blocked. Please contact the administrator.');
-            redirect('/login');
-            return;
-        }
+        // ── Company-specific status checks ────────────────────────────────────
+        if ($user['role'] === 'company') {
+            $company = $this->db->fetchOne(
+                "SELECT is_approved, COALESCE(is_rejected,0) as is_rejected, rejection_reason FROM companies WHERE user_id = ?",
+                [$user['id']]
+            );
 
-        if ($user['status'] === 'pending') {
-            // For companies, check approval
-            if ($user['role'] === 'company') {
-                $company = $this->db->fetchOne("SELECT is_approved FROM companies WHERE user_id = ?", [$user['id']]);
-                if (!$company || !$company['is_approved']) {
-                    setFlash('warning', 'Your company registration is pending approval. Please wait for admin approval.');
-                    redirect('/login');
-                    return;
+            // Rejected — blocked at account level but give specific message
+            if ($company && $company['is_rejected']) {
+                $msg = 'Your registration has been rejected by the administrator.';
+                if (!empty($company['rejection_reason'])) {
+                    $msg .= ' Reason: ' . htmlspecialchars($company['rejection_reason']);
                 }
+                $msg .= ' Please contact the administrator for further assistance.';
+                if (isAjax()) { jsonResponse(['success' => false, 'message' => $msg]); }
+                setFlash('danger', $msg);
+                redirect('/login');
+                return;
             }
-            
-            // Check email verification
-            if (!$user['email_verified']) {
-                $_SESSION['verify_user_id'] = $user['id'];
-                // Generate and set OTP
-                $otp = generateOTP();
-                $this->userModel->setOTP($user['id'], $otp);
-                setFlash('info', 'Please verify your email first. OTP: ' . $otp . ' (In production, this would be sent via email)');
-                redirect('/verify-email');
+
+            // Suspended (approved but blocked)
+            if ($company && $company['is_approved'] && $user['status'] === 'blocked') {
+                if (isAjax()) { jsonResponse(['success' => false, 'message' => 'Your company account has been suspended. Contact administrator.']); }
+                setFlash('danger', 'Your company account has been suspended. Please contact the administrator.');
+                redirect('/login');
+                return;
+            }
+
+            // Pending approval
+            if (!$company || !$company['is_approved']) {
+                if (isAjax()) { jsonResponse(['success' => false, 'message' => 'Your company registration is awaiting admin verification.']); }
+                setFlash('warning', 'Your company is awaiting admin verification. You will be notified once approved.');
+                redirect('/login');
                 return;
             }
         }
 
-        if ($user['status'] !== 'active') {
-            setFlash('danger', 'Your account is not active. Please contact the administrator.');
+        // ── General status checks ─────────────────────────────────────────────
+        if ($user['status'] === 'blocked') {
+            if (isAjax()) { jsonResponse(['success' => false, 'message' => 'Your account has been blocked. Contact administrator.']); }
+            setFlash('danger', 'Your account has been blocked. Please contact the administrator.');
             redirect('/login');
             return;
         }
@@ -124,6 +133,47 @@ class AuthController {
                 jsonResponse(['success' => false, 'message' => 'Invalid email or password.']);
             }
             setFlash('danger', 'Invalid email or password.');
+            redirect('/login');
+            return;
+        }
+
+        // Check email verification status
+        if (!$user['email_verified']) {
+            $_SESSION['verify_user_id'] = $user['id'];
+            $_SESSION['verify_email']   = $user['email'];
+            $_SESSION['verify_role']    = $user['role'];
+
+            $cooldownCheck = $this->userModel->canResendOTP($user['id']);
+            if ($cooldownCheck['can_resend']) {
+                $otp = sprintf('%06d', random_int(100000, 999999));
+                $this->userModel->setOTP($user['id'], $otp);
+                $name = $user['email'];
+                if ($user['role'] === 'student') {
+                    $st = $this->db->fetchOne("SELECT first_name, last_name FROM students WHERE user_id = ?", [$user['id']]);
+                    if ($st) $name = $st['first_name'] . ' ' . $st['last_name'];
+                } elseif ($user['role'] === 'company') {
+                    $cp = $this->db->fetchOne("SELECT contact_person FROM companies WHERE user_id = ?", [$user['id']]);
+                    if ($cp) $name = $cp['contact_person'];
+                }
+                Mailer::sendOtp($user['email'], $name, $otp, $user['role']);
+            }
+
+            if (isAjax()) {
+                jsonResponse([
+                    'success' => false,
+                    'message' => 'Your email address is not verified yet. A 6-digit OTP code has been sent to your email.',
+                    'redirect' => url('/verify-email')
+                ]);
+            }
+
+            setFlash('warning', 'Your email address is not verified yet. A 6-digit OTP code has been sent to your email.');
+            redirect('/verify-email');
+            return;
+        }
+
+        if ($user['status'] !== 'active') {
+            if (isAjax()) { jsonResponse(['success' => false, 'message' => 'Your account is not active. Contact administrator.']); }
+            setFlash('danger', 'Your account is not active. Please contact the administrator.');
             redirect('/login');
             return;
         }
@@ -210,13 +260,13 @@ class AuthController {
         try {
             $this->db->beginTransaction();
 
-            // Create user
+            // Create user (unverified & pending until OTP verification)
             $userId = $this->userModel->create([
                 'email' => $data['email'],
                 'password' => $data['password'],
                 'role' => 'student',
-                'status' => 'active',
-                'email_verified' => 1
+                'status' => 'pending',
+                'email_verified' => 0
             ]);
 
             // Create student profile
@@ -251,14 +301,29 @@ class AuthController {
 
             $this->db->commit();
 
-            logActivity('register', 'auth', 'New student registered: ' . $data['email']);
+            // Generate secure 6-digit OTP and send email
+            $otp = sprintf('%06d', random_int(100000, 999999));
+            $this->userModel->setOTP($userId, $otp);
+
+            $fullName = $data['first_name'] . ' ' . $data['last_name'];
+            Mailer::sendOtp($data['email'], $fullName, $otp, 'student');
+
+            $_SESSION['verify_user_id'] = $userId;
+            $_SESSION['verify_email']   = $data['email'];
+            $_SESSION['verify_role']    = 'student';
+
+            logActivity('register', 'auth', 'New student registered (pending OTP verification): ' . $data['email']);
 
             if (isAjax()) {
-                jsonResponse(['success' => true, 'message' => 'Registration successful! Please login.', 'redirect' => url('/login')]);
+                jsonResponse([
+                    'success' => true,
+                    'message' => 'Registration successful! An OTP code has been sent to your email. Please verify your email.',
+                    'redirect' => url('/verify-email')
+                ]);
             }
 
-            setFlash('success', 'Registration successful! Please login with your credentials.');
-            redirect('/login');
+            setFlash('info', 'Registration successful! An OTP code has been sent to ' . htmlspecialchars($data['email']) . '. Please enter it below to complete your registration.');
+            redirect('/verify-email');
 
         } catch (Exception $e) {
             $this->db->rollback();
@@ -290,17 +355,34 @@ class AuthController {
         $errors = [];
 
         // Validation
-        if (empty($data['company_name'])) $errors[] = 'Company name is required.';
-        if (empty($data['email'])) $errors[] = 'Email is required.';
+        if (empty($data['company_name']))   $errors[] = 'Company name is required.';
+        if (empty($data['email']))           $errors[] = 'Email is required.';
         if (!isValidEmail($data['email'] ?? '')) $errors[] = 'Invalid email format.';
-        if (empty($data['password'])) $errors[] = 'Password is required.';
-        if (!isStrongPassword($data['password'] ?? '')) $errors[] = 'Password must be at least 8 characters with uppercase, lowercase, number, and special character.';
+        if (empty($data['password']))        $errors[] = 'Password is required.';
+        if (!isStrongPassword($data['password'] ?? '')) {
+            $errors[] = 'Password must be at least 8 characters with uppercase, lowercase, number, and special character.';
+        }
         if ($data['password'] !== ($data['confirm_password'] ?? '')) $errors[] = 'Passwords do not match.';
-        if (empty($data['contact_person'])) $errors[] = 'Contact person name is required.';
-        if (empty($data['contact_phone'])) $errors[] = 'Contact phone is required.';
+        if (empty($data['contact_person']))  $errors[] = 'HR Name is required.';
+        if (empty($data['contact_phone']))   $errors[] = 'Mobile number is required.';
+        if (!empty($data['contact_phone']) && !preg_match('/^[0-9]{10}$/', $data['contact_phone'])) {
+            $errors[] = 'Mobile number must be exactly 10 digits.';
+        }
 
+        // Email uniqueness
         if ($this->userModel->emailExists($data['email'] ?? '')) {
-            $errors[] = 'Email already registered.';
+            $errors[] = 'This email address is already registered.';
+        }
+
+        // Mobile uniqueness — check companies table
+        if (!empty($data['contact_phone'])) {
+            $phoneUsed = $this->db->fetchColumn(
+                "SELECT COUNT(*) FROM companies WHERE contact_phone = ?",
+                [$data['contact_phone']]
+            );
+            if ($phoneUsed > 0) {
+                $errors[] = 'This mobile number is already registered with another company.';
+            }
         }
 
         if (!empty($errors)) {
@@ -316,30 +398,35 @@ class AuthController {
             $this->db->beginTransaction();
 
             $userId = $this->userModel->create([
-                'email' => $data['email'],
-                'password' => $data['password'],
-                'role' => 'company',
-                'status' => 'pending',
-                'email_verified' => 1
+                'email'          => $data['email'],
+                'password'       => $data['password'],
+                'role'           => 'company',
+                'status'         => 'pending',
+                'email_verified' => 0,
             ]);
 
             $this->db->insert(
-                "INSERT INTO companies (user_id, company_name, industry, company_type, website, description, contact_person, contact_email, contact_phone, city, state, employee_count, established_year, is_approved) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "INSERT INTO companies
+                 (user_id, company_name, industry, company_type, website, description,
+                  contact_person, contact_email, contact_phone, address, city, state,
+                  employee_count, established_year, is_approved)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 [
                     $userId,
                     $data['company_name'],
-                    $data['industry'] ?? null,
-                    $data['company_type'] ?? 'other',
-                    $data['website'] ?? null,
-                    $data['description'] ?? null,
+                    $data['industry']       ?? null,
+                    $data['company_type']   ?? 'other',
+                    $data['website']        ?? null,
+                    $data['description']    ?? null,
                     $data['contact_person'],
                     $data['email'],
                     $data['contact_phone'],
-                    $data['city'] ?? null,
-                    $data['state'] ?? null,
+                    $data['address']        ?? null,
+                    $data['city']           ?? null,
+                    $data['state']          ?? null,
                     $data['employee_count'] ?? null,
-                    $data['established_year'] ?? null,
-                    0
+                    !empty($data['established_year']) ? (int)$data['established_year'] : null,
+                    0,
                 ]
             );
 
@@ -351,14 +438,29 @@ class AuthController {
 
             $this->db->commit();
 
-            logActivity('register', 'auth', 'New company registered: ' . $data['company_name']);
+            // Generate secure 6-digit OTP and send email
+            $otp = sprintf('%06d', random_int(100000, 999999));
+            $this->userModel->setOTP($userId, $otp);
+
+            $contactPerson = $data['contact_person'] ?? $data['company_name'];
+            Mailer::sendOtp($data['email'], $contactPerson, $otp, 'company');
+
+            $_SESSION['verify_user_id'] = $userId;
+            $_SESSION['verify_email']   = $data['email'];
+            $_SESSION['verify_role']    = 'company';
+
+            logActivity('register', 'auth', 'New company registered (pending OTP verification): ' . $data['company_name']);
 
             if (isAjax()) {
-                jsonResponse(['success' => true, 'message' => 'Registration submitted! Awaiting admin approval.', 'redirect' => url('/login')]);
+                jsonResponse([
+                    'success' => true,
+                    'message' => 'Registration submitted! An OTP code has been sent to your email. Please verify your email address.',
+                    'redirect' => url('/verify-email')
+                ]);
             }
 
-            setFlash('success', 'Registration submitted successfully! Your account will be activated after admin approval.');
-            redirect('/login');
+            setFlash('info', 'Registration submitted! An OTP code has been sent to ' . htmlspecialchars($data['email']) . '. Please enter it below to verify your email address.');
+            redirect('/verify-email');
 
         } catch (Exception $e) {
             $this->db->rollback();
@@ -418,6 +520,19 @@ class AuthController {
                 } else {
                     setFlash('danger', 'Failed to send email. Please try again later or contact support.');
                 }
+            }
+
+            // Send SMS notification for password reset if phone number exists
+            require_once ROOT_PATH . '/services/SmsService.php';
+            $phone = '';
+            if ($user['role'] === 'student') {
+                $phone = $this->db->fetchColumn("SELECT phone FROM students WHERE user_id = ?", [$user['id']]) ?: '';
+            } elseif ($user['role'] === 'company') {
+                $phone = $this->db->fetchColumn("SELECT contact_phone FROM companies WHERE user_id = ?", [$user['id']]) ?: '';
+            }
+            if (!empty($phone)) {
+                $otpCode = sprintf('%06d', mt_rand(100000, 999999));
+                SmsService::getInstance()->sendPasswordReset($phone, $otpCode, (int)$user['id']);
             }
 
             logActivity('forgot_password', 'auth', 'Password reset requested for: ' . $email);
@@ -498,6 +613,8 @@ class AuthController {
             return;
         }
         $pageTitle = 'Verify Email';
+        $verifyEmail = $_SESSION['verify_email'] ?? '';
+        $verifyRole  = $_SESSION['verify_role'] ?? 'user';
         require_once VIEWS_PATH . '/auth/verify-email.php';
     }
 
@@ -511,25 +628,135 @@ class AuthController {
         $userId = $_SESSION['verify_user_id'] ?? null;
 
         if (!$userId) {
+            if (isAjax()) {
+                jsonResponse(['success' => false, 'message' => 'Session expired. Please register or login again.', 'redirect' => url('/login')]);
+            }
+            setFlash('danger', 'Session expired. Please register or login again.');
             redirect('/login');
             return;
         }
 
-        if (empty($otp)) {
-            setFlash('danger', 'Please enter the OTP.');
+        if (empty($otp) || strlen($otp) !== 6 || !ctype_digit($otp)) {
+            if (isAjax()) {
+                jsonResponse(['success' => false, 'message' => 'Please enter a valid 6-digit numeric OTP.']);
+            }
+            setFlash('danger', 'Please enter a valid 6-digit numeric OTP.');
             redirect('/verify-email');
             return;
         }
 
-        if ($this->userModel->verifyOTP($userId, $otp)) {
+        $result = $this->userModel->verifyOTP($userId, $otp);
+
+        if (!$result['success']) {
+            if (isAjax()) {
+                jsonResponse(['success' => false, 'message' => $result['message']]);
+            }
+            setFlash('danger', $result['message']);
+            redirect('/verify-email');
+            return;
+        }
+
+        // OTP Verified successfully
+        $user = $this->userModel->findById($userId);
+        unset($_SESSION['verify_user_id'], $_SESSION['verify_email'], $_SESSION['verify_role']);
+
+        if ($user && $user['role'] === 'student') {
             $this->userModel->activate($userId);
-            unset($_SESSION['verify_user_id']);
-            setFlash('success', 'Email verified successfully! Please login.');
+            logActivity('email_verified', 'auth', 'Student email verified: ' . $user['email']);
+
+            if (isAjax()) {
+                jsonResponse([
+                    'success' => true,
+                    'message' => 'Email verified successfully! Your student account is now active.',
+                    'redirect' => url('/login')
+                ]);
+            }
+
+            setFlash('success', 'Email verified successfully! Your account is active. Please login with your credentials.');
             redirect('/login');
         } else {
-            setFlash('danger', 'Invalid or expired OTP. Please try again.');
-            redirect('/verify-email');
+            // Company account keeps status pending for Admin Approval
+            logActivity('email_verified', 'auth', 'Company email verified: ' . ($user['email'] ?? ''));
+
+            if (isAjax()) {
+                jsonResponse([
+                    'success' => true,
+                    'message' => 'Email verified successfully! Your company registration is now awaiting Admin approval.',
+                    'redirect' => url('/login')
+                ]);
+            }
+
+            setFlash('success', 'Email verified successfully! Your company account is now awaiting Admin verification before you can login.');
+            redirect('/login');
         }
+    }
+
+    /**
+     * Resend OTP
+     */
+    public function resendOtp(): void {
+        CsrfMiddleware::requireValidToken();
+
+        $userId = $_SESSION['verify_user_id'] ?? null;
+
+        if (!$userId) {
+            if (isAjax()) {
+                jsonResponse(['success' => false, 'message' => 'Session expired. Please register or login again.', 'redirect' => url('/login')]);
+            }
+            setFlash('danger', 'Session expired. Please register or login again.');
+            redirect('/login');
+            return;
+        }
+
+        $cooldown = $this->userModel->canResendOTP($userId);
+        if (!$cooldown['can_resend']) {
+            $msg = "Please wait {$cooldown['remaining_seconds']} second(s) before requesting a new OTP.";
+            if (isAjax()) {
+                jsonResponse(['success' => false, 'message' => $msg, 'remaining_seconds' => $cooldown['remaining_seconds']]);
+            }
+            setFlash('warning', $msg);
+            redirect('/verify-email');
+            return;
+        }
+
+        $user = $this->userModel->findById($userId);
+        if (!$user) {
+            if (isAjax()) {
+                jsonResponse(['success' => false, 'message' => 'User not found.', 'redirect' => url('/login')]);
+            }
+            redirect('/login');
+            return;
+        }
+
+        $otp = sprintf('%06d', random_int(100000, 999999));
+        $this->userModel->setOTP($userId, $otp);
+
+        $name = $user['email'];
+        if ($user['role'] === 'student') {
+            $st = $this->db->fetchOne("SELECT first_name, last_name FROM students WHERE user_id = ?", [$userId]);
+            if ($st) $name = $st['first_name'] . ' ' . $st['last_name'];
+        } elseif ($user['role'] === 'company') {
+            $cp = $this->db->fetchOne("SELECT contact_person FROM companies WHERE user_id = ?", [$userId]);
+            if ($cp) $name = $cp['contact_person'];
+        }
+
+        $sent = Mailer::sendOtp($user['email'], $name, $otp, $user['role']);
+
+        if ($sent) {
+            $msg = 'A new 6-digit OTP code has been sent to ' . htmlspecialchars($user['email']) . '.';
+            if (isAjax()) {
+                jsonResponse(['success' => true, 'message' => $msg, 'cooldown' => 60]);
+            }
+            setFlash('success', $msg);
+        } else {
+            $msg = 'Failed to send OTP email via SMTP. Please try again later.';
+            if (isAjax()) {
+                jsonResponse(['success' => false, 'message' => $msg]);
+            }
+            setFlash('danger', $msg);
+        }
+
+        redirect('/verify-email');
     }
 
     /**
@@ -574,7 +801,8 @@ class AuthController {
         $_SESSION['user_email'] = $user['email'];
         $_SESSION['user_role'] = $user['role'];
         $_SESSION['login_time'] = time();
-        if (!empty($user['theme_preference'])) {
+        // Guard: theme_preference column may not exist on older DB versions
+        if (array_key_exists('theme_preference', $user) && !empty($user['theme_preference'])) {
             $_SESSION['user_theme'] = $user['theme_preference'];
             setcookie('tpms_theme', $user['theme_preference'], time() + 31536000, '/', '', false, false);
         }

@@ -22,9 +22,9 @@
         </div>
     </div>
     
-    <div class="navbar-right">
+    <div class="navbar-right d-flex align-items-center gap-2">
         <!-- Theme Selector Dropdown -->
-        <div class="dropdown me-1">
+        <div class="dropdown">
             <button class="navbar-icon-btn dropdown-toggle no-caret" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Select Theme">
                 <i class="fas fa-palette text-primary"></i>
             </button>
@@ -80,34 +80,21 @@
                 </li>
             </ul>
         </div>
-        
+
+        <?php if (in_array($currentRole, ['student', 'company'])): ?>
+        <!-- Messages Link -->
+        <a href="<?= url('/' . $currentRole . '/messages') ?>" class="navbar-icon-btn position-relative" title="Messages & Chat">
+            <i class="fas fa-comments text-primary"></i>
+            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger chat-unread-badge" style="display:none;font-size:0.65rem">0</span>
+        </a>
+        <?php endif; ?>
+
         <!-- Notifications -->
-        <div class="position-relative">
-            <button class="navbar-icon-btn notification-toggle" data-bs-toggle="tooltip" title="Notifications">
-                <i class="fas fa-bell"></i>
-                <span class="badge-dot" style="display:none"></span>
-            </button>
-            
-            <div class="notification-dropdown">
-                <div class="notification-dropdown-header">
-                    <h6>Notifications</h6>
-                    <a href="javascript:void(0)" onclick="TPMS.markAllNotificationsRead()" class="text-primary" style="font-size:0.78rem;font-weight:600">
-                        Mark all read
-                    </a>
-                </div>
-                <div class="notification-list">
-                    <div class="p-4 text-center text-muted">
-                        <i class="fas fa-bell-slash mb-2 d-block" style="font-size:2rem"></i>
-                        <small>Loading notifications...</small>
-                    </div>
-                </div>
-                <div class="p-2 text-center border-top">
-                    <a href="<?= url('/' . $currentRole . '/notifications') ?>" class="text-primary" style="font-size:0.82rem;font-weight:600">
-                        View All Notifications
-                    </a>
-                </div>
-            </div>
-        </div>
+        <a href="<?= url('/' . $currentRole . '/notifications') ?>" class="navbar-icon-btn position-relative" title="Notifications">
+            <i class="fas fa-bell"></i>
+            <span class="badge-dot" style="display:none"></span>
+            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger notification-badge" style="display:none;font-size:0.65rem">0</span>
+        </a>
         
         <!-- User Dropdown -->
         <div class="dropdown">

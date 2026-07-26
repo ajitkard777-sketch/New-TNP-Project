@@ -85,3 +85,30 @@ SET FOREIGN_KEY_CHECKS = 1;
 -- PATCH COMPLETE
 -- Fixes: 2 missing tables, 1 column rename, 8 missing columns
 -- =====================================================
+
+-- =====================================================
+-- 9. FIX users.status ENUM — add 'blocked' value
+-- Referenced by: AuthController.php (checks 'blocked'),
+--                User.php block() method (sets 'blocked')
+-- Without this fix, User::block() silently fails and
+-- the login check for 'blocked' status never triggers.
+-- =====================================================
+ALTER TABLE `users`
+    MODIFY COLUMN `status`
+    ENUM('active','inactive','pending','banned','blocked')
+    NOT NULL DEFAULT 'active';
+
+-- =====================================================
+-- 10. ADD theme_preference to users
+-- Referenced by: AuthController.php createSession()
+-- Without this column PHP throws notices that corrupt
+-- JSON response headers causing AJAX login to fail.
+-- =====================================================
+ALTER TABLE `users`
+    ADD COLUMN IF NOT EXISTS `theme_preference`
+    VARCHAR(50) NOT NULL DEFAULT 'light'
+    AFTER `locked_until`;
+
+-- =====================================================
+-- PATCH v2 COMPLETE — Run this full file in phpMyAdmin
+-- =====================================================

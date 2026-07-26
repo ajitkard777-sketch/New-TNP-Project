@@ -9,24 +9,32 @@ $sidebarMenus = [];
 // Student Sidebar Configuration
 if ($currentRole === 'student') {
     $sidebarMenus = [
-        'MAIN' => [
+        'OVERVIEW' => [
             ['icon' => 'fas fa-th-large', 'label' => 'Dashboard', 'url' => '/student/dashboard', 'key' => 'dashboard'],
-            ['icon' => 'fas fa-user-circle', 'label' => 'My Profile', 'url' => '/student/profile', 'key' => 'profile'],
+            ['icon' => 'fas fa-user-circle', 'label' => 'Profile', 'url' => '/student/profile', 'key' => 'profile'],
         ],
-        'CAREER' => [
+        'RECRUITMENT & JOBS' => [
             ['icon' => 'fas fa-briefcase', 'label' => 'Browse Jobs', 'url' => '/student/jobs', 'key' => 'jobs'],
             ['icon' => 'fas fa-paper-plane', 'label' => 'My Applications', 'url' => '/student/applications', 'key' => 'applications'],
+            ['icon' => 'fas fa-building', 'label' => 'Companies', 'url' => '/student/companies', 'key' => 'companies'],
+            ['icon' => 'fas fa-sparkles', 'label' => 'AI Recommendation', 'url' => '/student/recommendations', 'key' => 'recommendations'],
             ['icon' => 'fas fa-bookmark', 'label' => 'Bookmarks', 'url' => '/student/bookmarks', 'key' => 'bookmarks'],
-            ['icon' => 'fas fa-calendar-check', 'label' => 'Interviews', 'url' => '/student/interviews', 'key' => 'interviews'],
         ],
-        'DEVELOPMENT' => [
-            ['icon' => 'fas fa-chalkboard-teacher', 'label' => 'Trainings', 'url' => '/student/trainings', 'key' => 'trainings'],
+        'TRAINING & SCHEDULES' => [
+            ['icon' => 'fas fa-chalkboard-teacher', 'label' => 'Training Programs', 'url' => '/student/trainings', 'key' => 'trainings'],
+            ['icon' => 'fas fa-calendar-check', 'label' => 'Interviews', 'url' => '/student/interviews', 'key' => 'interviews'],
+            ['icon' => 'fas fa-calendar-alt', 'label' => 'Placement Calendar', 'url' => '/student/calendar', 'key' => 'calendar'],
+            ['icon' => 'fas fa-vial', 'label' => 'Mock Tests', 'url' => '/student/mock-tests', 'key' => 'mock-tests'],
+        ],
+        'PORTFOLIO & ACADEMICS' => [
+            ['icon' => 'fas fa-file-invoice', 'label' => 'Resume Builder', 'url' => '/student/resume-builder', 'key' => 'resume-builder'],
+            ['icon' => 'fas fa-award', 'label' => 'Achievements & Certificates', 'url' => '/student/achievements', 'key' => 'achievements'],
             ['icon' => 'fas fa-graduation-cap', 'label' => 'Higher Studies', 'url' => '/student/higher-studies', 'key' => 'higher-studies'],
         ],
-        'ACCOUNT' => [
-            ['icon' => 'fas fa-file-alt', 'label' => 'Resume', 'url' => '/student/profile/edit', 'key' => 'resume'],
+        'COMMUNICATION & SYSTEM' => [
             ['icon' => 'fas fa-bell', 'label' => 'Notifications', 'url' => '/student/notifications', 'key' => 'notifications'],
-            ['icon' => 'fas fa-key', 'label' => 'Change Password', 'url' => '/student/change-password', 'key' => 'change-password'],
+            ['icon' => 'fas fa-comments', 'label' => 'Messages', 'url' => '/student/messages', 'key' => 'messages'],
+            ['icon' => 'fas fa-cog', 'label' => 'Settings', 'url' => '/student/change-password', 'key' => 'change-password'],
         ]
     ];
 }
@@ -34,7 +42,7 @@ if ($currentRole === 'student') {
 // Company Sidebar Configuration
 if ($currentRole === 'company') {
     $sidebarMenus = [
-        'MAIN' => [
+        'OVERVIEW' => [
             ['icon' => 'fas fa-th-large', 'label' => 'Dashboard', 'url' => '/company/dashboard', 'key' => 'dashboard'],
             ['icon' => 'fas fa-building', 'label' => 'Company Profile', 'url' => '/company/profile', 'key' => 'profile'],
         ],
@@ -42,6 +50,10 @@ if ($currentRole === 'company') {
             ['icon' => 'fas fa-plus-circle', 'label' => 'Post New Job', 'url' => '/company/post-job', 'key' => 'post-job'],
             ['icon' => 'fas fa-briefcase', 'label' => 'Manage Jobs', 'url' => '/company/jobs', 'key' => 'jobs'],
             ['icon' => 'fas fa-calendar-alt', 'label' => 'Interviews', 'url' => '/company/interviews', 'key' => 'interviews'],
+        ],
+        'COMMUNICATION & ALERTS' => [
+            ['icon' => 'fas fa-bell', 'label' => 'Notifications', 'url' => '/company/notifications', 'key' => 'notifications'],
+            ['icon' => 'fas fa-comments', 'label' => 'Messages', 'url' => '/company/messages', 'key' => 'messages'],
         ]
     ];
 }
@@ -72,6 +84,7 @@ if ($currentRole === 'admin') {
                     ['icon' => 'fas fa-layer-group', 'label' => 'Manage Jobs', 'url' => '/admin/jobs', 'key' => 'jobs'],
                     ['icon' => 'fas fa-trophy', 'label' => 'Placements Record', 'url' => '/admin/placements', 'key' => 'placements'],
                     ['icon' => 'fas fa-calendar-check', 'label' => 'Interviews Schedule', 'url' => '/admin/interviews', 'key' => 'interviews'],
+                    ['icon' => 'fas fa-calendar-alt', 'label' => 'Placement Calendar', 'url' => '/admin/calendar', 'key' => 'calendar'],
                 ]
             ],
             [
@@ -86,7 +99,10 @@ if ($currentRole === 'admin') {
         ],
         'SYSTEM CONTROL' => [
             ['icon' => 'fas fa-check-double', 'label' => 'Pending Approvals', 'url' => '/admin/approvals', 'key' => 'approvals'],
+            ['icon' => 'fas fa-award', 'label' => 'Achievements', 'url' => '/admin/achievements', 'key' => 'achievements'],
             ['icon' => 'fas fa-bell', 'label' => 'Notifications', 'url' => '/admin/notifications', 'key' => 'notifications'],
+            ['icon' => 'fas fa-sms', 'label' => 'SMS Settings', 'url' => '/admin/sms-settings', 'key' => 'sms-settings'],
+            ['icon' => 'fas fa-paper-plane', 'label' => 'SMS History', 'url' => '/admin/sms-logs', 'key' => 'sms-logs'],
             ['icon' => 'fas fa-history', 'label' => 'Activity Logs', 'url' => '/admin/logs', 'key' => 'logs'],
             ['icon' => 'fas fa-cog', 'label' => 'System Settings', 'url' => '/admin/settings', 'key' => 'settings'],
         ]

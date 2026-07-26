@@ -81,14 +81,17 @@
                 <div class="row">
                     <div class="col-md-6">
                         <div class="form-group">
-                            <label class="form-label">Contact Person *</label>
-                            <input type="text" class="form-control" name="contact_person" placeholder="HR Manager name" required>
+                            <label class="form-label">HR Name (Contact Person) *</label>
+                            <input type="text" class="form-control" name="contact_person" placeholder="Full name of HR Manager" required>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="form-group">
-                            <label class="form-label">Contact Phone *</label>
-                            <input type="text" class="form-control" name="contact_phone" placeholder="10-digit number" maxlength="10" required>
+                            <label class="form-label">Mobile Number *</label>
+                            <input type="tel" class="form-control" name="contact_phone"
+                                   placeholder="10-digit mobile number" maxlength="10"
+                                   pattern="[0-9]{10}" title="Enter a valid 10-digit mobile number" required>
+                            <small class="text-muted">Must be unique — not registered with any other company.</small>
                         </div>
                     </div>
                 </div>
@@ -146,13 +149,34 @@
                 </div>
 
                 <div class="form-group">
+                    <label class="form-label">Company Address</label>
+                    <input type="text" class="form-control" name="address" placeholder="Street address, area, landmark">
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">City</label>
+                            <input type="text" class="form-control" name="city" placeholder="City">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">State</label>
+                            <input type="text" class="form-control" name="state" placeholder="State">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
                     <label class="form-label">Company Description</label>
-                    <textarea class="form-control" name="description" rows="3" placeholder="Brief description about your company"></textarea>
+                    <textarea class="form-control" name="description" rows="3" placeholder="Brief description about your company — what you do, your vision, tech stack, etc."></textarea>
                 </div>
 
                 <div class="alert alert-info" style="font-size:0.82rem">
                     <i class="fas fa-info-circle me-2"></i>
-                    Your registration will be reviewed by the admin. You'll receive a notification once approved.
+                    Your registration will be reviewed by the admin. You'll be notified once approved.
+                    Only verified companies can post jobs and access the recruitment portal.
                 </div>
 
                 <button type="submit" class="btn btn-login">

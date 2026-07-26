@@ -27,7 +27,7 @@ class Job {
     }
 
     public function getApplications(int $jobId): array {
-        return $this->db->fetchAll("SELECT a.*, s.first_name, s.last_name, s.branch, s.cgpa, s.phone, s.profile_photo, s.resume_path, u.email FROM applications a JOIN students s ON a.student_id = s.id JOIN users u ON s.user_id = u.id WHERE a.job_id = ? ORDER BY a.applied_at DESC", [$jobId]);
+        return $this->db->fetchAll("SELECT a.*, s.user_id as student_user_id, s.first_name, s.last_name, s.branch, s.cgpa, s.phone, s.profile_photo, s.resume_path, u.email FROM applications a JOIN students s ON a.student_id = s.id JOIN users u ON s.user_id = u.id WHERE a.job_id = ? ORDER BY a.applied_at DESC", [$jobId]);
     }
 
     public function updateApplicationStatus(int $appId, string $status): int {

@@ -17,7 +17,7 @@ define('APP_FULL_NAME', 'Training & Placement Management System');
 define('APP_VERSION', '1.0.0');
 
 // Base URL - adjust if needed
-define('BASE_URL', '/team1');
+define('BASE_URL', '/Internship Project/New-TNP-Project');
 define('FULL_URL', 'http://localhost' . BASE_URL);
 
 // Paths

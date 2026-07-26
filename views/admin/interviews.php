@@ -200,7 +200,7 @@ $passed    = array_filter($interviews, fn($i) => $i['result'] === 'passed');
                 <h5 class="modal-title"><i class="fas fa-calendar-plus me-2 text-primary"></i>Schedule Interview</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form action="<?= url('/admin/schedule-interview') ?>" method="POST">
+            <form action="<?= url('/admin/schedule-interview') ?>" method="POST" enctype="multipart/form-data">
                 <?= CsrfMiddleware::tokenField() ?>
                 <div class="modal-body">
                     <div class="row g-3">
@@ -248,6 +248,14 @@ $passed    = array_filter($interviews, fn($i) => $i['result'] === 'passed');
                             <label class="form-label fw-semibold">Instructions</label>
                             <textarea class="form-control" name="instructions" rows="2" placeholder="Interview guidelines or notes..."></textarea>
                         </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Required Documents</label>
+                            <textarea class="form-control" name="required_documents" rows="2" placeholder="e.g. 2 Resume copies, College ID, All Marksheets"></textarea>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Upload Custom Call Letter PDF (Optional)</label>
+                            <input type="file" class="form-control" name="call_letter_file" accept=".pdf">
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -267,7 +275,7 @@ $passed    = array_filter($interviews, fn($i) => $i['result'] === 'passed');
                 <h5 class="modal-title"><i class="fas fa-edit me-2 text-primary"></i>Reschedule / Edit Interview</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form id="adminEditInterviewForm" method="POST">
+            <form id="adminEditInterviewForm" method="POST" enctype="multipart/form-data">
                 <?= CsrfMiddleware::tokenField() ?>
                 <div class="modal-body">
                     <div class="row g-3">
@@ -301,6 +309,14 @@ $passed    = array_filter($interviews, fn($i) => $i['result'] === 'passed');
                         <div class="col-12">
                             <label class="form-label fw-semibold">Instructions</label>
                             <textarea class="form-control" name="instructions" id="adminEditInstructions" rows="2"></textarea>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Required Documents</label>
+                            <textarea class="form-control" name="required_documents" id="adminEditDocuments" rows="2"></textarea>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Replace Call Letter PDF</label>
+                            <input type="file" class="form-control" name="call_letter_file" accept=".pdf">
                         </div>
                     </div>
                 </div>
@@ -352,6 +368,7 @@ function openAdminEditModal(interview) {
     document.getElementById('adminEditVenue').value = interview.venue || '';
     document.getElementById('adminEditLink').value = interview.meeting_link || '';
     document.getElementById('adminEditInstructions').value = interview.instructions || '';
+    document.getElementById('adminEditDocuments').value = interview.required_documents || '';
     new bootstrap.Modal(document.getElementById('adminEditInterviewModal')).show();
 }
 
