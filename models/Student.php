@@ -23,7 +23,12 @@ class Student {
         $where = "1=1";
         if ($search) { $where .= " AND (s.first_name LIKE ? OR s.last_name LIKE ? OR u.email LIKE ? OR s.enrollment_no LIKE ?)"; $params = array_merge($params, ["%$search%", "%$search%", "%$search%", "%$search%"]); }
         if ($branch) { $where .= " AND s.branch = ?"; $params[] = $branch; }
-        if ($status) { $where .= " AND u.status = ?"; $params[] = $status; }
+        if ($status === 'placed') {
+            $where .= " AND s.is_placed = 1";
+        } elseif ($status) {
+            $where .= " AND u.status = ?";
+            $params[] = $status;
+        }
         $params[] = $limit;
         $params[] = $offset;
         return $this->db->fetchAll("SELECT s.*, u.email, u.status as user_status FROM students s JOIN users u ON s.user_id = u.id WHERE $where ORDER BY s.created_at DESC LIMIT ? OFFSET ?", $params);
@@ -32,9 +37,14 @@ class Student {
     public function count(string $search = '', string $branch = '', string $status = ''): int {
         $params = [];
         $where = "1=1";
-        if ($search) { $where .= " AND (s.first_name LIKE ? OR s.last_name LIKE ? OR u.email LIKE ?)"; $params = array_merge($params, ["%$search%", "%$search%", "%$search%"]); }
+        if ($search) { $where .= " AND (s.first_name LIKE ? OR s.last_name LIKE ? OR u.email LIKE ? OR s.enrollment_no LIKE ?)"; $params = array_merge($params, ["%$search%", "%$search%", "%$search%", "%$search%"]); }
         if ($branch) { $where .= " AND s.branch = ?"; $params[] = $branch; }
-        if ($status) { $where .= " AND u.status = ?"; $params[] = $status; }
+        if ($status === 'placed') {
+            $where .= " AND s.is_placed = 1";
+        } elseif ($status) {
+            $where .= " AND u.status = ?";
+            $params[] = $status;
+        }
         return (int)$this->db->fetchColumn("SELECT COUNT(*) FROM students s JOIN users u ON s.user_id = u.id WHERE $where", $params);
     }
 

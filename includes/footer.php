@@ -52,5 +52,14 @@
 <script><?= $inlineJs ?></script>
 <?php endif; ?>
 
+<!-- Floating AI Chatbot Widgets -->
+<?php 
+if (($currentRole ?? '') === 'admin') {
+    require_once ROOT_PATH . '/includes/admin-chatbot-widget.php';
+} else {
+    require_once ROOT_PATH . '/includes/chatbot-widget.php';
+}
+?>
+
 </body>
 </html>

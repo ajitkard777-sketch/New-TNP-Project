@@ -32,7 +32,7 @@
 
             <form class="auth-form" action="<?= url('/reset-password') ?>" method="POST" data-validate>
                 <?= CsrfMiddleware::tokenField() ?>
-                <input type="hidden" name="token" value="<?= htmlspecialchars($_GET['token'] ?? '') ?>">
+                <input type="hidden" name="token" value="<?= htmlspecialchars($token ?? $_GET['token'] ?? '') ?>">
 
                 <div class="form-group">
                     <label class="form-label">New Password</label>

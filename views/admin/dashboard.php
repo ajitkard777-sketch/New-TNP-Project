@@ -10,12 +10,60 @@
 
 <!-- Key Stats -->
 <div class="row g-4 mb-4">
-    <div class="col-xl-2 col-lg-4 col-sm-6"><div class="stat-card gradient-primary"><div class="stat-card-icon bg-primary-soft"><i class="fas fa-user-graduate"></i></div><div class="stat-card-value"><?= $totalStudents ?></div><div class="stat-card-label">Students</div></div></div>
-    <div class="col-xl-2 col-lg-4 col-sm-6"><div class="stat-card gradient-success"><div class="stat-card-icon bg-success-soft"><i class="fas fa-trophy"></i></div><div class="stat-card-value"><?= $placedStudents ?></div><div class="stat-card-label">Placed</div></div></div>
-    <div class="col-xl-2 col-lg-4 col-sm-6"><div class="stat-card gradient-info"><div class="stat-card-icon bg-info-soft"><i class="fas fa-building"></i></div><div class="stat-card-value"><?= $totalCompanies ?></div><div class="stat-card-label">Companies</div></div></div>
-    <div class="col-xl-2 col-lg-4 col-sm-6"><div class="stat-card gradient-warning"><div class="stat-card-icon bg-warning-soft"><i class="fas fa-briefcase"></i></div><div class="stat-card-value"><?= $activeJobs ?></div><div class="stat-card-label">Active Jobs</div></div></div>
-    <div class="col-xl-2 col-lg-4 col-sm-6"><div class="stat-card gradient-violet"><div class="stat-card-icon bg-violet-soft"><i class="fas fa-rupee-sign"></i></div><div class="stat-card-value"><?= $highestPackage ? number_format($highestPackage, 1) : '0' ?></div><div class="stat-card-label">Highest LPA</div></div></div>
-    <div class="col-xl-2 col-lg-4 col-sm-6"><div class="stat-card gradient-danger"><div class="stat-card-icon bg-danger-soft"><i class="fas fa-chart-line"></i></div><div class="stat-card-value"><?= $averagePackage ? number_format($averagePackage, 1) : '0' ?></div><div class="stat-card-label">Average LPA</div></div></div>
+    <div class="col-xl-2 col-lg-4 col-sm-6">
+        <a href="<?= url('/admin/students') ?>" class="text-decoration-none">
+            <div class="stat-card gradient-primary">
+                <div class="stat-card-icon bg-primary-soft"><i class="fas fa-user-graduate"></i></div>
+                <div class="stat-card-value"><?= $totalStudents ?></div>
+                <div class="stat-card-label">Students</div>
+            </div>
+        </a>
+    </div>
+    <div class="col-xl-2 col-lg-4 col-sm-6">
+        <a href="<?= url('/admin/placements') ?>" class="text-decoration-none">
+            <div class="stat-card gradient-success">
+                <div class="stat-card-icon bg-success-soft"><i class="fas fa-trophy"></i></div>
+                <div class="stat-card-value"><?= $placedStudents ?></div>
+                <div class="stat-card-label">Placed</div>
+            </div>
+        </a>
+    </div>
+    <div class="col-xl-2 col-lg-4 col-sm-6">
+        <a href="<?= url('/admin/companies') ?>" class="text-decoration-none">
+            <div class="stat-card gradient-info">
+                <div class="stat-card-icon bg-info-soft"><i class="fas fa-building"></i></div>
+                <div class="stat-card-value"><?= $totalCompanies ?></div>
+                <div class="stat-card-label">Companies</div>
+            </div>
+        </a>
+    </div>
+    <div class="col-xl-2 col-lg-4 col-sm-6">
+        <a href="<?= url('/admin/jobs') ?>" class="text-decoration-none">
+            <div class="stat-card gradient-warning">
+                <div class="stat-card-icon bg-warning-soft"><i class="fas fa-briefcase"></i></div>
+                <div class="stat-card-value"><?= $activeJobs ?></div>
+                <div class="stat-card-label">Active Jobs</div>
+            </div>
+        </a>
+    </div>
+    <div class="col-xl-2 col-lg-4 col-sm-6">
+        <a href="<?= url('/admin/placements') ?>" class="text-decoration-none">
+            <div class="stat-card gradient-violet">
+                <div class="stat-card-icon bg-violet-soft"><i class="fas fa-rupee-sign"></i></div>
+                <div class="stat-card-value"><?= $highestPackage ? number_format($highestPackage, 1) : '0' ?></div>
+                <div class="stat-card-label">Highest LPA</div>
+            </div>
+        </a>
+    </div>
+    <div class="col-xl-2 col-lg-4 col-sm-6">
+        <a href="<?= url('/admin/higher-studies') ?>" class="text-decoration-none">
+            <div class="stat-card gradient-teal">
+                <div class="stat-card-icon bg-teal-soft"><i class="fas fa-graduation-cap"></i></div>
+                <div class="stat-card-value"><?= $higherStudiesCount ?></div>
+                <div class="stat-card-label">Higher Studies</div>
+            </div>
+        </a>
+    </div>
 </div>
 
 <div class="row g-4">

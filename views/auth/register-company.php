@@ -49,7 +49,7 @@
                             <select class="form-select" name="industry">
                                 <option value="">Select Industry</option>
                                 <option value="Information Technology">Information Technology</option>
-                                <option value="Finance">Finance & Banking</option>
+                                <option value="Finance">Finance &amp; Banking</option>
                                 <option value="Healthcare">Healthcare</option>
                                 <option value="Manufacturing">Manufacturing</option>
                                 <option value="Consulting">Consulting</option>

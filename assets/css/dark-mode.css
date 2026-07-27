@@ -1,12 +1,12 @@
 /* ===================================================================
    TPMS – Enterprise Design System
-   7 Premium Themes: Enterprise Blue · Midnight · Slate · Emerald · Indigo · Light · Dark
+   2 Premium Themes: Light · OLED Midnight
    Selector: html[data-theme="..."]  — beats Bootstrap specificity
    =================================================================== */
 
 /* ===================================================================
-   1. ENTERPRISE BLUE (default / light)
-   Clean Microsoft/SAP enterprise palette
+   1. LIGHT (default)
+   Clean enterprise palette
    =================================================================== */
 :root,
 html[data-theme="light"] {
@@ -61,271 +61,8 @@ html[data-theme="light"] {
 }
 
 /* ===================================================================
-   2. DARK SLATE (dark)
-   GitHub/Linear-inspired dark mode
-   =================================================================== */
-html[data-theme="dark"] {
-    --primary:           #3B82F6;
-    --primary-hover:     #2563EB;
-    --primary-light:     #60A5FA;
-    --primary-subtle:    rgba(59, 130, 246, 0.14);
-    --primary-gradient:  linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
-
-    --secondary:         #22D3EE;
-    --success:           #22C55E;
-    --success-subtle:    rgba(34, 197, 94, 0.12);
-    --warning:           #F59E0B;
-    --warning-subtle:    rgba(245, 158, 11, 0.12);
-    --danger:            #F87171;
-    --danger-subtle:     rgba(248, 113, 113, 0.12);
-    --info:              #22D3EE;
-    --info-subtle:       rgba(34, 211, 238, 0.12);
-
-    --bg-page:           #0D1117;
-    --bg-primary:        #0D1117;
-    --bg-secondary:      #161B22;
-    --bg-card:           #1C2333;
-    --bg-sidebar:        linear-gradient(180deg, #090D14 0%, #0D1117 100%);
-    --bg-glass:          rgba(28, 35, 51, 0.95);
-
-    --text-primary:      #E2E8F0;
-    --text-secondary:    #94A3B8;
-    --text-muted:        #64748B;
-    --text-heading:      #F1F5F9;
-    --text-white:        #FFFFFF;
-
-    --border-color:      #30363D;
-    --border-light:      rgba(255,255,255,0.08);
-
-    --shadow-sm:  0 1px 3px rgba(0,0,0,0.4);
-    --shadow-md:  0 4px 8px rgba(0,0,0,0.5);
-    --shadow-lg:  0 12px 24px rgba(0,0,0,0.6);
-    --shadow-xl:  0 20px 40px rgba(0,0,0,0.7);
-    --shadow-card:0 0 0 1px rgba(255,255,255,0.05), 0 2px 8px rgba(0,0,0,0.4);
-
-    --gray-50:  #1C2333;
-    --gray-100: #21262D;
-    --gray-200: #30363D;
-    --gray-300: #3D444D;
-    --gray-400: #656D76;
-    --gray-500: #8B949E;
-    --gray-600: #B1BAC4;
-    --gray-700: #C9D1D9;
-    --gray-800: #E6EDF3;
-    --gray-900: #F0F6FC;
-}
-
-/* ===================================================================
-   3. ENTERPRISE BLUE ACCENT (blue)
-   Salesforce/Azure-inspired saturated blue
-   =================================================================== */
-html[data-theme="blue"] {
-    --primary:           #0050B3;
-    --primary-hover:     #003D8F;
-    --primary-light:     #1677FF;
-    --primary-subtle:    rgba(0, 80, 179, 0.08);
-    --primary-gradient:  linear-gradient(135deg, #0050B3 0%, #1677FF 100%);
-
-    --secondary:         #0EA5E9;
-    --success:           #16A34A;
-    --success-subtle:    rgba(22, 163, 74, 0.10);
-    --warning:           #D97706;
-    --warning-subtle:    rgba(217, 119, 6, 0.10);
-    --danger:            #DC2626;
-    --danger-subtle:     rgba(220, 38, 38, 0.10);
-    --info:              #0891B2;
-    --info-subtle:       rgba(8, 145, 178, 0.10);
-
-    --bg-page:           #F0F5FF;
-    --bg-primary:        #F0F5FF;
-    --bg-secondary:      #E8F0FE;
-    --bg-card:           #FFFFFF;
-    --bg-sidebar:        linear-gradient(180deg, #001D6E 0%, #0043CE 100%);
-    --bg-glass:          rgba(255,255,255,0.97);
-
-    --text-primary:      #001D6E;
-    --text-secondary:    #4A5568;
-    --text-muted:        #90A4AE;
-    --text-heading:      #001141;
-    --text-white:        #FFFFFF;
-
-    --border-color:      #C8D8FF;
-    --border-light:      rgba(255,255,255,0.12);
-
-    --shadow-sm:  0 1px 3px rgba(0,29,110,0.06);
-    --shadow-md:  0 4px 8px rgba(0,29,110,0.08);
-    --shadow-lg:  0 12px 24px rgba(0,29,110,0.10);
-    --shadow-xl:  0 20px 40px rgba(0,29,110,0.12);
-    --shadow-card:0 0 0 1px rgba(0,29,110,0.06), 0 2px 4px rgba(0,29,110,0.04);
-
-    --gray-50:  #F0F5FF;
-    --gray-100: #E8F0FE;
-    --gray-200: #C8D8FF;
-    --gray-300: #A3BFFA;
-    --gray-400: #7F9CF5;
-    --gray-500: #4A5568;
-    --gray-600: #2D3748;
-}
-
-/* ===================================================================
-   4. INDIGO (purple)
-   Notion/Atlassian-inspired
-   =================================================================== */
-html[data-theme="purple"] {
-    --primary:           #4F46E5;
-    --primary-hover:     #4338CA;
-    --primary-light:     #818CF8;
-    --primary-subtle:    rgba(79, 70, 229, 0.08);
-    --primary-gradient:  linear-gradient(135deg, #4F46E5 0%, #4338CA 100%);
-
-    --secondary:         #7C3AED;
-    --success:           #16A34A;
-    --success-subtle:    rgba(22, 163, 74, 0.10);
-    --warning:           #D97706;
-    --warning-subtle:    rgba(217, 119, 6, 0.10);
-    --danger:            #DC2626;
-    --danger-subtle:     rgba(220, 38, 38, 0.10);
-    --info:              #0891B2;
-    --info-subtle:       rgba(8, 145, 178, 0.10);
-
-    --bg-page:           #F5F4FE;
-    --bg-primary:        #F5F4FE;
-    --bg-secondary:      #EDE9FE;
-    --bg-card:           #FFFFFF;
-    --bg-sidebar:        linear-gradient(180deg, #1E1B4B 0%, #3730A3 100%);
-    --bg-glass:          rgba(255,255,255,0.97);
-
-    --text-primary:      #1E1B4B;
-    --text-secondary:    #4C4F69;
-    --text-muted:        #9897B4;
-    --text-heading:      #1E1B4B;
-    --text-white:        #FFFFFF;
-
-    --border-color:      #DDD6FE;
-    --border-light:      rgba(255,255,255,0.10);
-
-    --shadow-sm:  0 1px 3px rgba(30,27,75,0.06);
-    --shadow-md:  0 4px 8px rgba(30,27,75,0.08);
-    --shadow-lg:  0 12px 24px rgba(30,27,75,0.10);
-    --shadow-xl:  0 20px 40px rgba(30,27,75,0.12);
-    --shadow-card:0 0 0 1px rgba(30,27,75,0.06), 0 2px 4px rgba(30,27,75,0.04);
-
-    --gray-50:  #F5F4FE;
-    --gray-100: #EDE9FE;
-    --gray-200: #DDD6FE;
-    --gray-300: #C4B5FD;
-    --gray-400: #A78BFA;
-    --gray-500: #4C4F69;
-    --gray-600: #312E81;
-}
-
-/* ===================================================================
-   5. EMERALD (emerald)
-   SAP/Workday enterprise green
-   =================================================================== */
-html[data-theme="emerald"] {
-    --primary:           #059669;
-    --primary-hover:     #047857;
-    --primary-light:     #10B981;
-    --primary-subtle:    rgba(5, 150, 105, 0.08);
-    --primary-gradient:  linear-gradient(135deg, #059669 0%, #047857 100%);
-
-    --secondary:         #0891B2;
-    --success:           #16A34A;
-    --success-subtle:    rgba(22, 163, 74, 0.10);
-    --warning:           #D97706;
-    --warning-subtle:    rgba(217, 119, 6, 0.10);
-    --danger:            #DC2626;
-    --danger-subtle:     rgba(220, 38, 38, 0.10);
-    --info:              #0891B2;
-    --info-subtle:       rgba(8, 145, 178, 0.10);
-
-    --bg-page:           #F0FDF4;
-    --bg-primary:        #F0FDF4;
-    --bg-secondary:      #DCFCE7;
-    --bg-card:           #FFFFFF;
-    --bg-sidebar:        linear-gradient(180deg, #022C22 0%, #065F46 100%);
-    --bg-glass:          rgba(255,255,255,0.97);
-
-    --text-primary:      #052E16;
-    --text-secondary:    #3D7A5C;
-    --text-muted:        #86EFAC;
-    --text-heading:      #022C22;
-    --text-white:        #FFFFFF;
-
-    --border-color:      #BBF7D0;
-    --border-light:      rgba(255,255,255,0.12);
-
-    --shadow-sm:  0 1px 3px rgba(2,44,34,0.06);
-    --shadow-md:  0 4px 8px rgba(2,44,34,0.08);
-    --shadow-lg:  0 12px 24px rgba(2,44,34,0.10);
-    --shadow-xl:  0 20px 40px rgba(2,44,34,0.12);
-    --shadow-card:0 0 0 1px rgba(2,44,34,0.06), 0 2px 4px rgba(2,44,34,0.04);
-
-    --gray-50:  #F0FDF4;
-    --gray-100: #DCFCE7;
-    --gray-200: #BBF7D0;
-    --gray-300: #86EFAC;
-    --gray-400: #4ADE80;
-    --gray-500: #3D7A5C;
-    --gray-600: #166534;
-}
-
-/* ===================================================================
-   6. SUNSET AMBER (sunset) → kept in DB/cookie as "sunset"
-   Warm enterprise palette (Oracle/SAP-inspired amber)
-   =================================================================== */
-html[data-theme="sunset"] {
-    --primary:           #B45309;
-    --primary-hover:     #92400E;
-    --primary-light:     #D97706;
-    --primary-subtle:    rgba(180, 83, 9, 0.08);
-    --primary-gradient:  linear-gradient(135deg, #B45309 0%, #92400E 100%);
-
-    --secondary:         #EA580C;
-    --success:           #16A34A;
-    --success-subtle:    rgba(22, 163, 74, 0.10);
-    --warning:           #F59E0B;
-    --warning-subtle:    rgba(245, 158, 11, 0.10);
-    --danger:            #DC2626;
-    --danger-subtle:     rgba(220, 38, 38, 0.10);
-    --info:              #0891B2;
-    --info-subtle:       rgba(8, 145, 178, 0.10);
-
-    --bg-page:           #FFFBEB;
-    --bg-primary:        #FFFBEB;
-    --bg-secondary:      #FEF3C7;
-    --bg-card:           #FFFFFF;
-    --bg-sidebar:        linear-gradient(180deg, #3B1F00 0%, #78350F 100%);
-    --bg-glass:          rgba(255,255,255,0.97);
-
-    --text-primary:      #3B1F00;
-    --text-secondary:    #78350F;
-    --text-muted:        #B45309;
-    --text-heading:      #1C0A00;
-    --text-white:        #FFFFFF;
-
-    --border-color:      #FDE68A;
-    --border-light:      rgba(255,255,255,0.10);
-
-    --shadow-sm:  0 1px 3px rgba(59,31,0,0.06);
-    --shadow-md:  0 4px 8px rgba(59,31,0,0.08);
-    --shadow-lg:  0 12px 24px rgba(59,31,0,0.10);
-    --shadow-xl:  0 20px 40px rgba(59,31,0,0.12);
-    --shadow-card:0 0 0 1px rgba(59,31,0,0.06), 0 2px 4px rgba(59,31,0,0.04);
-
-    --gray-50:  #FFFBEB;
-    --gray-100: #FEF3C7;
-    --gray-200: #FDE68A;
-    --gray-300: #FCD34D;
-    --gray-400: #FBBF24;
-    --gray-500: #78350F;
-    --gray-600: #451A03;
-}
-
-/* ===================================================================
-   7. MIDNIGHT (midnight)
-   True OLED Midnight – Oracle Fusion/HCM dark style
+   2. OLED MIDNIGHT (midnight)
+   True OLED Black — max contrast, zero waste
    =================================================================== */
 html[data-theme="midnight"] {
     --primary:           #38BDF8;
@@ -374,73 +111,6 @@ html[data-theme="midnight"] {
     --gray-500: #636366;
     --gray-600: #AEAEB2;
 }
-
-/* ===================================================================
-   8. GLASSMORPHISM (glassmorphism)
-   Modern glass effect — kept for backward compat
-   =================================================================== */
-html[data-theme="glassmorphism"] {
-    --primary:           #4F46E5;
-    --primary-hover:     #4338CA;
-    --primary-light:     #818CF8;
-    --primary-subtle:    rgba(79, 70, 229, 0.10);
-    --primary-gradient:  linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
-
-    --secondary:         #7C3AED;
-    --success:           #16A34A;
-    --success-subtle:    rgba(22, 163, 74, 0.10);
-    --warning:           #D97706;
-    --warning-subtle:    rgba(217, 119, 6, 0.10);
-    --danger:            #DC2626;
-    --danger-subtle:     rgba(220, 38, 38, 0.10);
-    --info:              #0891B2;
-    --info-subtle:       rgba(8, 145, 178, 0.10);
-
-    --bg-page:           #EDE9FE;
-    --bg-primary:        #EDE9FE;
-    --bg-secondary:      rgba(255,255,255,0.65);
-    --bg-card:           rgba(255,255,255,0.80);
-    --bg-sidebar:        linear-gradient(180deg, rgba(30,27,75,0.92) 0%, rgba(67,56,202,0.88) 100%);
-    --bg-glass:          rgba(255,255,255,0.85);
-
-    --text-primary:      #1E1B4B;
-    --text-secondary:    #4C4F69;
-    --text-muted:        #9897B4;
-    --text-heading:      #1E1B4B;
-    --text-white:        #FFFFFF;
-
-    --border-color:      rgba(196, 181, 253, 0.7);
-    --border-light:      rgba(255,255,255,0.20);
-
-    --shadow-sm:  0 1px 4px rgba(30,27,75,0.08);
-    --shadow-md:  0 4px 12px rgba(30,27,75,0.10);
-    --shadow-lg:  0 12px 28px rgba(30,27,75,0.12);
-    --shadow-xl:  0 24px 48px rgba(30,27,75,0.15);
-    --shadow-card:0 0 0 1px rgba(196,181,253,0.4), 0 4px 12px rgba(30,27,75,0.08);
-
-    --gray-50:  rgba(237,233,254,0.7);
-    --gray-100: rgba(221,214,254,0.8);
-    --gray-200: rgba(196,181,253,0.9);
-    --gray-300: #C4B5FD;
-    --gray-400: #A78BFA;
-    --gray-500: #4C4F69;
-    --gray-600: #312E81;
-}
-
-html[data-theme="glassmorphism"] body {
-    background: linear-gradient(135deg, #EDE9FE 0%, #E0E7FF 40%, #FCE7F3 100%) !important;
-    background-attachment: fixed !important;
-}
-
-html[data-theme="glassmorphism"] .card,
-html[data-theme="glassmorphism"] .stat-card,
-html[data-theme="glassmorphism"] .job-card,
-html[data-theme="glassmorphism"] .top-navbar,
-html[data-theme="glassmorphism"] .modal-content {
-    backdrop-filter: blur(12px) !important;
-    -webkit-backdrop-filter: blur(12px) !important;
-}
-
 
 /* ===================================================================
    UNIVERSAL SMOOTH TRANSITIONS
@@ -567,6 +237,13 @@ html[data-theme] .card-header h6,
 html[data-theme] .card-body h5,
 html[data-theme] .card-body h6 {
     color: var(--text-heading) !important;
+}
+
+/* Clickable stat card link */
+html[data-theme] .stat-card-link:hover .stat-card {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-lg) !important;
+    border-color: var(--primary) !important;
 }
 
 /* ===================================================================
@@ -771,10 +448,7 @@ html[data-theme] .dataTables_wrapper .dataTables_paginate .paginate_button.disab
     background: var(--bg-secondary) !important;
 }
 
-/* ===================================================================
-   DARK THEMES TABLE STRIPING
-   =================================================================== */
-html[data-theme="dark"] .table-striped > tbody > tr:nth-of-type(odd) > *,
+/* Dark themes table striping */
 html[data-theme="midnight"] .table-striped > tbody > tr:nth-of-type(odd) > * {
     background-color: rgba(255,255,255,0.02) !important;
     color: var(--text-primary) !important;
@@ -843,7 +517,6 @@ html[data-theme] .modal-title {
     font-weight: 700;
 }
 
-html[data-theme="dark"] .btn-close,
 html[data-theme="midnight"] .btn-close {
     filter: invert(1) grayscale(100%) !important;
 }
@@ -875,17 +548,14 @@ html[data-theme] .alert-info {
     color: var(--info) !important;
 }
 
-html[data-theme="dark"] .alert-success,
 html[data-theme="midnight"] .alert-success {
     color: #4ADE80 !important;
 }
 
-html[data-theme="dark"] .alert-danger,
 html[data-theme="midnight"] .alert-danger {
     color: #FCA5A5 !important;
 }
 
-html[data-theme="dark"] .alert-warning,
 html[data-theme="midnight"] .alert-warning {
     color: #FCD34D !important;
 }
@@ -934,7 +604,6 @@ html[data-theme] .badge.bg-light {
     border: 1px solid var(--border-color) !important;
 }
 
-html[data-theme="dark"] .badge.bg-light,
 html[data-theme="midnight"] .badge.bg-light {
     background: var(--gray-100) !important;
     color: var(--text-primary) !important;
@@ -964,18 +633,14 @@ html[data-theme] .badge-soft-danger {
 /* ===================================================================
    STAT CARD ICONS — dark theme adjustments
    =================================================================== */
-html[data-theme="dark"] .stat-card-icon.bg-primary-soft,
 html[data-theme="midnight"] .stat-card-icon.bg-primary-soft   { background: rgba(59,130,246,.16) !important; color: #60A5FA !important; }
-html[data-theme="dark"] .stat-card-icon.bg-success-soft,
 html[data-theme="midnight"] .stat-card-icon.bg-success-soft   { background: rgba(34,197,94,.14) !important; color: #4ADE80 !important; }
-html[data-theme="dark"] .stat-card-icon.bg-warning-soft,
 html[data-theme="midnight"] .stat-card-icon.bg-warning-soft   { background: rgba(245,158,11,.14) !important; color: #FBBF24 !important; }
-html[data-theme="dark"] .stat-card-icon.bg-danger-soft,
 html[data-theme="midnight"] .stat-card-icon.bg-danger-soft    { background: rgba(248,113,133,.14) !important; color: #FB7185 !important; }
-html[data-theme="dark"] .stat-card-icon.bg-info-soft,
 html[data-theme="midnight"] .stat-card-icon.bg-info-soft      { background: rgba(34,211,238,.14) !important; color: #22D3EE !important; }
-html[data-theme="dark"] .stat-card-icon.bg-violet-soft,
 html[data-theme="midnight"] .stat-card-icon.bg-violet-soft    { background: rgba(129,140,248,.14) !important; color: #818CF8 !important; }
+html[data-theme="dark"] .stat-card-icon.bg-teal-soft,
+html[data-theme="midnight"] .stat-card-icon.bg-teal-soft      { background: rgba(45,212,191,.14) !important; color: #2DD4BF !important; }
 
 /* ===================================================================
    NOTIFICATION DROPDOWN
@@ -1019,6 +684,13 @@ html[data-theme] .notification-item .n-text {
 
 html[data-theme] .notification-item .n-time {
     color: var(--text-muted) !important;
+}
+
+html[data-theme] .notif-mark-read-btn {
+    color: var(--text-muted) !important;
+}
+html[data-theme] .notif-mark-read-btn:hover {
+    color: var(--primary) !important;
 }
 
 /* ===================================================================
@@ -1089,8 +761,6 @@ html[data-theme] .bg-white { background-color: var(--bg-card) !important; }
 html[data-theme] .bg-light { background-color: var(--bg-secondary) !important; }
 html[data-theme] .border   { border-color: var(--border-color) !important; }
 
-html[data-theme="dark"] .bg-white,
-html[data-theme="dark"] .bg-light,
 html[data-theme="midnight"] .bg-white,
 html[data-theme="midnight"] .bg-light {
     background-color: var(--bg-secondary) !important;
@@ -1170,28 +840,23 @@ html[data-theme] .app-footer-right a:hover {
 /* ===================================================================
    AUTH PAGES — card styling per theme
    =================================================================== */
-html[data-theme="dark"] .auth-card,
 html[data-theme="midnight"] .auth-card {
     background: var(--bg-card) !important;
     border: 1px solid var(--border-color) !important;
     color: var(--text-primary) !important;
 }
 
-html[data-theme="dark"] .auth-card h2,
-html[data-theme="dark"] .auth-card p,
 html[data-theme="midnight"] .auth-card h2,
 html[data-theme="midnight"] .auth-card p {
     color: var(--text-primary) !important;
 }
 
-html[data-theme="dark"] .auth-role-tab,
 html[data-theme="midnight"] .auth-role-tab {
     background: var(--bg-secondary) !important;
     border-color: var(--border-color) !important;
     color: var(--text-primary) !important;
 }
 
-html[data-theme="dark"] .auth-role-tab.active,
 html[data-theme="midnight"] .auth-role-tab.active {
     background: var(--primary) !important;
     color: #ffffff !important;
@@ -1267,4 +932,26 @@ html[data-theme] ::-webkit-scrollbar-thumb {
 
 html[data-theme] ::-webkit-scrollbar-thumb:hover {
     background: var(--gray-400) !important;
+}
+
+/* ===================================================================
+   SIDEBAR COLLAPSE BUTTON
+   =================================================================== */
+html[data-theme] .sidebar-collapse-btn {
+    background: rgba(255,255,255,0.05) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    color: #94a3b8 !important;
+}
+
+html[data-theme] .sidebar-collapse-btn:hover {
+    background: rgba(255,255,255,0.12) !important;
+    color: #ffffff !important;
+}
+
+/* ===================================================================
+   NOTIFICATION COUNT BADGE
+   =================================================================== */
+html[data-theme] .notification-count {
+    background: var(--danger) !important;
+    color: #ffffff !important;
 }

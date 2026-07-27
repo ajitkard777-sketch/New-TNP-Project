@@ -124,7 +124,7 @@ if ($currentRole === 'student' && $profile) {
     $userAvatar = asset('images/default-avatar.png');
 }
 $userTheme = $_SESSION['user_theme'] ?? $_COOKIE['tpms_theme'] ?? 'light';
-$allowedThemes = ['light','dark','blue','purple','emerald','sunset','midnight','glassmorphism'];
+$allowedThemes = ['light','midnight'];
 if (!in_array($userTheme, $allowedThemes)) $userTheme = 'light';
 ?>
 <!DOCTYPE html>
@@ -137,7 +137,7 @@ if (!in_array($userTheme, $allowedThemes)) $userTheme = 'light';
     <script>
     /* Instant theme restore – runs before CSS is applied to prevent flicker */
     (function() {
-        var allowed = ['light','dark','blue','purple','emerald','sunset','midnight','glassmorphism'];
+        var allowed = ['light','midnight'];
         var saved = null;
         // 1. Try localStorage (fastest client-side source)
         try { saved = localStorage.getItem('tpms_theme'); } catch(e) {}
