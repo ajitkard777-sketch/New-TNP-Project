@@ -43,7 +43,7 @@ if (isset($urlParts[0]) && $urlParts[0] === 'api') {
     }
     if (($urlParts[1] ?? '') === 'theme' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $theme = sanitize($_POST['theme'] ?? 'light');
-        $allowed = ['light', 'dark', 'blue', 'purple', 'emerald', 'sunset', 'midnight', 'glassmorphism'];
+        $allowed = ['light', 'midnight'];
         if (in_array($theme, $allowed)) {
             $_SESSION['user_theme'] = $theme;
             setcookie('tpms_theme', $theme, time() + 31536000, '/', '', false, false);
@@ -312,6 +312,10 @@ switch ($page) {
             case 'register-training': $controller->registerTraining($param); break;
             case 'higher-studies': $controller->higherStudies(); break;
             case 'register-higher-study': $controller->registerHigherStudy(); break;
+            case 'apply-higher-study': $controller->applyHigherStudy(); break;
+            case 'edit-higher-study': $controller->editHigherStudy($param); break;
+            case 'withdraw-higher-study': $controller->withdrawHigherStudy($param); break;
+            case 'withdraw-training': $controller->withdrawTraining($param); break;
             case 'notifications': $controller->notifications(); break;
             case 'interviews': $controller->interviews(); break;
             case 'bookmarks': $controller->bookmarks(); break;
@@ -404,6 +408,11 @@ switch ($page) {
             case 'higher-studies': $controller->higherStudies(); break;
             case 'update-higher-study': $controller->updateHigherStudyStatus($param); break;
             case 'create-university': $controller->createUniversity(); break;
+            case 'approve-higher-study': $controller->approveHigherStudy($param); break;
+            case 'reject-higher-study': $controller->rejectHigherStudy($param); break;
+            case 'approve-training-enrollment': $controller->approveTrainingEnrollment($param); break;
+            case 'reject-training-enrollment': $controller->rejectTrainingEnrollment($param); break;
+            case 'issue-certificate': $controller->issueTrainingCertificate($param); break;
             case 'interviews': $controller->interviews(); break;
             case 'schedule-interview': $controller->scheduleInterview(); break;
             case 'edit-interview': $controller->updateInterview($param); break;

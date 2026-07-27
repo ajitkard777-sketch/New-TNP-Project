@@ -758,11 +758,20 @@ h6 { font-size: 0.875rem; }
 
 .notification-item {
     display: flex;
-    gap: 12px;
-    padding: 14px 20px;
+    align-items: flex-start;
     border-bottom: 1px solid var(--gray-50);
     transition: background var(--transition-fast);
-    cursor: pointer;
+    position: relative;
+}
+
+.notification-item-link {
+    display: flex;
+    gap: 12px;
+    padding: 14px 16px;
+    flex: 1;
+    min-width: 0;
+    text-decoration: none !important;
+    color: inherit !important;
 }
 
 .notification-item:hover {
@@ -808,6 +817,30 @@ h6 { font-size: 0.875rem; }
     font-size: 0.7rem;
     color: var(--text-muted);
     margin-top: 4px;
+}
+
+/* Mark as read button inside notification item */
+.notif-mark-read-btn {
+    background: none;
+    border: none;
+    padding: 4px 10px;
+    cursor: pointer;
+    color: var(--text-muted);
+    font-size: 0.7rem;
+    align-self: center;
+    flex-shrink: 0;
+    border-radius: 50%;
+    width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.notif-mark-read-btn:hover {
+    background: var(--primary-subtle);
+    color: var(--primary);
 }
 
 .theme-toggle {
@@ -1928,4 +1961,75 @@ textarea.form-control {
 
 .hover-scale:hover {
     transform: scale(1.02);
+}
+
+/* =====================================================
+   Sidebar Collapse Button
+   ===================================================== */
+.sidebar-collapse-wrap {
+    padding: 12px 14px 16px 14px;
+    border-top: 1px solid rgba(255,255,255,0.07);
+    justify-content: center;
+}
+
+.sidebar-collapse-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: rgba(255,255,255,0.06);
+    color: #94a3b8;
+    font-size: 0.8rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 200ms ease;
+    flex-shrink: 0;
+}
+
+.sidebar-collapse-btn:hover {
+    background: rgba(255,255,255,0.14);
+    color: #ffffff;
+    border-color: rgba(255,255,255,0.25);
+}
+
+/* Hide collapse wrap text when collapsed */
+.app-wrapper.sidebar-collapsed .sidebar-collapse-wrap {
+    padding: 12px 8px 16px 8px;
+}
+
+/* =====================================================
+   Clickable Stat Cards
+   ===================================================== */
+.stat-card-link {
+    text-decoration: none !important;
+    color: inherit !important;
+    display: block;
+}
+
+.stat-card-link .stat-card {
+    transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease;
+}
+
+.stat-card-link:hover .stat-card {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg) !important;
+    border-color: rgba(99,102,241,0.4) !important;
+}
+
+.stat-card-link:hover .stat-card-value {
+    color: var(--primary);
+}
+
+/* =====================================================
+   Smooth sidebar width transition (on top of existing)
+   ===================================================== */
+.sidebar {
+    transition: width 280ms cubic-bezier(0.4, 0, 0.2, 1),
+                background 280ms ease !important;
+}
+
+.main-content {
+    transition: margin-left 280ms cubic-bezier(0.4, 0, 0.2, 1) !important;
 }

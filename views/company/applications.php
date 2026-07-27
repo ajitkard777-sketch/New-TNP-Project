@@ -35,7 +35,7 @@ foreach ($applications as $a) { $statusCounts[$a['status']] = ($statusCounts[$a[
                     <div class="dropdown">
                         <button class="btn btn-sm btn-light dropdown-toggle" data-bs-toggle="dropdown">Action</button>
                         <ul class="dropdown-menu">
-                            <?php foreach (['shortlisted'=>'Shortlist','interview'=>'Schedule Interview','selected'=>'Select','rejected'=>'Reject'] as $sk=>$sv): ?>
+                            <?php foreach (['shortlisted'=>'Shortlist','selected'=>'Select','rejected'=>'Reject'] as $sk=>$sv): ?>
                             <?php if ($a['status'] !== $sk): ?>
                             <li><a class="dropdown-item" href="#" onclick="updateStatus(<?= $a['id'] ?>,'<?= $sk ?>')"><i class="fas fa-<?= $sk === 'selected' ? 'check-circle text-success' : ($sk === 'rejected' ? 'times-circle text-danger' : ($sk === 'shortlisted' ? 'star text-warning' : 'calendar text-info')) ?> me-2"></i><?= $sv ?></a></li>
                             <?php endif; ?>

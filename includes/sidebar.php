@@ -171,4 +171,11 @@ if ($currentRole === 'admin') {
             </a>
         </div>
     </nav>
+
+    <!-- Sidebar Collapse Button (Desktop Only) -->
+    <div class="sidebar-collapse-wrap d-none d-lg-flex">
+        <button class="sidebar-collapse-btn" title="Collapse Sidebar">
+            <i class="fas fa-angle-double-left"></i>
+        </button>
+    </div>
 </aside>

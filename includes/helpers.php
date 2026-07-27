@@ -409,41 +409,48 @@ function getPagination(int $totalRecords, int $currentPage, int $perPage = RECOR
 
 /**
  * Render pagination HTML
+ * @param array  $pagination  Result from getPagination()
+ * @param string $baseUrl     Base URL (without query string)
+ * @param array  $extraParams Additional GET params to preserve (e.g. ['status'=>'placed','search'=>'foo'])
  */
-function renderPagination(array $pagination, string $baseUrl): string {
+function renderPagination(array $pagination, string $baseUrl, array $extraParams = []): string {
     if ($pagination['total_pages'] <= 1) return '';
-    
+
+    // Build a query string that includes any extra params
+    $buildUrl = function(int $page) use ($baseUrl, $extraParams): string {
+        $params = array_merge($extraParams, ['page' => $page]);
+        return $baseUrl . '?' . http_build_query($params);
+    };
+
     $html = '<nav aria-label="Page navigation"><ul class="pagination justify-content-center">';
-    
+
     // Previous
     $prevDisabled = $pagination['has_prev'] ? '' : ' disabled';
-    $prevPage = $pagination['current_page'] - 1;
-    $html .= "<li class='page-item{$prevDisabled}'><a class='page-link' href='{$baseUrl}?page={$prevPage}'><i class='fas fa-chevron-left'></i></a></li>";
-    
+    $html .= "<li class='page-item{$prevDisabled}'><a class='page-link' href='" . $buildUrl($pagination['current_page'] - 1) . "'><i class='fas fa-chevron-left'></i></a></li>";
+
     // Page numbers
     $start = max(1, $pagination['current_page'] - 2);
     $end = min($pagination['total_pages'], $pagination['current_page'] + 2);
-    
+
     if ($start > 1) {
-        $html .= "<li class='page-item'><a class='page-link' href='{$baseUrl}?page=1'>1</a></li>";
+        $html .= "<li class='page-item'><a class='page-link' href='" . $buildUrl(1) . "'>1</a></li>";
         if ($start > 2) $html .= "<li class='page-item disabled'><span class='page-link'>...</span></li>";
     }
-    
+
     for ($i = $start; $i <= $end; $i++) {
         $active = $i === $pagination['current_page'] ? ' active' : '';
-        $html .= "<li class='page-item{$active}'><a class='page-link' href='{$baseUrl}?page={$i}'>{$i}</a></li>";
+        $html .= "<li class='page-item{$active}'><a class='page-link' href='" . $buildUrl($i) . "'>{$i}</a></li>";
     }
-    
+
     if ($end < $pagination['total_pages']) {
         if ($end < $pagination['total_pages'] - 1) $html .= "<li class='page-item disabled'><span class='page-link'>...</span></li>";
-        $html .= "<li class='page-item'><a class='page-link' href='{$baseUrl}?page={$pagination['total_pages']}'>{$pagination['total_pages']}</a></li>";
+        $html .= "<li class='page-item'><a class='page-link' href='" . $buildUrl($pagination['total_pages']) . "'>{$pagination['total_pages']}</a></li>";
     }
-    
+
     // Next
     $nextDisabled = $pagination['has_next'] ? '' : ' disabled';
-    $nextPage = $pagination['current_page'] + 1;
-    $html .= "<li class='page-item{$nextDisabled}'><a class='page-link' href='{$baseUrl}?page={$nextPage}'><i class='fas fa-chevron-right'></i></a></li>";
-    
+    $html .= "<li class='page-item{$nextDisabled}'><a class='page-link' href='" . $buildUrl($pagination['current_page'] + 1) . "'><i class='fas fa-chevron-right'></i></a></li>";
+
     $html .= '</ul></nav>';
     return $html;
 }
