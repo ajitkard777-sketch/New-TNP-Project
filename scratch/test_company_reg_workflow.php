@@ -82,7 +82,7 @@ echo "  To Email (user.email / HR email): {$targetEmail}\n";
 echo "  To Name (company_name):           {$targetName}\n";
 echo "  Sending OTP: {$otp}...\n";
 
-$sent = Mailer::sendOTP($targetEmail, $targetName, $otp);
+$sent = Mailer::sendOtpVerification($targetEmail, $targetName, $otp);
 if ($sent) {
     echo "  Delivery Status: PASS ✓ Email delivered via SMTP\n\n";
 } else {
