@@ -16,7 +16,7 @@ class StudentController {
         $this->studentModel = new Student();
         $this->userModel = new User();
         $this->db = Database::getInstance();
-        $this->student = $this->studentModel->findByUserId($_SESSION['user_id']);
+        $this->student = isset($_SESSION['user_id']) ? $this->studentModel->findByUserId((int)$_SESSION['user_id']) : null;
     }
 
     public function dashboard(): void {

@@ -16,7 +16,7 @@ class CompanyController {
         $this->companyModel = new Company();
         $this->jobModel = new Job();
         $this->db = Database::getInstance();
-        $this->company = $this->companyModel->findByUserId($_SESSION['user_id']);
+        $this->company = isset($_SESSION['user_id']) ? $this->companyModel->findByUserId((int)$_SESSION['user_id']) : null;
     }
 
     public function dashboard(): void {

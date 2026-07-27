@@ -99,6 +99,15 @@ class User {
     }
 
     /**
+     * Generate & Save 6-digit OTP
+     */
+    public function generateAndSaveOTP(int $userId): string {
+        $otp = sprintf('%06d', random_int(100000, 999999));
+        $this->setOTP($userId, $otp);
+        return $otp;
+    }
+
+    /**
      * Set OTP for user
      */
     public function setOTP(int $id, string $otp): void {

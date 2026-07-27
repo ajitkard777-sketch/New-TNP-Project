@@ -1,5 +1,5 @@
 RewriteEngine On
-RewriteBase "/Internship Project/New-TNP-Project/"
+RewriteBase /team1/
 
 # Redirect to HTTPS (uncomment in production)
 # RewriteCond %{HTTPS} off

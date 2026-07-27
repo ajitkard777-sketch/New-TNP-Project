@@ -6,6 +6,7 @@
  */
 
 require_once ROOT_PATH . '/includes/helpers.php';
+require_once ROOT_PATH . '/middleware/AuthMiddleware.php';
 require_once ROOT_PATH . '/models/Message.php';
 require_once ROOT_PATH . '/models/Student.php';
 require_once ROOT_PATH . '/models/Company.php';
