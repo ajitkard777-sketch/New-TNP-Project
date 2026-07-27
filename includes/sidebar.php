@@ -14,12 +14,14 @@ if ($currentRole === 'student') {
             ['icon' => 'fas fa-user-circle', 'label' => 'My Profile', 'url' => '/student/profile', 'key' => 'profile'],
         ],
         'CAREER' => [
+            ['icon' => 'fas fa-magic', 'label' => 'AI Recommendations', 'url' => '/student/recommendations', 'key' => 'recommendations'],
             ['icon' => 'fas fa-briefcase', 'label' => 'Browse Jobs', 'url' => '/student/jobs', 'key' => 'jobs'],
             ['icon' => 'fas fa-paper-plane', 'label' => 'My Applications', 'url' => '/student/applications', 'key' => 'applications'],
             ['icon' => 'fas fa-bookmark', 'label' => 'Bookmarks', 'url' => '/student/bookmarks', 'key' => 'bookmarks'],
             ['icon' => 'fas fa-calendar-check', 'label' => 'Interviews', 'url' => '/student/interviews', 'key' => 'interviews'],
         ],
         'DEVELOPMENT' => [
+            ['icon' => 'fas fa-brain', 'label' => 'Skill Gap Analysis', 'url' => '/student/skill-gap', 'key' => 'skill-gap'],
             ['icon' => 'fas fa-chalkboard-teacher', 'label' => 'Trainings', 'url' => '/student/trainings', 'key' => 'trainings'],
             ['icon' => 'fas fa-graduation-cap', 'label' => 'Higher Studies', 'url' => '/student/higher-studies', 'key' => 'higher-studies'],
         ],
@@ -51,6 +53,7 @@ if ($currentRole === 'admin') {
     $sidebarMenus = [
         'OVERVIEW' => [
             ['icon' => 'fas fa-th-large', 'label' => 'Dashboard', 'url' => '/admin/dashboard', 'key' => 'dashboard'],
+            ['icon' => 'fas fa-robot', 'label' => 'AI Analytics', 'url' => '/admin/recommendation-analytics', 'key' => 'recommendation-analytics'],
             ['icon' => 'fas fa-chart-line', 'label' => 'Reports & Analytics', 'url' => '/admin/reports', 'key' => 'reports'],
         ],
         'DIRECTORY' => [

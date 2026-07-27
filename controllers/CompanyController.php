@@ -140,7 +140,17 @@ class CompanyController {
         redirect('/company/jobs');
     }
 
-    public function viewApplications($jobId): void {
+    public function viewApplications($jobId = null): void {
+        if (!$jobId) {
+            $firstJobId = $this->db->fetchColumn("SELECT id FROM jobs WHERE company_id = ? ORDER BY created_at DESC LIMIT 1", [$this->company['id']]);
+            if ($firstJobId) {
+                redirect('/company/applications/' . $firstJobId);
+                return;
+            }
+            setFlash('info', 'Please post a job first to view applications.');
+            redirect('/company/jobs');
+            return;
+        }
         $job = $this->db->fetchOne("SELECT * FROM jobs WHERE id = ? AND company_id = ?", [$jobId, $this->company['id']]);
         if (!$job) { setFlash('danger', 'Job not found.'); redirect('/company/jobs'); return; }
         $company = $this->company;
@@ -186,15 +196,30 @@ class CompanyController {
         if (!$app || $app['company_id'] != $this->company['id']) { setFlash('danger', 'Not found.'); redirect('/company/jobs'); return; }
 
         $data = sanitizeArray($_POST);
-        $this->db->insert("INSERT INTO interviews (student_id, company_id, job_id, round, interview_date, interview_time, mode, venue, meeting_link, instructions, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'scheduled')",
-            [$app['student_id'], $this->company['id'], $app['job_id'], $data['round'] ?? 'Round 1', $data['interview_date'], $data['interview_time'], $data['mode'] ?? 'offline', $data['venue'] ?? null, $data['meeting_link'] ?? null, $data['instructions'] ?? null]);
+        // Map form fields to actual DB columns
+        $round  = $data['round'] ?? 'Round 1';
+        $idate  = $data['interview_date'] ?? date('Y-m-d');
+        $itime  = $data['interview_time'] ?? '10:00:00';
+        $mode   = in_array($data['mode'] ?? 'offline', ['online', 'offline']) ? ($data['mode'] ?? 'offline') : 'offline';
+
+        try {
+            $this->db->insert(
+                "INSERT INTO interviews (student_id, company_id, job_id, round, interview_date, interview_time, mode, venue, meeting_link, instructions, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'scheduled')",
+                [$app['student_id'], $this->company['id'], $app['job_id'], $round, $idate, $itime, $mode, $data['venue'] ?? null, $data['meeting_link'] ?? null, $data['instructions'] ?? null]
+            );
+        } catch (Exception $e) {
+            error_log('[CompanyController::scheduleInterview] ' . $e->getMessage());
+            setFlash('danger', 'Interview scheduling failed: ' . $e->getMessage());
+            redirect('/company/applications/' . $app['job_id']);
+            return;
+        }
 
         $this->jobModel->updateApplicationStatus($appId, 'interview');
 
         $student = $this->db->fetchOne("SELECT user_id FROM students WHERE id = ?", [$app['student_id']]);
         if ($student) {
             $this->db->insert("INSERT INTO notifications (user_id, title, message, type, category) VALUES (?, ?, ?, ?, ?)",
-                [$student['user_id'], 'Interview Scheduled', "Interview for your application on " . formatDate($data['interview_date']), 'info', 'interview']);
+                [$student['user_id'], 'Interview Scheduled', "Interview for your application on " . formatDate($idate) . " at " . date('h:i A', strtotime($itime)), 'info', 'interview']);
         }
 
         setFlash('success', 'Interview scheduled!');
@@ -203,8 +228,35 @@ class CompanyController {
 
     public function interviews(): void {
         $company = $this->company;
-        $pageTitle = 'Interviews';
-        $interviews = $this->db->fetchAll("SELECT i.*, j.title as job_title, s.first_name, s.last_name, s.branch FROM interviews i JOIN jobs j ON i.job_id = j.id JOIN students s ON i.student_id = s.id WHERE i.company_id = ? ORDER BY i.interview_date DESC", [$company['id']]);
+        $pageTitle = 'Interview Scheduler';
+
+        // Stats
+        $totalInterviews = (int)$this->db->fetchColumn("SELECT COUNT(*) FROM interviews WHERE company_id = ?", [$company['id']]);
+        $todayInterviews = (int)$this->db->fetchColumn("SELECT COUNT(*) FROM interviews WHERE company_id = ? AND interview_date = CURDATE() AND status != 'cancelled'", [$company['id']]);
+        $upcomingInterviews = (int)$this->db->fetchColumn("SELECT COUNT(*) FROM interviews WHERE company_id = ? AND interview_date > CURDATE() AND status != 'cancelled'", [$company['id']]);
+        $completedInterviews = (int)$this->db->fetchColumn("SELECT COUNT(*) FROM interviews WHERE company_id = ? AND status IN ('completed', 'selected', 'rejected')", [$company['id']]);
+        $cancelledInterviews = (int)$this->db->fetchColumn("SELECT COUNT(*) FROM interviews WHERE company_id = ? AND status = 'cancelled'", [$company['id']]);
+
+        // Jobs posted by company
+        $jobs = $this->jobModel->getByCompany($company['id']);
+
+        // All interviews — ORDER BY uses actual column `interview_time`
+        try {
+            $interviews = $this->db->fetchAll(
+                "SELECT i.*, j.title as job_title, s.first_name, s.last_name, s.enrollment_no, s.branch, s.cgpa, s.skills, s.profile_photo, s.resume_path
+                 FROM interviews i
+                 JOIN jobs j ON i.job_id = j.id
+                 JOIN students s ON i.student_id = s.id
+                 WHERE i.company_id = ?
+                 ORDER BY i.interview_date DESC, i.interview_time DESC",
+                [$company['id']]
+            );
+        } catch (Exception $e) {
+            error_log('[CompanyController::interviews] ' . $e->getMessage());
+            $interviews = [];
+            setFlash('danger', 'Failed to load interviews: ' . $e->getMessage());
+        }
+
         require_once VIEWS_PATH . '/company/interviews.php';
     }
 
@@ -231,25 +283,34 @@ class CompanyController {
         $interview = $this->db->fetchOne("SELECT * FROM interviews WHERE id = ? AND company_id = ?", [$id, $this->company['id']]);
         if (!$interview) { setFlash('danger', 'Interview not found.'); redirect('/company/interviews'); return; }
 
-        $data = sanitizeArray($_POST);
-        $this->db->update(
-            "UPDATE interviews SET round = ?, interview_date = ?, interview_time = ?, mode = ?, venue = ?, meeting_link = ?, instructions = ?, status = 'rescheduled' WHERE id = ?",
-            [
-                $data['round'] ?? $interview['round'],
-                $data['interview_date'] ?? $interview['interview_date'],
-                $data['interview_time'] ?? $interview['interview_time'],
-                $data['mode'] ?? $interview['mode'],
-                $data['venue'] ?? null,
-                $data['meeting_link'] ?? null,
-                $data['instructions'] ?? null,
-                $id
-            ]
-        );
+        $data   = sanitizeArray($_POST);
+        $idate  = $data['interview_date'] ?? $interview['interview_date'];
+        $itime  = $data['interview_time'] ?? $interview['interview_time'];
+        $mode   = in_array($data['mode'] ?? '', ['online','offline']) ? $data['mode'] : $interview['mode'];
+
+        try {
+            $this->db->update(
+                "UPDATE interviews SET round = ?, interview_date = ?, interview_time = ?, mode = ?, venue = ?, meeting_link = ?, instructions = ?, status = 'rescheduled' WHERE id = ?",
+                [
+                    $data['round'] ?? $interview['round'],
+                    $idate, $itime, $mode,
+                    $data['venue'] ?? null,
+                    $data['meeting_link'] ?? null,
+                    $data['instructions'] ?? null,
+                    $id
+                ]
+            );
+        } catch (Exception $e) {
+            error_log('[CompanyController::updateInterview] ' . $e->getMessage());
+            setFlash('danger', 'Reschedule failed: ' . $e->getMessage());
+            redirect('/company/interviews');
+            return;
+        }
 
         $student = $this->db->fetchOne("SELECT user_id FROM students WHERE id = ?", [$interview['student_id']]);
         if ($student) {
             $this->db->insert("INSERT INTO notifications (user_id, title, message, type, category) VALUES (?, ?, ?, ?, ?)",
-                [$student['user_id'], 'Interview Rescheduled', "Your interview has been rescheduled for " . formatDate($data['interview_date']) . " at " . date('h:i A', strtotime($data['interview_time'])), 'info', 'interview']);
+                [$student['user_id'], 'Interview Rescheduled', "Your interview has been rescheduled for " . formatDate($idate) . " at " . date('h:i A', strtotime($itime)), 'info', 'interview']);
         }
 
         setFlash('success', 'Interview rescheduled successfully.');
@@ -271,5 +332,15 @@ class CompanyController {
 
         setFlash('success', 'Interview cancelled.');
         redirect('/company/interviews');
+    }
+
+    public function notifications(): void {
+        $company = $this->company;
+        $pageTitle = 'Notifications';
+        $notifications = $this->db->fetchAll(
+            "SELECT * FROM notifications WHERE user_id = ? OR is_global = 1 ORDER BY created_at DESC LIMIT 50",
+            [$_SESSION['user_id']]
+        );
+        require_once VIEWS_PATH . '/company/notifications.php';
     }
 }

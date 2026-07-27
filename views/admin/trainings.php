@@ -30,9 +30,11 @@
             <div class="col-md-4"><label class="form-label">Type</label><select class="form-select" name="training_type"><option value="technical">Technical</option><option value="soft-skills">Soft Skills</option><option value="aptitude">Aptitude</option><option value="workshop">Workshop</option></select></div>
             <div class="col-12"><label class="form-label">Description</label><textarea class="form-control" name="description" rows="2"></textarea></div>
             <div class="col-md-4"><label class="form-label">Mode</label><select class="form-select" name="mode"><option value="offline">Offline</option><option value="online">Online</option><option value="hybrid">Hybrid</option></select></div>
-            <div class="col-md-4"><label class="form-label">Venue</label><input type="text" class="form-control" name="venue"></div>
+            <div class="col-md-4"><label class="form-label">Platform Name</label><input type="text" class="form-control" name="platform_name" placeholder="e.g. Zoom, Google Meet, MS Teams"></div>
+            <div class="col-md-4"><label class="form-label">Online Training Link</label><input type="url" class="form-control" name="training_link" placeholder="https://meet.google.com/xyz..."></div>
+            <div class="col-md-4"><label class="form-label">Venue (if offline/hybrid)</label><input type="text" class="form-control" name="venue"></div>
             <div class="col-md-4"><label class="form-label">Capacity</label><input type="number" class="form-control" name="capacity" value="50" min="1"></div>
-            <div class="col-md-6"><label class="form-label">Trainer Name</label><input type="text" class="form-control" name="trainer_name"></div>
+            <div class="col-md-4"><label class="form-label">Trainer Name</label><input type="text" class="form-control" name="trainer_name"></div>
             <div class="col-md-6"><label class="form-label">Faculty</label><select class="form-select" name="faculty_id"><option value="">None</option><?php foreach ($faculty as $f): ?><option value="<?= $f['id'] ?>"><?= htmlspecialchars($f['name']) ?></option><?php endforeach; ?></select></div>
             <div class="col-md-3"><label class="form-label">Start Date *</label><input type="date" class="form-control" name="start_date" required></div>
             <div class="col-md-3"><label class="form-label">End Date *</label><input type="date" class="form-control" name="end_date" required></div>

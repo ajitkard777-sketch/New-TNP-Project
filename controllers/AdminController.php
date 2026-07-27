@@ -32,6 +32,7 @@ class AdminController {
         $totalJobs = $this->jobModel->getTotalCount();
         $activeJobs = $this->jobModel->getActiveCount();
         $totalApplications = (int)$this->db->fetchColumn("SELECT COUNT(*) FROM applications");
+        $higherStudiesCount = (int)$this->db->fetchColumn("SELECT COUNT(*) FROM higher_study_applications");
         $highestPackage = $this->studentModel->getHighestPackage();
         $averagePackage = $this->studentModel->getAveragePackage();
         $totalPlacements = (int)$this->db->fetchColumn("SELECT COUNT(*) FROM placements");
@@ -172,6 +173,11 @@ class AdminController {
             // Global notification for students
             $this->db->insert("INSERT INTO notifications (user_id, title, message, type, category, is_global) VALUES (NULL, ?, ?, ?, ?, 1)",
                 ['New Job: ' . $job['title'], $job['company_name'] . ' is hiring for ' . $job['title'], 'info', 'job']);
+
+            // Auto-trigger recommendation generation for new active job
+            require_once ROOT_PATH . '/models/RecommendationEngine.php';
+            $recEngine = new RecommendationEngine();
+            $recEngine->generateForAllStudents();
         }
         setFlash('success', 'Job approved and live!');
         redirect('/admin/jobs');
@@ -212,9 +218,9 @@ class AdminController {
     public function createTraining(): void {
         CsrfMiddleware::requireValidToken();
         $data = sanitizeArray($_POST);
-        $this->db->insert("INSERT INTO trainings (title, description, training_type, mode, venue, trainer_name, start_date, end_date, start_time, end_time, capacity, faculty_id, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            [$data['title'], $data['description'] ?? '', $data['training_type'] ?? 'technical', $data['mode'] ?? 'offline', $data['venue'] ?? '', $data['trainer_name'] ?? '', $data['start_date'], $data['end_date'], $data['start_time'] ?? null, $data['end_time'] ?? null, $data['capacity'] ?? 50, $data['faculty_id'] ?: null, $data['status'] ?? 'upcoming']);
-        setFlash('success', 'Training created!');
+        $this->db->insert("INSERT INTO trainings (title, description, training_type, mode, platform_name, training_link, venue, trainer_name, start_date, end_date, start_time, end_time, capacity, faculty_id, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            [$data['title'], $data['description'] ?? '', $data['training_type'] ?? 'technical', $data['mode'] ?? 'offline', $data['platform_name'] ?? null, $data['training_link'] ?? null, $data['venue'] ?? '', $data['trainer_name'] ?? '', $data['start_date'], $data['end_date'], $data['start_time'] ?? null, $data['end_time'] ?? null, $data['capacity'] ?? 50, $data['faculty_id'] ?: null, $data['status'] ?? 'upcoming']);
+        setFlash('success', 'Training created successfully!');
         redirect('/admin/trainings');
     }
 
@@ -226,11 +232,32 @@ class AdminController {
 
     // ============ Higher Studies ============
     public function higherStudies(): void {
-        $pageTitle = 'Higher Studies';
+        $pageTitle = 'Higher Studies Management';
+        $applications = $this->db->fetchAll(
+            "SELECT hsa.*, s.first_name, s.last_name, s.branch, s.cgpa, u.name as legacy_univ_name, c.name as legacy_course_name
+             FROM higher_study_applications hsa
+             JOIN students s ON hsa.student_id = s.id
+             LEFT JOIN universities u ON hsa.university_id = u.id
+             LEFT JOIN courses c ON hsa.course_id = c.id
+             ORDER BY hsa.created_at DESC"
+        );
         $universities = $this->db->fetchAll("SELECT * FROM universities ORDER BY ranking ASC");
         $exams = $this->db->fetchAll("SELECT * FROM entrance_exams ORDER BY exam_date ASC");
         $scholarships = $this->db->fetchAll("SELECT * FROM scholarships ORDER BY created_at DESC");
         require_once VIEWS_PATH . '/admin/higher-studies.php';
+    }
+
+    public function updateHigherStudyStatus($id): void {
+        CsrfMiddleware::requireValidToken();
+        $status = sanitize($_POST['status'] ?? '');
+        $allowedStatus = ['interested', 'applied', 'accepted', 'rejected', 'enrolled'];
+        if (in_array($status, $allowedStatus)) {
+            $this->db->update("UPDATE higher_study_applications SET status = ? WHERE id = ?", [$status, $id]);
+            setFlash('success', 'Higher Studies application status updated to ' . ucfirst($status) . '.');
+        } else {
+            setFlash('danger', 'Invalid status.');
+        }
+        redirect('/admin/higher-studies');
     }
 
     public function createUniversity(): void {

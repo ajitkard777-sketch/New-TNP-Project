@@ -38,6 +38,25 @@ class Mailer {
     }
 
     /**
+     * Send OTP Verification email
+     */
+    public static function sendOtpVerification(string $toEmail, string $toName, string $otpCode): bool {
+        try {
+            $mail = self::create();
+            $mail->addAddress($toEmail, $toName);
+            $mail->Subject = "{$otpCode} is your TPMS Verification Code";
+            $mail->Body    = self::otpTemplate($toName, $otpCode);
+            $mail->AltBody = "Hi {$toName},\n\nYour OTP verification code for TPMS is: {$otpCode}\n\nThis code will expire in 10 minutes. Do not share this OTP with anyone.\n\n- TPMS Team";
+
+            $mail->send();
+            return true;
+        } catch (Exception $e) {
+            error_log('Mailer Error (sendOtpVerification): ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
      * Send password reset email
      *
      * @param string $toEmail  Recipient email
@@ -219,6 +238,75 @@ HTML;
           </tr>
           <tr>
             <td style="background:#f9fafb;border-top:1px solid #e5e7eb;padding:24px 40px;text-align:center;">
+              <p style="margin:0;font-size:12px;color:#9ca3af;">© {$year} TPMS. All rights reserved.</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+HTML;
+    }
+
+    /**
+     * HTML template for OTP Verification email
+     */
+    private static function otpTemplate(string $name, string $otpCode): string {
+        $appName = APP_FULL_NAME;
+        $year    = date('Y');
+
+        return <<<HTML
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Email Verification Code</title>
+</head>
+<body style="margin:0;padding:0;background:#f0f4ff;font-family:'Segoe UI',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f0f4ff;padding:40px 0;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 30px rgba(0,0,0,0.08);">
+          <tr>
+            <td style="background:linear-gradient(135deg,#4f46e5,#7c3aed);padding:40px;text-align:center;">
+              <div style="width:60px;height:60px;background:rgba(255,255,255,0.15);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;margin-bottom:16px;">
+                <span style="font-size:26px;">🔐</span>
+              </div>
+              <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:700;">Email Verification Code</h1>
+              <p style="margin:8px 0 0;color:rgba(255,255,255,0.85);font-size:14px;">{$appName}</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:40px;text-align:center;">
+              <p style="margin:0 0 16px;font-size:16px;color:#374151;text-align:left;">Hi <strong>{$name}</strong>,</p>
+              <p style="margin:0 0 24px;font-size:15px;color:#6b7280;line-height:1.7;text-align:left;">
+                Thank you for registering with TPMS. Please use the following 6-digit verification code to complete your registration:
+              </p>
+
+              <!-- OTP Code Display -->
+              <div style="margin:30px 0;padding:20px;background:#f3f4f6;border-radius:12px;border:2px dashed #6366f1;">
+                <span style="font-size:36px;font-weight:800;letter-spacing:12px;color:#4f46e5;font-family:'Courier New',Courier,monospace;">{$otpCode}</span>
+              </div>
+
+              <!-- Warning & Details -->
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="background:#fef3c7;border-left:4px solid #f59e0b;border-radius:8px;padding:16px 20px;text-align:left;">
+                    <p style="margin:0;font-size:13px;color:#92400e;line-height:1.6;">
+                      ⏰ &nbsp;<strong>This code will expire in 10 minutes.</strong><br>
+                      If you did not request this verification code, please ignore this email or contact system administration.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="background:#f9fafb;border-top:1px solid #e5e7eb;padding:24px 40px;text-align:center;">
+              <p style="margin:0 0 4px;font-size:13px;color:#6b7280;">This email was sent by <strong>TPMS</strong> — {$appName}</p>
               <p style="margin:0;font-size:12px;color:#9ca3af;">© {$year} TPMS. All rights reserved.</p>
             </td>
           </tr>

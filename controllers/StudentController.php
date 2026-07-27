@@ -97,6 +97,8 @@ class StudentController {
             'backlogs' => $data['backlogs'] ?? 0,
             'active_backlogs' => $data['active_backlogs'] ?? 0,
             'skills' => $data['skills'] ?? null,
+            'preferred_location' => $data['preferred_location'] ?? null,
+            'experience_years' => $data['experience_years'] ?? 0,
             'bio' => $data['bio'] ?? null,
             'linkedin' => $data['linkedin'] ?? null,
             'github' => $data['github'] ?? null,
@@ -112,6 +114,16 @@ class StudentController {
 
         $this->studentModel->updateByUserId($_SESSION['user_id'], $updateData);
         $this->studentModel->updateProfileCompletion($this->student['id']);
+        
+        // Auto-recalculate recommendations & skill gap on profile update
+        require_once ROOT_PATH . '/models/RecommendationEngine.php';
+        $recEngine = new RecommendationEngine();
+        $recEngine->generateForStudent($this->student['id']);
+
+        require_once ROOT_PATH . '/models/SkillGapEngine.php';
+        $sgEngine = new SkillGapEngine();
+        $sgEngine->analyzeStudentSkillGap($this->student['id']);
+
         logActivity('update_profile', 'student', 'Student updated profile');
         setFlash('success', 'Profile updated successfully!');
         redirect('/student/profile');
@@ -277,29 +289,62 @@ class StudentController {
         $search = sanitize($_GET['search'] ?? '');
         $type = sanitize($_GET['type'] ?? '');
         $location = sanitize($_GET['location'] ?? '');
+        $company = sanitize($_GET['company'] ?? '');
+        $package = sanitize($_GET['package'] ?? '');
+        $workMode = sanitize($_GET['work_mode'] ?? '');
         $page = max(1, (int)($_GET['page'] ?? 1));
 
         $where = "j.status = 'active' AND (j.application_deadline IS NULL OR j.application_deadline >= CURDATE()) AND c.is_approved = 1";
         $params = [];
 
-        if ($search) { $where .= " AND (j.title LIKE ? OR c.company_name LIKE ? OR j.skills_required LIKE ?)"; $params = array_merge($params, ["%$search%", "%$search%", "%$search%"]); }
+        if ($search) {
+            // Smart Skill & Keyword Search: split by commas or spaces for multi-skill search
+            $keywords = array_filter(array_map('trim', preg_split('/[\s,]+/', $search)));
+            $searchConditions = [];
+            foreach ($keywords as $kw) {
+                if (empty($kw)) continue;
+                $searchConditions[] = "(j.skills_required LIKE ? OR j.title LIKE ? OR c.company_name LIKE ? OR j.description LIKE ?)";
+                $params = array_merge($params, ["%$kw%", "%$kw%", "%$kw%", "%$kw%"]);
+            }
+            if (!empty($searchConditions)) {
+                $where .= " AND (" . implode(" OR ", $searchConditions) . ")";
+            }
+        }
+
         if ($type) { $where .= " AND j.job_type = ?"; $params[] = $type; }
-        if ($location) { $where .= " AND j.location LIKE ?"; $params[] = "%$location%"; }
+        if ($location) { $where .= " AND (j.location LIKE ? OR j.work_mode LIKE ?)"; $params[] = "%$location%"; $params[] = "%$location%"; }
+        if ($company) { $where .= " AND c.company_name LIKE ?"; $params[] = "%$company%"; }
+        if ($workMode) { $where .= " AND j.work_mode = ?"; $params[] = $workMode; }
+        if ($package) { $where .= " AND (j.salary_max >= ? OR j.salary_min >= ?)"; $params[] = (float)$package; $params[] = (float)$package; }
 
         $totalJobs = (int)$this->db->fetchColumn("SELECT COUNT(*) FROM jobs j JOIN companies c ON j.company_id = c.id WHERE $where", $params);
         $pagination = getPagination($totalJobs, $page);
 
-        $params[] = $pagination['per_page'];
-        $params[] = $pagination['offset'];
+        $fetchParams = array_merge([$student['id'], $student['id'], $student['id']], $params, [$pagination['per_page'], $pagination['offset']]);
 
         $jobs = $this->db->fetchAll(
             "SELECT j.*, c.company_name, c.logo, c.city as company_city,
              (SELECT COUNT(*) FROM applications a WHERE a.job_id = j.id) as application_count,
              (SELECT COUNT(*) FROM applications a WHERE a.job_id = j.id AND a.student_id = ?) as has_applied,
+             (SELECT COUNT(*) FROM saved_jobs sj WHERE sj.job_id = j.id AND sj.student_id = ?) as is_saved,
              (SELECT COUNT(*) FROM bookmarks b WHERE b.job_id = j.id AND b.student_id = ?) as is_bookmarked
              FROM jobs j JOIN companies c ON j.company_id = c.id WHERE $where ORDER BY j.created_at DESC LIMIT ? OFFSET ?",
-            array_merge([$student['id'], $student['id']], $params)
+            $fetchParams
         );
+
+        // Attach Recommendation Engine Scoring, Matched & Missing Skills
+        require_once ROOT_PATH . '/models/RecommendationEngine.php';
+        $recEngine = new RecommendationEngine();
+        $studentFull = $this->studentModel->findById($student['id']);
+
+        foreach ($jobs as &$job) {
+            $rec = $recEngine->calculateRecommendation($studentFull ?: $student, $job);
+            $job['recommendation_score'] = $rec['recommendation_score'];
+            $job['recommendation_level'] = $rec['recommendation_level'];
+            $job['matched_skills'] = $rec['matched_skills'];
+            $job['missing_skills'] = $rec['missing_skills'];
+            $job['is_bookmarked'] = ($job['is_saved'] || $job['is_bookmarked']) ? 1 : 0;
+        }
 
         require_once VIEWS_PATH . '/student/jobs.php';
     }
@@ -330,7 +375,7 @@ class StudentController {
             setFlash('danger', 'You have more active backlogs than allowed.'); redirect('/student/jobs'); return;
         }
 
-        $this->db->insert("INSERT INTO applications (student_id, job_id, status, resume_snapshot) VALUES (?, ?, 'applied', ?)",
+        $appId = $this->db->insert("INSERT INTO applications (student_id, job_id, status, resume_snapshot) VALUES (?, ?, 'applied', ?)",
             [$this->student['id'], $jobId, $this->student['resume_path']]);
 
         // Notification
@@ -338,9 +383,14 @@ class StudentController {
             [$_SESSION['user_id'], 'Application Submitted', "You have successfully applied for {$job['title']}.", 'success', 'job']);
 
         logActivity('apply_job', 'application', "Applied for job: {$job['title']}");
-        if (isAjax()) { jsonResponse(['success' => true, 'message' => 'Application submitted successfully!']); }
+        if (isAjax()) { 
+            jsonResponse([
+                'success' => true, 
+                'message' => 'Application submitted successfully!'
+            ]); 
+        }
         setFlash('success', 'Application submitted successfully!');
-        redirect('/student/jobs');
+        redirect('/student/applications');
     }
 
     public function withdrawApplication($appId): void {
@@ -354,7 +404,7 @@ class StudentController {
         $pageTitle = 'My Applications';
         $student = $this->student;
         $applications = $this->db->fetchAll(
-            "SELECT a.*, j.title as job_title, j.salary_min, j.salary_max, j.location, j.job_type, c.company_name, c.logo
+            "SELECT a.*, j.title as job_title, j.salary_min, j.salary_max, j.location, j.work_mode, j.job_type, c.company_name, c.logo
              FROM applications a JOIN jobs j ON a.job_id = j.id JOIN companies c ON j.company_id = c.id
              WHERE a.student_id = ? ORDER BY a.applied_at DESC",
             [$student['id']]
@@ -372,7 +422,7 @@ class StudentController {
             [$student['id']]
         );
         $myTrainings = $this->db->fetchAll(
-            "SELECT tr.*, t.title, t.start_date, t.end_date, t.status as training_status, t.trainer_name
+            "SELECT tr.*, tr.status as reg_status, t.title, t.mode, t.platform_name, t.training_link, t.start_date, t.end_date, t.status as training_status, t.trainer_name, t.venue
              FROM training_registrations tr JOIN trainings t ON tr.training_id = t.id WHERE tr.student_id = ? ORDER BY t.start_date DESC",
             [$student['id']]
         );
@@ -401,8 +451,10 @@ class StudentController {
         $exams = $this->db->fetchAll("SELECT * FROM entrance_exams WHERE status = 'active' ORDER BY exam_date ASC");
         $scholarships = $this->db->fetchAll("SELECT * FROM scholarships WHERE status = 'active' ORDER BY application_deadline ASC");
         $myApplications = $this->db->fetchAll(
-            "SELECT hsa.*, u.name as university_name, u.country, c.name as course_name
-             FROM higher_study_applications hsa JOIN universities u ON hsa.university_id = u.id LEFT JOIN courses c ON hsa.course_id = c.id
+            "SELECT hsa.*, u.name as legacy_univ_name, c.name as legacy_course_name
+             FROM higher_study_applications hsa
+             LEFT JOIN universities u ON hsa.university_id = u.id
+             LEFT JOIN courses c ON hsa.course_id = c.id
              WHERE hsa.student_id = ? ORDER BY hsa.created_at DESC",
             [$student['id']]
         );
@@ -412,9 +464,26 @@ class StudentController {
     public function registerHigherStudy(): void {
         CsrfMiddleware::requireValidToken();
         $data = sanitizeArray($_POST);
-        $this->db->insert("INSERT INTO higher_study_applications (student_id, university_id, course_id, exam_score, status, notes) VALUES (?, ?, ?, ?, 'interested', ?)",
-            [$this->student['id'], $data['university_id'], $data['course_id'] ?: null, $data['exam_score'] ?? null, $data['notes'] ?? null]);
-        setFlash('success', 'Interest registered successfully!');
+        $careerOption = $data['career_option'] ?? 'Other';
+        $preferredCourse = $data['preferred_course'] ?? '';
+        $preferredUniversity = $data['preferred_university'] ?? '';
+        $examScore = $data['exam_score'] ?? null;
+        $notes = $data['notes'] ?? null;
+
+        $this->db->insert(
+            "INSERT INTO higher_study_applications (student_id, career_option, preferred_course, preferred_university, university_name, exam_score, status, notes) VALUES (?, ?, ?, ?, ?, ?, 'applied', ?)",
+            [
+                $this->student['id'],
+                $careerOption,
+                $preferredCourse,
+                $preferredUniversity,
+                $preferredUniversity ?: 'Not Specified',
+                $examScore,
+                $notes
+            ]
+        );
+
+        setFlash('success', 'Higher Studies application submitted successfully!');
         redirect('/student/higher-studies');
     }
 

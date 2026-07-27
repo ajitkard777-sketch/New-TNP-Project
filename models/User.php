@@ -99,33 +99,99 @@ class User {
     }
 
     /**
-     * Set OTP
+     * Generate & Save cryptographically secure 6-digit OTP
+     */
+    public function generateAndSaveOTP(int $userId): string {
+        $otp = sprintf('%06d', random_int(100000, 999999));
+        $expiresAt = date('Y-m-d H:i:s', time() + 600); // 10 minutes
+        $now = date('Y-m-d H:i:s');
+
+        $this->db->update(
+            "UPDATE users SET otp = ?, otp_expires_at = ?, otp_last_sent_at = ?, otp_attempts = 0 WHERE id = ?",
+            [$otp, $expiresAt, $now, $userId]
+        );
+        return $otp;
+    }
+
+    /**
+     * Set OTP (legacy alias)
      */
     public function setOTP(int $id, string $otp): void {
-        $expiresAt = date('Y-m-d H:i:s', time() + OTP_EXPIRY);
+        $expiresAt = date('Y-m-d H:i:s', time() + 600); // 10 minutes
+        $now = date('Y-m-d H:i:s');
         $this->db->update(
-            "UPDATE users SET otp = ?, otp_expires_at = ? WHERE id = ?",
-            [$otp, $expiresAt, $id]
+            "UPDATE users SET otp = ?, otp_expires_at = ?, otp_last_sent_at = ?, otp_attempts = 0 WHERE id = ?",
+            [$otp, $expiresAt, $now, $id]
         );
     }
 
     /**
-     * Verify OTP
+     * Check if user can resend OTP (60s cooldown)
      */
-    public function verifyOTP(int $id, string $otp): bool {
-        $user = $this->db->fetchOne(
-            "SELECT otp, otp_expires_at FROM users WHERE id = ? AND otp = ? AND otp_expires_at > NOW()",
-            [$id, $otp]
-        );
-        
-        if ($user) {
-            $this->db->update(
-                "UPDATE users SET otp = NULL, otp_expires_at = NULL, email_verified = 1 WHERE id = ?",
-                [$id]
-            );
-            return true;
+    public function canResendOTP(int $userId): array {
+        $user = $this->findById($userId);
+        if (!$user) return ['allowed' => false, 'wait' => 0, 'message' => 'User not found.'];
+
+        if (!empty($user['otp_last_sent_at'])) {
+            $elapsed = time() - strtotime($user['otp_last_sent_at']);
+            if ($elapsed < 60) {
+                $wait = 60 - $elapsed;
+                return ['allowed' => false, 'wait' => $wait, 'message' => "Please wait {$wait} second(s) before requesting a new OTP."];
+            }
         }
-        return false;
+        return ['allowed' => true, 'wait' => 0];
+    }
+
+    /**
+     * Verify OTP with attempt limits, expiry checks, and role activation
+     */
+    public function verifyOTP(int $id, string $otp): array {
+        $user = $this->findById($id);
+        if (!$user) {
+            return ['success' => false, 'message' => 'User account not found.'];
+        }
+
+        if ((int)$user['email_verified'] === 1) {
+            return ['success' => true, 'already_verified' => true, 'user' => $user, 'message' => 'Email is already verified.'];
+        }
+
+        if ((int)$user['otp_attempts'] >= 5) {
+            return ['success' => false, 'message' => 'Too many failed attempts. Please click "Resend OTP" to generate a new code.'];
+        }
+
+        if (empty($user['otp']) || empty($user['otp_expires_at'])) {
+            return ['success' => false, 'message' => 'No active OTP found. Please click "Resend OTP".'];
+        }
+
+        if (strtotime($user['otp_expires_at']) < time()) {
+            return ['success' => false, 'message' => 'OTP has expired. Please click "Resend OTP" to generate a new code.'];
+        }
+
+        if ($user['otp'] !== trim($otp)) {
+            $newAttempts = (int)$user['otp_attempts'] + 1;
+            $this->db->update("UPDATE users SET otp_attempts = ? WHERE id = ?", [$newAttempts, $id]);
+            $remaining = max(0, 5 - $newAttempts);
+            $msg = ($remaining > 0)
+                ? "Invalid OTP code. {$remaining} attempt(s) remaining."
+                : "Invalid OTP code. Max attempts reached. Please click Resend OTP.";
+            return ['success' => false, 'message' => $msg];
+        }
+
+        // Verification Success!
+        $newStatus = ($user['role'] === 'student') ? 'active' : 'pending'; // Company stays pending for Admin approval
+        $this->db->update(
+            "UPDATE users SET otp = NULL, otp_expires_at = NULL, otp_attempts = 0, email_verified = 1, status = ? WHERE id = ?",
+            [$newStatus, $id]
+        );
+
+        $updatedUser = $this->findById($id);
+        return [
+            'success' => true,
+            'user' => $updatedUser,
+            'message' => ($user['role'] === 'company')
+                ? 'Email verified successfully! Your company account is awaiting admin approval.'
+                : 'Email verified successfully! Your account is now active.'
+        ];
     }
 
     /**

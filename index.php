@@ -33,7 +33,14 @@ $urlParts = $url ? explode('/', $url) : [];
 
 // API Routes
 if (isset($urlParts[0]) && $urlParts[0] === 'api') {
-    header('Content-Type: application/json');
+    $isBinaryRoute = (
+        (($urlParts[1] ?? '') === 'application' && ($urlParts[2] ?? '') === 'pdf') ||
+        (($urlParts[1] ?? '') === 'interview' && ($urlParts[2] ?? '') === 'pdf') ||
+        (($urlParts[1] ?? '') === 'admin' && ($urlParts[2] ?? '') === 'reports')
+    );
+    if (!$isBinaryRoute) {
+        header('Content-Type: application/json');
+    }
     if (($urlParts[1] ?? '') === 'theme' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $theme = sanitize($_POST['theme'] ?? 'light');
         $allowed = ['light', 'dark', 'blue', 'purple', 'emerald', 'sunset', 'midnight', 'glassmorphism'];
@@ -47,6 +54,121 @@ if (isset($urlParts[0]) && $urlParts[0] === 'api') {
             jsonResponse(['success' => true, 'theme' => $theme]);
             exit;
         }
+    } elseif (($urlParts[1] ?? '') === 'recommendations') {
+        require_once __DIR__ . '/controllers/RecommendationController.php';
+        $recController = new RecommendationController();
+        $subAction = $urlParts[2] ?? '';
+
+        if ($subAction === 'generate' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+            $recController->apiGenerateRecommendations();
+        } elseif ($subAction === 'top') {
+            $recController->apiGetTop();
+        } elseif ($subAction === 'history') {
+            $recController->apiGetHistory();
+        } elseif ($subAction === 'analytics') {
+            $recController->apiGetAnalytics();
+        } else {
+            $studentIdParam = is_numeric($subAction) ? (int)$subAction : null;
+            $recController->apiGetRecommendations($studentIdParam);
+        }
+        exit;
+    } elseif (($urlParts[1] ?? '') === 'saved-jobs') {
+        require_once __DIR__ . '/controllers/SavedJobController.php';
+        $savedController = new SavedJobController();
+        $param1 = $urlParts[2] ?? null;
+        $param2 = $urlParts[3] ?? null;
+        $method = $_SERVER['REQUEST_METHOD'];
+
+        if ($method === 'POST') {
+            $savedController->saveJob();
+        } elseif ($method === 'DELETE') {
+            $studentIdParam = is_numeric($param1) ? (int)$param1 : null;
+            $jobIdParam = is_numeric($param2) ? (int)$param2 : null;
+            $savedController->unsaveJob($studentIdParam, $jobIdParam);
+        } else {
+            $studentIdParam = is_numeric($param1) ? (int)$param1 : null;
+            $savedController->getSavedJobs($studentIdParam);
+        }
+        exit;
+    } elseif (($urlParts[1] ?? '') === 'chat') {
+        require_once __DIR__ . '/controllers/ChatController.php';
+        $chatController = new ChatController();
+        $sub = $urlParts[2] ?? '';
+
+        if ($sub === 'recommend') {
+            $chatController->getRecommendations();
+        } elseif ($sub === 'history') {
+            $chatController->getHistory();
+        } elseif ($sub === 'suggestions') {
+            $chatController->getSuggestions();
+        } else {
+            $chatController->sendMessage();
+        }
+        exit;
+    } elseif (($urlParts[1] ?? '') === 'skill-gap') {
+        require_once __DIR__ . '/controllers/SkillGapController.php';
+        $sgCtrl = new SkillGapController();
+        $sub = $urlParts[2] ?? '';
+
+        if ($sub === 'analyze') {
+            $sgCtrl->apiAnalyze();
+        } elseif ($sub === 'courses') {
+            $sgCtrl->apiGetCourses();
+        } elseif ($sub === 'progress') {
+            $sgCtrl->apiUpdateProgress();
+        } elseif ($sub === 'roadmap') {
+            $sgCtrl->apiGetRoadmap();
+        } else {
+            $studentIdParam = is_numeric($sub) ? (int)$sub : null;
+            $sgCtrl->apiGetSkillGap($studentIdParam);
+        }
+        exit;
+    } elseif (($urlParts[1] ?? '') === 'admin') {
+        require_once __DIR__ . '/controllers/AdminAssistantController.php';
+        $adminAst = new AdminAssistantController();
+        $sub = $urlParts[2] ?? '';
+
+        if ($sub === 'chat') {
+            $adminAst->chat();
+        } elseif ($sub === 'recommend-students') {
+            $adminAst->recommendStudents();
+        } elseif ($sub === 'analytics') {
+            $adminAst->analytics();
+        } elseif ($sub === 'reports') {
+            $adminAst->reports();
+        } elseif ($sub === 'eligible-students') {
+            $jobId = is_numeric($urlParts[3] ?? null) ? (int)$urlParts[3] : 0;
+            $adminAst->recommendStudents($jobId);
+        } elseif ($sub === 'notify-shortlist') {
+            $adminAst->notifyShortlist();
+        } else {
+            jsonResponse(['error' => 'Invalid admin API endpoint'], 400);
+        }
+        exit;
+    } elseif (($urlParts[1] ?? '') === 'company' && ($urlParts[2] ?? '') === 'interviews') {
+        require_once __DIR__ . '/controllers/InterviewController.php';
+        $invCtrl = new InterviewController();
+        $sub = $urlParts[3] ?? '';
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if ($sub === 'reschedule') {
+                $invCtrl->reschedule();
+            } elseif ($sub === 'cancel') {
+                $invCtrl->cancel();
+            } elseif ($sub === 'feedback') {
+                $invCtrl->submitFeedback();
+            } else {
+                $invCtrl->scheduleInterviews();
+            }
+        } else {
+            $invCtrl->getCompanyInterviews();
+        }
+    } elseif (($urlParts[1] ?? '') === 'interview' && ($urlParts[2] ?? '') === 'pdf') {
+        require_once __DIR__ . '/controllers/InterviewController.php';
+        $invCtrl = new InterviewController();
+        $invId = is_numeric($urlParts[3] ?? null) ? (int)$urlParts[3] : 0;
+        $invCtrl->downloadPdf($invId);
+        exit;
     }
     jsonResponse(['error' => 'Not found'], 404);
     exit;
@@ -125,6 +247,7 @@ switch ($page) {
         break;
 
     case 'verify-email':
+    case 'verify-otp':
         require_once __DIR__ . '/controllers/AuthController.php';
         $controller = new AuthController();
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -132,6 +255,12 @@ switch ($page) {
         } else {
             $controller->verifyEmailPage();
         }
+        break;
+
+    case 'resend-otp':
+        require_once __DIR__ . '/controllers/AuthController.php';
+        $controller = new AuthController();
+        $controller->resendOTP();
         break;
 
     case 'logout':
@@ -169,9 +298,20 @@ switch ($page) {
             case 'apply': $controller->applyJob($param); break;
             case 'withdraw': $controller->withdrawApplication($param); break;
             case 'applications': $controller->applications(); break;
+            case 'recommendations':
+                require_once __DIR__ . '/controllers/RecommendationController.php';
+                $recController = new RecommendationController();
+                $recController->studentRecommendations();
+                break;
+            case 'skill-gap':
+                require_once __DIR__ . '/controllers/SkillGapController.php';
+                $sgController = new SkillGapController();
+                $sgController->skillGapDashboard();
+                break;
             case 'trainings': $controller->trainings(); break;
             case 'register-training': $controller->registerTraining($param); break;
             case 'higher-studies': $controller->higherStudies(); break;
+            case 'register-higher-study': $controller->registerHigherStudy(); break;
             case 'notifications': $controller->notifications(); break;
             case 'interviews': $controller->interviews(); break;
             case 'bookmarks': $controller->bookmarks(); break;
@@ -228,6 +368,7 @@ switch ($page) {
                 break;
             case 'interviews': $controller->interviews(); break;
             case 'interview-result': $controller->updateInterviewResult($param); break;
+            case 'notifications': $controller->notifications(); break;
             default: $controller->dashboard(); break;
         }
         break;
@@ -261,6 +402,7 @@ switch ($page) {
             case 'create-training': $controller->createTraining(); break;
             case 'delete-training': $controller->deleteTraining($param); break;
             case 'higher-studies': $controller->higherStudies(); break;
+            case 'update-higher-study': $controller->updateHigherStudyStatus($param); break;
             case 'create-university': $controller->createUniversity(); break;
             case 'interviews': $controller->interviews(); break;
             case 'schedule-interview': $controller->scheduleInterview(); break;
@@ -274,6 +416,11 @@ switch ($page) {
             case 'create-faculty': $controller->createFaculty(); break;
             case 'delete-faculty': $controller->deleteFaculty($param); break;
             case 'reports': $controller->reports(); break;
+            case 'recommendation-analytics':
+                require_once __DIR__ . '/controllers/RecommendationController.php';
+                $recController = new RecommendationController();
+                $recController->adminAnalytics();
+                break;
             case 'logs': $controller->logs(); break;
             case 'settings': $controller->settings(); break;
             default: $controller->dashboard(); break;

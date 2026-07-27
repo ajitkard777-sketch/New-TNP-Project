@@ -976,6 +976,8 @@ html[data-theme="dark"] .stat-card-icon.bg-info-soft,
 html[data-theme="midnight"] .stat-card-icon.bg-info-soft      { background: rgba(34,211,238,.14) !important; color: #22D3EE !important; }
 html[data-theme="dark"] .stat-card-icon.bg-violet-soft,
 html[data-theme="midnight"] .stat-card-icon.bg-violet-soft    { background: rgba(129,140,248,.14) !important; color: #818CF8 !important; }
+html[data-theme="dark"] .stat-card-icon.bg-teal-soft,
+html[data-theme="midnight"] .stat-card-icon.bg-teal-soft      { background: rgba(45,212,191,.14) !important; color: #2DD4BF !important; }
 
 /* ===================================================================
    NOTIFICATION DROPDOWN

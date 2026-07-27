@@ -1,5 +1,27 @@
 <?php require_once ROOT_PATH . '/includes/header.php'; ?>
-<div class="content-header"><div><h1 class="page-title">Reports & Analytics</h1><p class="subtitle">Comprehensive placement analytics</p></div></div>
+<div class="content-header d-flex justify-content-between align-items-center">
+    <div>
+        <h1 class="page-title">Reports &amp; Analytics</h1>
+        <p class="subtitle">Comprehensive placement analytics &amp; exportable reports</p>
+    </div>
+    <div class="dropdown">
+        <button class="btn btn-primary btn-sm dropdown-toggle shadow-sm px-3" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="fas fa-file-export me-1"></i> Export Analytics &amp; Reports
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+            <li><h6 class="dropdown-header text-uppercase fs-xs">Placement Reports</h6></li>
+            <li><a class="dropdown-item" href="<?= url('/api/admin/reports?type=placements&format=excel') ?>"><i class="fas fa-file-excel text-success me-2"></i> Placements Report (Excel)</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><h6 class="dropdown-header text-uppercase fs-xs">Student Reports</h6></li>
+            <li><a class="dropdown-item" href="<?= url('/api/admin/reports?type=students&format=excel') ?>"><i class="fas fa-file-excel text-success me-2"></i> Students Directory (Excel)</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><h6 class="dropdown-header text-uppercase fs-xs">Company &amp; Job Reports</h6></li>
+            <li><a class="dropdown-item" href="<?= url('/api/admin/reports?type=companies&format=excel') ?>"><i class="fas fa-file-excel text-success me-2"></i> Companies Directory (Excel)</a></li>
+            <li><a class="dropdown-item" href="<?= url('/api/admin/reports?type=jobs&format=excel') ?>"><i class="fas fa-file-excel text-success me-2"></i> Active Jobs Report (Excel)</a></li>
+            <li><a class="dropdown-item" href="<?= url('/api/admin/reports?type=skills&format=excel') ?>"><i class="fas fa-file-excel text-success me-2"></i> Skill Demand Analytics (Excel)</a></li>
+        </ul>
+    </div>
+</div>
 
 <!-- Key Metrics -->
 <div class="row g-4 mb-4">

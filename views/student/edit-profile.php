@@ -157,7 +157,17 @@
                             <div class="mb-3">
                                 <label class="form-label">Skills (comma separated)</label>
                                 <input type="text" class="form-control" name="skills" value="<?= htmlspecialchars($student['skills'] ?? '') ?>" placeholder="e.g. Java, Python, React, MySQL">
-                                <small class="form-text">Separate skills with commas</small>
+                                <small class="form-text">Separate skills with commas (Used by AI Job Recommendation Engine)</small>
+                            </div>
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Preferred Work Location</label>
+                                    <input type="text" class="form-control" name="preferred_location" value="<?= htmlspecialchars($student['preferred_location'] ?? '') ?>" placeholder="e.g. Bangalore, Pune, Mumbai, Remote">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Experience (Years)</label>
+                                    <input type="number" class="form-control" name="experience_years" value="<?= htmlspecialchars($student['experience_years'] ?? 0) ?>" step="0.5" min="0" max="30">
+                                </div>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">About / Bio</label>

@@ -371,12 +371,30 @@ const TPMS = {
         const input = document.querySelector('.global-search input');
         const dropdown = document.querySelector('.search-results-dropdown');
         let timeout;
+        let selectedIndex = -1;
 
         if (!input || !dropdown) return;
+
+        // Prevent input blur when clicking items inside dropdown
+        dropdown.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+        });
+
+        // Direct click handler on dropdown items to guarantee instant navigation
+        dropdown.addEventListener('click', (e) => {
+            const item = e.target.closest('.search-result-item');
+            if (item) {
+                const targetUrl = item.getAttribute('href');
+                if (targetUrl) {
+                    window.location.href = targetUrl;
+                }
+            }
+        });
 
         input.addEventListener('input', (e) => {
             clearTimeout(timeout);
             const query = e.target.value.trim();
+            selectedIndex = -1;
             
             if (query.length < 2) {
                 dropdown.classList.remove('show');
@@ -387,29 +405,68 @@ const TPMS = {
                 if (typeof $ !== 'undefined') {
                     $.get(this.baseUrl + '/search/global', { q: query }, (response) => {
                         if (response.success && response.results.length > 0) {
-                            dropdown.innerHTML = response.results.map(r => `
-                                <a href="${r.url}" class="search-result-item">
-                                    <div class="search-result-icon bg-${r.color}-soft">
-                                        <i class="fas fa-${r.icon} text-${r.color}"></i>
+                            dropdown.innerHTML = response.results.map((r, idx) => `
+                                <a href="${r.url}" class="search-result-item" data-index="${idx}">
+                                    <div class="search-result-icon bg-${r.color || 'primary'}-soft me-2">
+                                        <i class="${r.icon || 'fas fa-search'} text-${r.color || 'primary'}"></i>
                                     </div>
-                                    <div>
-                                        <div style="font-weight:600;font-size:0.85rem">${this.escapeHtml(r.title)}</div>
-                                        <div style="font-size:0.75rem;color:var(--text-muted)">${this.escapeHtml(r.subtitle)}</div>
+                                    <div class="flex-grow-1 overflow-hidden">
+                                        <div class="search-result-title text-truncate" style="font-weight:600;font-size:0.85rem">${this.escapeHtml(r.title)}</div>
+                                        <div class="search-result-subtitle text-truncate" style="font-size:0.75rem;color:var(--text-muted)">${this.escapeHtml(r.subtitle)}</div>
                                     </div>
+                                    <span class="badge bg-light text-dark border ms-2" style="font-size:0.68rem;">${this.escapeHtml(r.type || 'Item')}</span>
                                 </a>
                             `).join('');
                             dropdown.classList.add('show');
                         } else {
-                            dropdown.innerHTML = '<div class="p-3 text-center text-muted"><small>No results found</small></div>';
+                            dropdown.innerHTML = `
+                                <div class="p-4 text-center text-muted">
+                                    <i class="fas fa-search-minus mb-2 d-block fs-3 opacity-50"></i>
+                                    <small class="fw-semibold">No results found for "${this.escapeHtml(query)}"</small>
+                                </div>`;
                             dropdown.classList.add('show');
                         }
                     });
                 }
-            }, 300);
+            }, 250);
+        });
+
+        // Keyboard navigation: ArrowUp, ArrowDown, Enter, Escape
+        input.addEventListener('keydown', (e) => {
+            const items = dropdown.querySelectorAll('.search-result-item');
+            if (!dropdown.classList.contains('show') || items.length === 0) return;
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                selectedIndex = (selectedIndex + 1) % items.length;
+                this.highlightSearchItem(items, selectedIndex);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                selectedIndex = (selectedIndex - 1 + items.length) % items.length;
+                this.highlightSearchItem(items, selectedIndex);
+            } else if (e.key === 'Enter') {
+                if (selectedIndex >= 0 && items[selectedIndex]) {
+                    e.preventDefault();
+                    items[selectedIndex].click();
+                }
+            } else if (e.key === 'Escape') {
+                dropdown.classList.remove('show');
+            }
         });
 
         input.addEventListener('blur', () => {
             setTimeout(() => dropdown.classList.remove('show'), 200);
+        });
+    },
+
+    highlightSearchItem(items, index) {
+        items.forEach((item, i) => {
+            if (i === index) {
+                item.classList.add('active');
+                item.scrollIntoView({ block: 'nearest' });
+            } else {
+                item.classList.remove('active');
+            }
         });
     },
 
@@ -550,6 +607,84 @@ const TPMS = {
         };
     }
 };
+
+// Global toggle for Save to Playlist / Bookmarks
+window.toggleSaveJob = window.toggleBookmark = function(jobId, btnElement) {
+    if (!jobId) return;
+
+    const btn = btnElement || (event ? event.currentTarget : null);
+    const icon = btn ? btn.querySelector('i') : null;
+    const textSpan = btn ? btn.querySelector('.save-btn-text') : null;
+    const isCurrentlySaved = icon ? (icon.classList.contains('fas') && !icon.classList.contains('fa-spinner')) : false;
+
+    // Show loading state on button
+    if (btn) btn.disabled = true;
+    if (icon) {
+        icon.className = 'fas fa-spinner fa-spin me-1';
+    }
+
+    const baseUrl = document.querySelector('meta[name="base-url"]')?.content || '/team1';
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+
+    const url = isCurrentlySaved 
+        ? baseUrl + '/api/saved-jobs?job_id=' + jobId 
+        : baseUrl + '/api/saved-jobs';
+    const method = isCurrentlySaved ? 'DELETE' : 'POST';
+
+    fetch(url, {
+        method: method,
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: isCurrentlySaved ? null : ('job_id=' + jobId + '&csrf_token=' + encodeURIComponent(csrfToken))
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (btn) btn.disabled = false;
+        
+        if (data.success) {
+            const nowSaved = data.saved;
+            if (icon) {
+                if (nowSaved) {
+                    icon.className = 'fas fa-bookmark text-primary me-1';
+                } else {
+                    icon.className = 'far fa-bookmark me-1';
+                }
+            }
+
+            if (textSpan) {
+                textSpan.innerText = nowSaved ? 'Saved' : 'Save to Playlist';
+            }
+
+            if (btn) {
+                if (nowSaved) {
+                    btn.classList.add('saved-active');
+                    btn.title = 'Saved to Playlist';
+                } else {
+                    btn.classList.remove('saved-active');
+                    btn.title = 'Save to Playlist';
+                }
+            }
+
+            TPMS.toast(nowSaved ? 'success' : 'info', data.message || (nowSaved ? 'Saved to playlist!' : 'Removed from playlist'));
+        } else {
+            if (icon) {
+                icon.className = isCurrentlySaved ? 'fas fa-bookmark text-primary me-1' : 'far fa-bookmark me-1';
+            }
+            TPMS.toast('danger', data.error || data.message || 'Failed to update playlist');
+        }
+    })
+    .catch(err => {
+        if (btn) btn.disabled = false;
+        if (icon) {
+            icon.className = isCurrentlySaved ? 'fas fa-bookmark text-primary me-1' : 'far fa-bookmark me-1';
+        }
+        TPMS.toast('danger', 'Network error. Please try again.');
+    });
+};
+
+
 
 // Guard: if DOM is already parsed when this script loads (scripts at end of body),
 // DOMContentLoaded may have already fired – call init() directly in that case.
