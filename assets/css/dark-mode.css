@@ -30,7 +30,7 @@ html[data-theme="light"] {
     --bg-primary:        #F8FAFC;
     --bg-secondary:      #F1F5F9;
     --bg-card:           #FFFFFF;
-    --bg-sidebar:        linear-gradient(180deg, #0F172A 0%, #1E293B 100%);
+    --bg-sidebar:        #FFFFFF;
     --bg-glass:          rgba(255,255,255,0.95);
 
     --text-primary:      #0F172A;
@@ -241,8 +241,7 @@ html[data-theme] .card-body h6 {
 
 /* Clickable stat card link */
 html[data-theme] .stat-card-link:hover .stat-card {
-    transform: translateY(-3px);
-    box-shadow: var(--shadow-lg) !important;
+    box-shadow: var(--shadow-md) !important;
     border-color: var(--primary) !important;
 }
 
@@ -953,3 +952,261 @@ html[data-theme] .notification-count {
     background: var(--danger) !important;
     color: #ffffff !important;
 }
+
+/* =====================================================
+   AI CHAT WIDGET â€” Dark Mode Overrides
+   Applies when html[data-theme="midnight"]
+   ===================================================== */
+
+html[data-theme="midnight"] .ai-chat-panel {
+    background: #1e1e2e;
+    border-color: rgba(255,255,255,.07);
+    box-shadow: 0 8px 40px rgba(0,0,0,.5), 0 2px 12px rgba(0,0,0,.3);
+}
+
+html[data-theme="midnight"] .ai-msg-ai .ai-msg-bubble {
+    background: #2a2a3e;
+    color: #e2e8f0;
+    border-color: rgba(255,255,255,.06);
+}
+
+html[data-theme="midnight"] .ai-msg-ai .ai-msg-bubble code,
+html[data-theme="midnight"] .ai-msg-ai .ai-msg-bubble pre {
+    background: rgba(255,255,255,.06);
+    color: #c4b5fd;
+}
+
+html[data-theme="midnight"] .ai-msg-ai .ai-msg-bubble a {
+    color: #a5b4fc;
+}
+
+html[data-theme="midnight"] .ai-input-area {
+    background: #1e1e2e;
+    border-top-color: rgba(255,255,255,.07);
+}
+
+html[data-theme="midnight"] .ai-input-wrapper {
+    background: #2a2a3e;
+    border-color: rgba(255,255,255,.1);
+}
+
+html[data-theme="midnight"] .ai-input-wrapper:focus-within {
+    border-color: #818cf8;
+    box-shadow: 0 0 0 3px rgba(129,140,248,.15);
+}
+
+html[data-theme="midnight"] .ai-textarea {
+    color: #e2e8f0;
+}
+
+html[data-theme="midnight"] .ai-textarea::placeholder {
+    color: #64748b;
+}
+
+html[data-theme="midnight"] .ai-messages-area::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,.12);
+}
+
+html[data-theme="midnight"] .ai-msg-time,
+html[data-theme="midnight"] .ai-powered-by,
+html[data-theme="midnight"] .ai-char-count {
+    color: #4b5563;
+}
+
+html[data-theme="midnight"] .ai-typing span {
+    background: #4b5563;
+}
+
+/* =====================================================
+   APPLICANT CARDS — Midnight Dark Mode
+   ===================================================== */
+html[data-theme="midnight"] .applicant-card {
+    background: #181825;
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+html[data-theme="midnight"] .applicant-card:hover {
+    border-color: #6366f1;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+}
+
+html[data-theme="midnight"] .applicant-meta-grid {
+    background: #212133;
+    border-color: rgba(255, 255, 255, 0.06);
+}
+
+/* =====================================================
+   REAL-TIME CHAT SYSTEM — OLED Midnight Dark Mode
+   ===================================================== */
+html[data-theme="midnight"] .chat-app-card,
+html[data-theme="midnight"] .chat-sidebar-panel,
+html[data-theme="midnight"] .chat-header-bar,
+html[data-theme="midnight"] .chat-input-footer,
+html[data-theme="midnight"] .chat-typing-banner,
+html[data-theme="midnight"] .chat-emoji-picker {
+    background: #12121c;
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+/* Main window & empty state get darker message area background */
+html[data-theme="midnight"] .chat-main-window,
+html[data-theme="midnight"] .chat-empty-state {
+    background: #0d0d15;
+}
+
+html[data-theme="midnight"] .chat-messages-area {
+    background: #0d0d15;
+    scrollbar-color: rgba(255,255,255,0.08) transparent;
+}
+
+html[data-theme="midnight"] .chat-messages-area::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.08);
+}
+
+html[data-theme="midnight"] .chat-conversations-list {
+    scrollbar-color: rgba(255,255,255,0.08) transparent;
+}
+
+html[data-theme="midnight"] .chat-conversations-list::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.08);
+}
+
+html[data-theme="midnight"] .chat-search-input,
+html[data-theme="midnight"] .chat-textarea {
+    background: #1c1c2b;
+    border-color: rgba(255, 255, 255, 0.12);
+    color: #f3f4f6;
+}
+
+html[data-theme="midnight"] .chat-search-input::placeholder,
+html[data-theme="midnight"] .chat-textarea::placeholder {
+    color: rgba(255,255,255,0.3);
+}
+
+html[data-theme="midnight"] .chat-search-input:focus,
+html[data-theme="midnight"] .chat-textarea:focus {
+    border-color: #818cf8;
+    box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.15);
+    background: #1e1e2e;
+}
+
+html[data-theme="midnight"] .chat-conv-item:hover {
+    background: #1e1e2e;
+}
+
+html[data-theme="midnight"] .chat-conv-item.active {
+    background: rgba(99, 102, 241, 0.15);
+    border-left-color: #818cf8;
+}
+
+html[data-theme="midnight"] .chat-conv-item.active .chat-conv-name {
+    color: #818cf8;
+}
+
+html[data-theme="midnight"] .chat-conv-item {
+    border-bottom-color: rgba(255, 255, 255, 0.04);
+}
+
+html[data-theme="midnight"] .chat-conv-name {
+    color: #f3f4f6;
+}
+
+html[data-theme="midnight"] .chat-conv-snippet,
+html[data-theme="midnight"] .chat-conv-time {
+    color: rgba(255,255,255,0.45);
+}
+
+html[data-theme="midnight"] .msg-incoming .chat-msg-bubble {
+    background: #1e1e2e;
+    color: #f3f4f6;
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+html[data-theme="midnight"] .chat-date-divider::before,
+html[data-theme="midnight"] .chat-date-divider::after {
+    background: rgba(255, 255, 255, 0.07);
+}
+
+html[data-theme="midnight"] .chat-date-divider span {
+    background: #1c1c2b;
+    border-color: rgba(255, 255, 255, 0.08);
+    color: #9ca3af;
+}
+
+html[data-theme="midnight"] .chat-input-action-btn {
+    background: #1c1c2b;
+    border-color: rgba(255, 255, 255, 0.1);
+    color: #9ca3af;
+}
+
+html[data-theme="midnight"] .chat-input-action-btn:hover {
+    color: #818cf8;
+    border-color: #818cf8;
+    background: rgba(129, 140, 248, 0.1);
+}
+
+html[data-theme="midnight"] .chat-emoji-trigger {
+    color: rgba(255,255,255,0.35);
+}
+
+html[data-theme="midnight"] .chat-emoji-trigger:hover {
+    color: #818cf8;
+}
+
+html[data-theme="midnight"] .chat-emoji-grid span:hover {
+    background: rgba(129, 140, 248, 0.15);
+}
+
+html[data-theme="midnight"] .chat-icon-action-btn:hover {
+    background: rgba(255,255,255,0.07);
+    color: #818cf8;
+}
+
+html[data-theme="midnight"] .chat-filter-btn {
+    color: rgba(255,255,255,0.55);
+}
+
+html[data-theme="midnight"] .chat-filter-btn.active {
+    background: rgba(99, 102, 241, 0.15);
+    color: #818cf8;
+}
+
+html[data-theme="midnight"] .chat-filter-btn:hover:not(.active) {
+    background: rgba(255,255,255,0.06);
+}
+
+html[data-theme="midnight"] .chat-filter-tabs,
+html[data-theme="midnight"] .chat-search-wrapper {
+    border-bottom-color: rgba(255, 255, 255, 0.07);
+}
+
+html[data-theme="midnight"] .chat-online-dot {
+    border-color: #12121c;
+}
+
+html[data-theme="midnight"] .chat-attachment-preview {
+    background: #12121c;
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+html[data-theme="midnight"] .chat-send-btn {
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.35);
+}
+
+html[data-theme="midnight"] .chat-send-btn:hover:not(:disabled) {
+    box-shadow: 0 4px 14px rgba(99, 102, 241, 0.5);
+}
+
+html[data-theme="midnight"] .chat-fab-btn {
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    box-shadow: 0 4px 18px rgba(99, 102, 241, 0.45);
+}
+
+html[data-theme="midnight"] .chat-fab-badge {
+    border-color: #12121c;
+}
+
+
+
+

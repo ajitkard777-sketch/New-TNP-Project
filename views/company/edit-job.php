@@ -12,15 +12,16 @@
         <div class="col-md-4"><label class="form-label">Location</label><input type="text" class="form-control" name="location" value="<?= htmlspecialchars($job['location'] ?? '') ?>"></div>
         <div class="col-md-4"><label class="form-label">Openings</label><input type="number" class="form-control" name="openings" value="<?= $job['openings'] ?? 1 ?>" min="1"></div>
         <div class="col-12">
-            <label class="form-label fw-semibold">Salary Range (LPA)</label>
+            <label class="form-label fw-semibold">Package Range (LPA)</label>
             <div class="input-group">
-                <input type="number" class="form-control" name="salary_min" step="0.5" min="0" value="<?= $job['salary_min'] ?? '' ?>" placeholder="Min e.g. 3">
+                <input type="number" class="form-control" name="salary_min" step="0.1" min="0" value="<?= $job['salary_min'] ?? '' ?>" placeholder="Min LPA e.g. 4.5">
                 <span class="input-group-text fw-bold">–</span>
-                <input type="number" class="form-control" name="salary_max" step="0.5" min="0" value="<?= $job['salary_max'] ?? '' ?>" placeholder="Max e.g. 8">
+                <input type="number" class="form-control" name="salary_max" step="0.1" min="0" value="<?= $job['salary_max'] ?? '' ?>" placeholder="Max LPA e.g. 12">
                 <span class="input-group-text text-muted">LPA</span>
             </div>
-            <small class="text-muted" style="font-size:0.78rem">Example: 3 – 8 means 3 to 8 Lakhs Per Annum.</small>
+            <small class="text-muted" style="font-size:0.78rem">Example: 4.5 – 12 means 4.5 to 12 Lakhs Per Annum.</small>
         </div>
+
         <div class="col-md-4"><label class="form-label">Application Deadline</label><input type="date" class="form-control" name="application_deadline" value="<?= $job['application_deadline'] ?? '' ?>"></div>
         <div class="col-12"><label class="form-label">Skills Required</label><input type="text" class="form-control" name="skills_required" value="<?= htmlspecialchars($job['skills_required'] ?? '') ?>"></div>
         <div class="col-md-4"><label class="form-label">Min CGPA</label><input type="number" class="form-control" name="eligibility_cgpa" step="0.01" min="0" max="10" value="<?= $job['eligibility_cgpa'] ?? 0 ?>"></div>

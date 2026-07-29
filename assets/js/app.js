@@ -3,7 +3,7 @@
  */
 
 const TPMS = {
-    baseUrl: document.querySelector('meta[name="base-url"]')?.content || '/team1',
+    baseUrl: document.querySelector('meta[name="base-url"]')?.content || '/TNP',
     csrfToken: document.querySelector('meta[name="csrf-token"]')?.content || '',
 
     init() {
@@ -96,7 +96,7 @@ const TPMS = {
 
         // 5. Persist to database (async, best-effort)
         if (saveToBackend && typeof $ !== 'undefined') {
-            const baseUrl = document.querySelector('meta[name="base-url"]')?.content || '/team1';
+            const baseUrl = document.querySelector('meta[name="base-url"]')?.content || '/TNP';
             const csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
             $.ajax({
                 url: baseUrl + '/api/theme',
@@ -228,8 +228,7 @@ const TPMS = {
         document.querySelectorAll('.alert-dismissible').forEach(alert => {
             setTimeout(() => {
                 alert.style.opacity = '0';
-                alert.style.transform = 'translateY(-10px)';
-                setTimeout(() => alert.remove(), 300);
+                setTimeout(() => alert.remove(), 200);
             }, 5000);
         });
     },
@@ -262,8 +261,7 @@ const TPMS = {
 
         setTimeout(() => {
             toast.style.opacity = '0';
-            toast.style.transform = 'translateX(100px)';
-            setTimeout(() => toast.remove(), 300);
+            setTimeout(() => toast.remove(), 200);
         }, 4000);
     },
 

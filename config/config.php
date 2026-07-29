@@ -53,7 +53,7 @@ define('APP_FULL_NAME', env('APP_FULL_NAME', 'Training & Placement Management Sy
 define('APP_VERSION', '1.0.0');
 
 // Base URL - adjust if needed
-define('BASE_URL', env('BASE_URL', '/team1'));
+define('BASE_URL', env('BASE_URL', '/TNP'));
 define('FULL_URL', 'http://localhost' . BASE_URL);
 
 // Upload settings
@@ -73,13 +73,16 @@ define('JWT_SECRET', 'tpms_jwt_secret_key_2024_change_this_in_production');
 define('JWT_EXPIRY', 86400); // 24 hours
 define('JWT_ALGORITHM', 'HS256');
 
-// Email settings (configure for your SMTP)
-define('SMTP_HOST', env('SMTP_HOST', 'smtp.gmail.com'));
-define('SMTP_PORT', (int)env('SMTP_PORT', 587));
-define('SMTP_USERNAME', env('SMTP_USERNAME', 'kishorpanchal402@gmail.com'));
-define('SMTP_PASSWORD', env('SMTP_PASSWORD', 'tohb qpud bxgs fxlo'));
-define('SMTP_FROM_EMAIL', env('SMTP_FROM_EMAIL', 'kishorpanchal402@gmail.com'));
-define('SMTP_FROM_NAME', env('SMTP_FROM_NAME', 'TPMS System'));
+// Email settings — Brevo SMTP (configure in .env)
+define('SMTP_HOST',       env('SMTP_HOST',       'smtp-relay.brevo.com'));
+define('SMTP_PORT',       (int)env('SMTP_PORT',   587));
+define('SMTP_USERNAME',   env('SMTP_USERNAME',   ''));
+define('SMTP_PASSWORD',   env('SMTP_PASSWORD',   ''));
+define('SMTP_FROM_EMAIL', env('SMTP_FROM_EMAIL', ''));
+define('SMTP_FROM_NAME',  env('SMTP_FROM_NAME',  'TPMS System'));
+// Retry on temporary SMTP failures (e.g. network hiccup)
+define('SMTP_RETRY_ATTEMPTS', (int)env('SMTP_RETRY_ATTEMPTS', 2));
+define('SMTP_RETRY_DELAY_MS', (int)env('SMTP_RETRY_DELAY_MS', 1200));
 
 // Pagination
 define('RECORDS_PER_PAGE', 10);
@@ -90,6 +93,16 @@ define('PASSWORD_MIN_LENGTH', 8);
 // OTP settings
 define('OTP_LENGTH', 6);
 define('OTP_EXPIRY', 600); // 10 minutes
+
+// AI settings (Groq & Gemini)
+define('AI_PROVIDER', env('AI_PROVIDER', 'groq'));
+define('GROQ_API_KEY', env('GROQ_API_KEY', ''));
+define('GROQ_MODEL', env('GROQ_MODEL', 'llama-3.3-70b-versatile'));
+define('GROQ_API_URL', 'https://api.groq.com/openai/v1/chat/completions');
+
+define('GEMINI_API_KEY', env('GEMINI_API_KEY', ''));
+define('GEMINI_MODEL', env('GEMINI_MODEL', 'gemini-2.0-flash'));
+define('GEMINI_API_URL', 'https://generativelanguage.googleapis.com/v1beta/models/' . env('GEMINI_MODEL', 'gemini-2.0-flash') . ':generateContent');
 
 // Branches available
 define('BRANCHES', [

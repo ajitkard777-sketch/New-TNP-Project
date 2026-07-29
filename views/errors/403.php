@@ -13,8 +13,8 @@
         .error-code { font-size: 8rem; font-weight: 800; background: linear-gradient(135deg, #f43f5e, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; line-height: 1; }
         .error-title { font-size: 1.5rem; font-weight: 600; margin: 16px 0 8px; }
         .error-text { color: rgba(255,255,255,0.6); margin-bottom: 32px; }
-        .btn-home { display: inline-flex; align-items: center; gap: 8px; padding: 12px 28px; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; text-decoration: none; border-radius: 10px; font-weight: 600; transition: transform 0.2s, box-shadow 0.2s; }
-        .btn-home:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4); color: #fff; }
+        .btn-home { display: inline-flex; align-items: center; gap: 8px; padding: 12px 28px; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; text-decoration: none; border-radius: 10px; font-weight: 600; transition: box-shadow 0.15s; }
+        .btn-home:hover { box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4); color: #fff; }
     </style>
 </head>
 <body>

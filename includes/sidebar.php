@@ -11,10 +11,12 @@ if ($currentRole === 'student') {
     $sidebarMenus = [
         'MAIN' => [
             ['icon' => 'fas fa-th-large', 'label' => 'Dashboard', 'url' => '/student/dashboard', 'key' => 'dashboard'],
+            ['icon' => 'fas fa-comments', 'label' => 'Chat & Messages', 'url' => '/chat', 'key' => 'chat'],
             ['icon' => 'fas fa-user-circle', 'label' => 'My Profile', 'url' => '/student/profile', 'key' => 'profile'],
         ],
         'CAREER' => [
             ['icon' => 'fas fa-briefcase', 'label' => 'Browse Jobs', 'url' => '/student/jobs', 'key' => 'jobs'],
+            ['icon' => 'fas fa-robot', 'label' => 'AI Job Matches', 'url' => '/student/ai-jobs', 'key' => 'ai-jobs'],
             ['icon' => 'fas fa-paper-plane', 'label' => 'My Applications', 'url' => '/student/applications', 'key' => 'applications'],
             ['icon' => 'fas fa-bookmark', 'label' => 'Bookmarks', 'url' => '/student/bookmarks', 'key' => 'bookmarks'],
             ['icon' => 'fas fa-calendar-check', 'label' => 'Interviews', 'url' => '/student/interviews', 'key' => 'interviews'],
@@ -36,12 +38,14 @@ if ($currentRole === 'company') {
     $sidebarMenus = [
         'MAIN' => [
             ['icon' => 'fas fa-th-large', 'label' => 'Dashboard', 'url' => '/company/dashboard', 'key' => 'dashboard'],
+            ['icon' => 'fas fa-comments', 'label' => 'Chat & Messages', 'url' => '/chat', 'key' => 'chat'],
             ['icon' => 'fas fa-building', 'label' => 'Company Profile', 'url' => '/company/profile', 'key' => 'profile'],
         ],
         'RECRUITMENT' => [
             ['icon' => 'fas fa-plus-circle', 'label' => 'Post New Job', 'url' => '/company/post-job', 'key' => 'post-job'],
             ['icon' => 'fas fa-briefcase', 'label' => 'Manage Jobs', 'url' => '/company/jobs', 'key' => 'jobs'],
             ['icon' => 'fas fa-calendar-alt', 'label' => 'Interviews', 'url' => '/company/interviews', 'key' => 'interviews'],
+            ['icon' => 'fas fa-robot', 'label' => 'AI Recommendations', 'url' => '/company/recommendations', 'key' => 'recommendations'],
         ]
     ];
 }
@@ -51,8 +55,11 @@ if ($currentRole === 'admin') {
     $sidebarMenus = [
         'OVERVIEW' => [
             ['icon' => 'fas fa-th-large', 'label' => 'Dashboard', 'url' => '/admin/dashboard', 'key' => 'dashboard'],
+            ['icon' => 'fas fa-comments', 'label' => 'Chat & Messages', 'url' => '/chat', 'key' => 'chat'],
             ['icon' => 'fas fa-chart-line', 'label' => 'Reports & Analytics', 'url' => '/admin/reports', 'key' => 'reports'],
         ],
+
+
         'DIRECTORY' => [
             [
                 'icon' => 'fas fa-users-cog',

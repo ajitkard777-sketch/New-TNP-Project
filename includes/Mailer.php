@@ -1,7 +1,8 @@
 <?php
 /**
  * TPMS - Email Service using PHPMailer
- * Handles all outgoing emails via Gmail SMTP
+ * Handles all outgoing emails via Brevo SMTP
+ * Provider: https://app.brevo.com
  */
 
 require_once ROOT_PATH . '/vendor/phpmailer/src/Exception.php';
@@ -15,6 +16,16 @@ use PHPMailer\PHPMailer\Exception;
 class Mailer {
 
     private static string $lastError = '';
+
+    /** Status file for admin Email Config page */
+    private static string $statusFile = '';
+
+    private static function statusFile(): string {
+        if (self::$statusFile === '') {
+            self::$statusFile = (defined('LOGS_PATH') ? LOGS_PATH : ROOT_PATH . '/logs') . '/email_status.json';
+        }
+        return self::$statusFile;
+    }
 
     /**
      * Get the last error message
@@ -38,6 +49,60 @@ class Mailer {
     }
 
     /**
+     * Update the email_status.json file after a successful send
+     */
+    private static function updateEmailStatus(string $toEmail, string $subject): void {
+        $data = [
+            'last_sent_at'      => date('Y-m-d H:i:s'),
+            'last_sent_to'      => $toEmail,
+            'last_sent_subject' => $subject,
+            'provider'          => 'Brevo (' . SMTP_HOST . ')',
+        ];
+        @file_put_contents(self::statusFile(), json_encode($data, JSON_PRETTY_PRINT));
+    }
+
+    /**
+     * Get SMTP status info for the admin Email Config page
+     * Returns array with provider, host, port, from_email, last_sent_at, connection_ok
+     */
+    public static function getSmtpStatus(): array {
+        // Read last-sent status
+        $statusFile = self::statusFile();
+        $lastSent = null;
+        if (file_exists($statusFile)) {
+            $raw = @file_get_contents($statusFile);
+            if ($raw) $lastSent = json_decode($raw, true);
+        }
+
+        // Quick TCP socket check (non-sending, just port reachability)
+        $host    = defined('SMTP_HOST') ? SMTP_HOST : 'smtp-relay.brevo.com';
+        $port    = defined('SMTP_PORT') ? SMTP_PORT : 587;
+        $connOk  = false;
+        $socket  = @fsockopen($host, $port, $errno, $errstr, 5);
+        if ($socket) {
+            $connOk = true;
+            @fclose($socket);
+        }
+
+        $encryption = ($port === 465) ? 'SSL/TLS (Port 465)' : 'STARTTLS (Port 587)';
+
+        return [
+            'provider'       => 'Brevo SMTP',
+            'host'           => $host,
+            'port'           => $port,
+            'encryption'     => $encryption,
+            'from_email'     => defined('SMTP_FROM_EMAIL') ? SMTP_FROM_EMAIL : '-',
+            'from_name'      => defined('SMTP_FROM_NAME')  ? SMTP_FROM_NAME  : '-',
+            'username'       => defined('SMTP_USERNAME')   ? SMTP_USERNAME   : '-',
+            'configured'     => defined('SMTP_PASSWORD') && !empty(SMTP_PASSWORD),
+            'connection_ok'  => $connOk,
+            'last_sent_at'      => $lastSent['last_sent_at']      ?? null,
+            'last_sent_to'      => $lastSent['last_sent_to']      ?? null,
+            'last_sent_subject' => $lastSent['last_sent_subject'] ?? null,
+        ];
+    }
+
+    /**
      * Create a configured PHPMailer instance
      */
     private static function create(): PHPMailer {
@@ -45,7 +110,7 @@ class Mailer {
 
         if (!defined('SMTP_HOST') || !defined('SMTP_USERNAME') || !defined('SMTP_PASSWORD') ||
             empty(SMTP_HOST) || empty(SMTP_USERNAME) || empty(SMTP_PASSWORD)) {
-            $msg = 'SMTP configuration is incomplete. Host, username, or password missing in environment settings.';
+            $msg = 'SMTP configuration is incomplete. Please set SMTP credentials in the .env file.';
             self::$lastError = $msg;
             self::logMail($msg, 'CRITICAL');
             throw new Exception($msg);
@@ -53,18 +118,19 @@ class Mailer {
 
         $mail = new PHPMailer(true);
 
-        // Server settings
+        // Brevo SMTP server settings
         $mail->isSMTP();
         $mail->Host       = SMTP_HOST;
         $mail->SMTPAuth   = true;
+        $mail->AuthType   = 'LOGIN'; // Brevo SMTP keys require LOGIN auth (not CRAM-MD5)
         $mail->Username   = SMTP_USERNAME;
         $mail->Password   = SMTP_PASSWORD;
         $mail->SMTPSecure = (SMTP_PORT === 465) ? PHPMailer::ENCRYPTION_SMTPS : PHPMailer::ENCRYPTION_STARTTLS;
         $mail->Port       = SMTP_PORT;
         $mail->CharSet    = 'UTF-8';
-        $mail->Timeout    = 15;
+        $mail->Timeout    = 20;
 
-        // Capture SMTP debug output into email log if debug mode enabled or on error
+        // Capture SMTP debug output into email log on error
         $mail->SMTPDebug   = SMTP::DEBUG_OFF;
         $mail->Debugoutput = function($str, $level) {
             self::logMail("SMTP DEBUG [L{$level}]: " . trim($str), 'DEBUG');
@@ -76,6 +142,68 @@ class Mailer {
 
         return $mail;
     }
+
+    /**
+     * Send a PHPMailer instance with automatic retry on temporary SMTP failure.
+     * Retries up to SMTP_RETRY_ATTEMPTS times on transient errors only.
+     */
+    private static function sendWithRetry(PHPMailer $mail): void {
+        $maxAttempts = defined('SMTP_RETRY_ATTEMPTS') ? max(1, SMTP_RETRY_ATTEMPTS) : 2;
+        $delayMs     = defined('SMTP_RETRY_DELAY_MS') ? max(0, SMTP_RETRY_DELAY_MS) : 1200;
+        $lastException = null;
+
+        for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
+            try {
+                $mail->send(); // PHPMailer send
+                // Track last-sent metadata on success
+                $toEmails = array_column($mail->getToAddresses(), 0);
+                self::updateEmailStatus(
+                    implode(', ', $toEmails),
+                    $mail->Subject
+                );
+                return; // success — done
+            } catch (Exception $e) {
+                $lastException = $e;
+                $errorInfo     = !empty($mail->ErrorInfo) ? $mail->ErrorInfo : $e->getMessage();
+
+                // Do NOT retry on permanent failures (auth, address, limit errors)
+                $permanent = preg_match('/550|551|552|553|5\.1\.|5\.4\.|5\.7\.|Authentication|recipient/i', $errorInfo);
+                if ($permanent || $attempt >= $maxAttempts) {
+                    break;
+                }
+
+                self::logMail("SMTP attempt {$attempt} failed ({$errorInfo}), retrying in " . ($delayMs / 1000) . 's...', 'WARN');
+                usleep($delayMs * 1000);
+                // smtpClose() lets PHPMailer reconnect on next send()
+                $mail->smtpClose();
+            }
+        }
+
+        throw $lastException;
+    }
+
+    /**
+     * Send a Test Email to verify SMTP configuration
+     */
+    public static function sendTestEmail(string $toEmail, string $toName = 'Admin'): bool {
+        try {
+            $mail = self::create();
+            $mail->addAddress($toEmail, $toName);
+            $mail->Subject = '[TPMS] Brevo SMTP Test — ' . date('d M Y H:i');
+            $mail->Body    = self::testEmailTemplate($toName);
+            $mail->AltBody = "Hi {$toName},\n\nThis is a test email from TPMS.\nBrevo SMTP is configured correctly and working.\n\nSMTP Host: " . SMTP_HOST . "\nSent at: " . date('Y-m-d H:i:s') . "\n\n- TPMS System";
+
+            self::sendWithRetry($mail);
+            self::logMail("Test email sent successfully to {$toEmail}", 'SUCCESS');
+            return true;
+        } catch (Exception $e) {
+            $errorInfo = !empty($mail->ErrorInfo) ? $mail->ErrorInfo : $e->getMessage();
+            self::$lastError = $errorInfo;
+            self::logMail("Test email failed to {$toEmail}: {$errorInfo}", 'ERROR');
+            return false;
+        }
+    }
+
 
     /**
      * Send password reset email
@@ -93,7 +221,7 @@ class Mailer {
             $mail->Body    = self::passwordResetTemplate($toName, $resetLink);
             $mail->AltBody = "Hi {$toName},\n\nClick the link below to reset your password:\n{$resetLink}\n\nThis link expires in 1 hour.\n\nIf you did not request this, ignore this email.\n\n- TPMS Team";
 
-            $mail->send();
+            self::sendWithRetry($mail);
             self::logMail("Password reset email sent successfully to {$toEmail}", 'SUCCESS');
             return true;
         } catch (Exception $e) {
@@ -122,7 +250,7 @@ class Mailer {
             $mail->Body    = self::otpTemplate($toName, $otp, $expiryMinutes);
             $mail->AltBody = "Hi {$toName},\n\nYour TPMS Email Verification OTP code is: {$otp}\n\nThis code will expire in {$expiryMinutes} minutes.\n\nIf you did not request this, please ignore this email.\n\n- TPMS Team";
 
-            $mail->send();
+            self::sendWithRetry($mail);
             self::logMail("OTP verification email sent successfully to {$toEmail}", 'SUCCESS');
             return true;
         } catch (Exception $e) {
@@ -236,7 +364,7 @@ HTML;
             $mail->Body    = self::welcomeTemplate($toName);
             $mail->AltBody = "Hi {$toName},\n\nWelcome to TPMS! Your account has been created successfully.\n\nLog in at: " . FULL_URL . "/login\n\n- TPMS Team";
 
-            $mail->send();
+            self::sendWithRetry($mail);
             self::logMail("Welcome email sent successfully to {$toEmail}", 'SUCCESS');
             return true;
         } catch (Exception $e) {
@@ -418,7 +546,7 @@ HTML;
                 FULL_URL . '/student/applications', 'View My Applications', '#2563EB'
             );
             $mail->AltBody = "Hi {$toName}, your application for {$jobTitle} at {$companyName} has been submitted.";
-            $mail->send();
+            self::sendWithRetry($mail);
             self::logMail("Job application email sent to {$toEmail} for {$jobTitle}", 'SUCCESS');
             return true;
         } catch (Exception $e) {
@@ -481,7 +609,7 @@ HTML;
             }
             $mail->AltBody = "Hi {$toName},\n\nYour application for {$jobTitle} at {$companyName} has been updated to: {$statusLabel}.\n{$altInterview}\nLog in to TPMS: " . FULL_URL . "/student/applications\n\n- TPMS Team";
 
-            $mail->send();
+            self::sendWithRetry($mail);
             self::logMail("Application status email ({$status}) sent successfully to {$toEmail}", 'SUCCESS');
             return true;
         } catch (Exception $e) {
@@ -676,7 +804,7 @@ HTML;
                 FULL_URL . '/student/interviews', 'View Interview Details', '#0891B2'
             );
             $mail->AltBody = "Hi {$toName}, interview for {$jobTitle} at {$companyName} on {$date} at {$time}.";
-            $mail->send();
+            self::sendWithRetry($mail);
             self::logMail("Interview scheduled email sent to {$toEmail}", 'SUCCESS');
             return true;
         } catch (Exception $e) {
@@ -705,7 +833,7 @@ HTML;
                 FULL_URL . '/student/interviews', 'View All Interviews', $color
             );
             $mail->AltBody = "Hi {$toName}, interview result for {$jobTitle}: {$result}.";
-            $mail->send();
+            self::sendWithRetry($mail);
             self::logMail("Interview result email ({$result}) sent to {$toEmail}", 'SUCCESS');
             return true;
         } catch (Exception $e) {
@@ -731,7 +859,7 @@ HTML;
                 FULL_URL . '/student/trainings', 'View My Trainings', '#7C3AED'
             );
             $mail->AltBody = "Hi {$toName}, you've been registered for training: {$trainingTitle} starting {$startDate}.";
-            $mail->send();
+            self::sendWithRetry($mail);
             self::logMail("Training registration email sent to {$toEmail}", 'SUCCESS');
             return true;
         } catch (Exception $e) {
@@ -755,7 +883,7 @@ HTML;
                 FULL_URL . '/student/dashboard', 'Go to Dashboard', '#6366F1'
             );
             $mail->AltBody = "Hi {$toName}, announcement from TPMS Admin: {$title}\n{$message}";
-            $mail->send();
+            self::sendWithRetry($mail);
             self::logMail("Admin announcement email sent to {$toEmail}", 'SUCCESS');
             return true;
         } catch (Exception $e) {
@@ -785,7 +913,7 @@ HTML;
                 FULL_URL . '/login', 'Go to Login', $color
             );
             $mail->AltBody = "Hi {$toName}, your {$itemType} {$itemName} has been {$status}.";
-            $mail->send();
+            self::sendWithRetry($mail);
             self::logMail("Approval notification ({$status}) sent to {$toEmail}", 'SUCCESS');
             return true;
         } catch (Exception $e) {
@@ -813,7 +941,7 @@ HTML;
                 FULL_URL . '/admin/companies', 'Review Companies', '#D97706'
             );
             $mail->AltBody = "New company {$companyName} ({$companyEmail}) has registered and awaits approval.";
-            $mail->send();
+            self::sendWithRetry($mail);
             self::logMail("Company registration alert sent to admin for {$companyName}", 'SUCCESS');
             return true;
         } catch (Exception $e) {
@@ -850,7 +978,7 @@ HTML;
                 FULL_URL . '/company/jobs', 'Review Applications', '#2563EB'
             );
             $mail->AltBody = "Hi {$companyName}, {$studentName} ({$branch}) applied for {$jobTitle}. Log in to review.";
-            $mail->send();
+            self::sendWithRetry($mail);
             self::logMail("Company new application email sent to {$toEmail} for {$jobTitle}", 'SUCCESS');
             return true;
         } catch (Exception $e) {
@@ -887,7 +1015,7 @@ HTML;
                 FULL_URL . '/student/higher-studies', 'View Higher Studies', $color
             );
             $mail->AltBody = "Hi {$toName}, your application for {$universityName} is {$statusText}.";
-            $mail->send();
+            self::sendWithRetry($mail);
             self::logMail("Higher studies application email ({$status}) sent to {$toEmail}", 'SUCCESS');
             return true;
         } catch (Exception $e) {
@@ -924,7 +1052,7 @@ HTML;
                 FULL_URL . '/student/trainings', 'View Trainings', $color
             );
             $mail->AltBody = "Hi {$toName}, training enrollment for {$trainingTitle} is {$statusText}.";
-            $mail->send();
+            self::sendWithRetry($mail);
             self::logMail("Training enrollment status email ({$status}) sent to {$toEmail}", 'SUCCESS');
             return true;
         } catch (Exception $e) {
@@ -956,7 +1084,7 @@ HTML;
                 FULL_URL . '/student/trainings', 'View My Certificate', '#10B981'
             );
             $mail->AltBody = "Hi {$toName}, your certificate for {$trainingTitle} has been issued.";
-            $mail->send();
+            self::sendWithRetry($mail);
             self::logMail("Training certificate email sent to {$toEmail}", 'SUCCESS');
             return true;
         } catch (Exception $e) {
@@ -993,7 +1121,7 @@ HTML;
                 FULL_URL . '/login', 'Go to Login', '#0891B2'
             );
             $mail->AltBody = "Hi {$companyName}, your email has been verified. Your company account is pending admin approval. You will be notified once approved.";
-            $mail->send();
+            self::sendWithRetry($mail);
             self::logMail("Company email-verified/pending-approval email sent to {$toEmail} for {$companyName}", 'SUCCESS');
             return true;
         } catch (Exception $e) {
@@ -1054,6 +1182,247 @@ HTML;
         </tr>
       </table>
     </td></tr>
+  </table>
+</body>
+</html>
+HTML;
+    }
+
+    // ================================================================
+    // IMPORT STUDENTS WELCOME EMAIL
+    // ================================================================
+
+    /**
+     * Send a welcome email to a student imported via Excel bulk import.
+     * Includes their login credentials and a prompt to change password.
+     *
+     * @param string $toEmail         Student's email address
+     * @param string $toName          Student's full name
+     * @param string $studentId       Generated student ID (e.g. STU2025001)
+     * @param string $tempPassword    Plain-text temporary password (shown once)
+     * @return bool
+     */
+    public static function sendImportWelcome(
+        string $toEmail,
+        string $toName,
+        string $studentId,
+        string $tempPassword
+    ): bool {
+        try {
+            $mail = self::create();
+            $mail->addAddress($toEmail, $toName);
+            $mail->Subject = '🎓 Welcome to TPMS — Your Account Has Been Created';
+            $mail->Body    = self::importWelcomeTemplate($toName, $toEmail, $studentId, $tempPassword);
+            $mail->AltBody = "Hi {$toName},\n\nYour TPMS student account has been created by the administrator.\n\n"
+                           . "Login URL: " . FULL_URL . "/login\n"
+                           . "Email: {$toEmail}\n"
+                           . "Student ID: {$studentId}\n"
+                           . "Temporary Password: {$tempPassword}\n\n"
+                           . "IMPORTANT: Please log in and change your password immediately.\n\n"
+                           . "- TPMS Team";
+
+            self::sendWithRetry($mail);
+            self::logMail("Import welcome email sent to {$toEmail} (ID: {$studentId})", 'SUCCESS');
+            return true;
+        } catch (Exception $e) {
+            $err = !empty($mail->ErrorInfo) ? $mail->ErrorInfo : $e->getMessage();
+            self::$lastError = $err;
+            self::logMail("Failed import welcome email to {$toEmail}: {$err}", 'ERROR');
+            return false;
+        }
+    }
+
+    /**
+     * HTML template for the import welcome email.
+     */
+    private static function importWelcomeTemplate(
+        string $name,
+        string $email,
+        string $studentId,
+        string $tempPassword
+    ): string {
+        $appName  = APP_FULL_NAME;
+        $loginUrl = FULL_URL . '/login';
+        $year     = date('Y');
+
+        return <<<HTML
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Welcome to TPMS</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f4f6fb;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f6fb;padding:40px 0;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.08);border:1px solid #e5e7eb;">
+
+          <!-- Header -->
+          <tr>
+            <td style="background:linear-gradient(135deg,#4f46e5 0%,#7c3aed 100%);padding:40px 40px 30px;text-align:center;">
+              <div style="font-size:48px;margin-bottom:12px;">🎓</div>
+              <h1 style="margin:0;color:#ffffff;font-size:26px;font-weight:700;letter-spacing:-0.5px;">Welcome to TPMS!</h1>
+              <p style="margin:8px 0 0;color:rgba(255,255,255,0.85);font-size:14px;font-weight:500;">{$appName}</p>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding:36px 40px;">
+              <p style="margin:0 0 16px;font-size:16px;color:#1f2937;font-weight:600;">Hi <strong>{$name}</strong>,</p>
+              <p style="margin:0 0 24px;font-size:15px;color:#4b5563;line-height:1.7;">
+                Your student account has been created by the college administrator via bulk import. You can now log in to
+                <strong>TPMS</strong> to browse job opportunities, apply for positions, track your placement journey, and more.
+              </p>
+
+              <!-- Credentials Box -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+                <tr>
+                  <td style="background:#f8fafc;border:1px solid #e2e8f0;border-left:4px solid #4f46e5;border-radius:10px;padding:20px 24px;">
+                    <p style="margin:0 0 12px;font-size:14px;font-weight:700;color:#1e293b;text-transform:uppercase;letter-spacing:0.5px;">🔐 Your Login Credentials</p>
+                    <table width="100%" cellpadding="4" cellspacing="0" style="font-size:14px;color:#334155;">
+                      <tr>
+                        <td width="140" style="font-weight:600;color:#64748b;">Login URL:</td>
+                        <td><a href="{$loginUrl}" style="color:#4f46e5;text-decoration:none;font-weight:600;">{$loginUrl}</a></td>
+                      </tr>
+                      <tr>
+                        <td style="font-weight:600;color:#64748b;">Email:</td>
+                        <td style="font-family:'Courier New',monospace;font-weight:700;color:#0f172a;">{$email}</td>
+                      </tr>
+                      <tr>
+                        <td style="font-weight:600;color:#64748b;">Student ID:</td>
+                        <td style="font-family:'Courier New',monospace;font-weight:700;color:#4f46e5;">{$studentId}</td>
+                      </tr>
+                      <tr>
+                        <td style="font-weight:600;color:#64748b;">Temp Password:</td>
+                        <td style="font-family:'Courier New',monospace;font-weight:800;font-size:15px;color:#dc2626;letter-spacing:1px;">{$tempPassword}</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Warning Box -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
+                <tr>
+                  <td style="background:#fef9c3;border-left:4px solid #eab308;border-radius:8px;padding:14px 20px;">
+                    <p style="margin:0;font-size:13.5px;color:#713f12;line-height:1.6;">
+                      ⚠️ <strong>Important:</strong> This is a temporary password. Please log in immediately and change your password from your profile settings for security.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- CTA Button -->
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center" style="padding:8px 0 20px;">
+                    <a href="{$loginUrl}"
+                       style="display:inline-block;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#ffffff;text-decoration:none;font-size:16px;font-weight:700;padding:16px 48px;border-radius:50px;box-shadow:0 4px 15px rgba(79,70,229,0.4);letter-spacing:0.3px;">
+                      🚀 &nbsp; Login to TPMS
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin:0;font-size:13px;color:#94a3b8;text-align:center;line-height:1.6;">
+                If you have any issues logging in, contact your placement coordinator.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background:#f9fafb;border-top:1px solid #f3f4f6;padding:24px 40px;text-align:center;">
+              <p style="margin:0 0 4px;font-size:13px;color:#6b7280;font-weight:500;">Training &amp; Placement Management System (TPMS)</p>
+              <p style="margin:0;font-size:12px;color:#9ca3af;">© {$year} TPMS. All rights reserved.</p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+HTML;
+    }
+
+    // =========================================================
+    // TEST EMAIL TEMPLATE
+    // =========================================================
+
+    private static function testEmailTemplate(string $toName): string {
+        $appName = defined('APP_FULL_NAME') ? APP_FULL_NAME : 'Training & Placement Management System';
+        $host    = defined('SMTP_HOST') ? SMTP_HOST : 'smtp-relay.brevo.com';
+        $from    = defined('SMTP_FROM_EMAIL') ? SMTP_FROM_EMAIL : '-';
+        $sentAt  = date('d M Y H:i:s T');
+        $year    = date('Y');
+        return <<<HTML
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>TPMS – SMTP Test</title></head>
+<body style="margin:0;padding:0;background:#f1f5f9;font-family:'Segoe UI',Helvetica,Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0">
+    <tr>
+      <td align="center" style="padding:40px 20px;">
+        <table width="580" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,0.08);border:1px solid #e5e7eb;">
+
+          <!-- Header -->
+          <tr>
+            <td style="background:linear-gradient(135deg,#4f46e5 0%,#7c3aed 100%);padding:36px 40px 28px;text-align:center;">
+              <div style="font-size:44px;margin-bottom:10px;">✅</div>
+              <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:700;letter-spacing:-0.5px;">Brevo SMTP Test</h1>
+              <p style="margin:8px 0 0;color:rgba(255,255,255,0.85);font-size:13px;">$appName</p>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding:36px 40px;">
+              <p style="margin:0 0 16px;font-size:16px;color:#1f2937;font-weight:600;">Hi <strong>$toName</strong>,</p>
+              <p style="margin:0 0 24px;font-size:15px;color:#4b5563;line-height:1.7;">
+                This is a <strong>test email</strong> from TPMS. If you received this, your
+                <strong>Brevo SMTP</strong> configuration is working correctly and all system
+                emails will be delivered reliably.
+              </p>
+
+              <!-- SMTP Details -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+                <tr>
+                  <td style="background:#f0fdf4;border:1px solid #bbf7d0;border-left:4px solid #10b981;border-radius:10px;padding:20px 24px;">
+                    <p style="margin:0 0 12px;font-size:13px;font-weight:700;color:#065f46;text-transform:uppercase;letter-spacing:0.5px;">📡 SMTP Configuration</p>
+                    <table width="100%" cellpadding="4" cellspacing="0" style="font-size:13px;color:#334155;">
+                      <tr><td width="130" style="font-weight:600;color:#64748b;">Provider:</td><td style="font-weight:700;color:#047857;">Brevo SMTP</td></tr>
+                      <tr><td style="font-weight:600;color:#64748b;">Host:</td><td style="font-family:'Courier New',monospace;">$host</td></tr>
+                      <tr><td style="font-weight:600;color:#64748b;">From:</td><td>$from</td></tr>
+                      <tr><td style="font-weight:600;color:#64748b;">Sent at:</td><td>$sentAt</td></tr>
+                      <tr><td style="font-weight:600;color:#64748b;">Status:</td><td><span style="color:#059669;font-weight:700;">✅ Connected &amp; Delivered</span></td></tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin:0;font-size:13px;color:#6b7280;line-height:1.6;">
+                You can safely ignore this email. It was triggered from the
+                <strong>Admin → Settings → Email Configuration</strong> panel.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding:20px 40px;background:#f8fafc;border-top:1px solid #e5e7eb;text-align:center;">
+              <p style="margin:0 0 4px;font-size:13px;color:#6b7280;font-weight:500;">$appName (TPMS)</p>
+              <p style="margin:0;font-size:12px;color:#9ca3af;">© $year TPMS. All rights reserved.</p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
   </table>
 </body>
 </html>

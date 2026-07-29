@@ -13,7 +13,7 @@
     overflow: hidden;
 }
 
-/* Animated Background */
+/* Background */
 .auth-wrapper::before {
     content: '';
     position: absolute;
@@ -23,7 +23,6 @@
     background: radial-gradient(circle, rgba(30, 64, 175, 0.25), transparent 70%);
     top: -150px;
     right: -100px;
-    animation: float 8s ease-in-out infinite;
 }
 
 .auth-wrapper::after {
@@ -35,13 +34,6 @@
     background: radial-gradient(circle, rgba(13, 148, 136, 0.2), transparent 70%);
     bottom: -100px;
     left: -80px;
-    animation: float 10s ease-in-out infinite reverse;
-}
-
-@keyframes float {
-    0%, 100% { transform: translate(0, 0) scale(1); }
-    33% { transform: translate(30px, -30px) scale(1.05); }
-    66% { transform: translate(-20px, 20px) scale(0.95); }
 }
 
 .auth-container {
@@ -63,7 +55,6 @@
     border-radius: 16px;
     padding: 40px 38px;
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2), 0 0 80px rgba(30, 64, 175, 0.08);
-    animation: fadeInUp 0.45s ease;
 }
 
 .auth-logo {
@@ -119,7 +110,7 @@
     color: var(--text-secondary);
     cursor: pointer;
     border-radius: var(--radius-full);
-    transition: all var(--transition-fast);
+    transition: background var(--transition-fast), color var(--transition-fast);
 }
 
 .auth-role-tab:hover {
@@ -179,14 +170,13 @@
     border-radius: 8px;
     color: #fff;
     cursor: pointer;
-    transition: all 180ms ease;
+    transition: box-shadow 150ms ease, background 150ms ease;
     box-shadow: 0 3px 12px rgba(30, 64, 175, 0.28);
     letter-spacing: 0.2px;
 }
 
 .auth-form .btn-login:hover {
     box-shadow: 0 6px 20px rgba(30, 64, 175, 0.38);
-    transform: translateY(-1px);
 }
 
 .auth-form .form-check {
@@ -265,7 +255,7 @@
 .password-strength-fill {
     height: 100%;
     border-radius: 2px;
-    transition: all var(--transition-base);
+    transition: width var(--transition-base), background var(--transition-base);
     width: 0;
 }
 
@@ -295,7 +285,7 @@
     font-weight: 700;
     border: 2px solid var(--border-color);
     border-radius: var(--radius-md);
-    transition: all var(--transition-fast);
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
     font-family: var(--font-family);
 }
 
@@ -318,7 +308,7 @@
     height: 10px;
     border-radius: 50%;
     background: var(--gray-300);
-    transition: all var(--transition-fast);
+    transition: background var(--transition-fast), width var(--transition-fast);
 }
 
 .step-dot.active {

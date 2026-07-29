@@ -28,7 +28,7 @@
                 <?php if ($student['is_placed']): ?>
                 <div class="alert alert-success py-2 px-3 text-start" style="font-size:0.82rem">
                     <i class="fas fa-trophy me-1"></i> <strong>Placed</strong> at <?= htmlspecialchars($student['placed_company'] ?? 'N/A') ?>
-                    <?php if ($student['placed_package']): ?><br>Package: <?= formatCurrency($student['placed_package']) ?><?php endif; ?>
+                    <?php if ($student['placed_package']): ?><br>Package: <?= formatPackage($student['placed_package']) ?><?php endif; ?>
                 </div>
                 <?php endif; ?>
 

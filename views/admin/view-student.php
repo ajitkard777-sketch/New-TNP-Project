@@ -18,7 +18,7 @@
                     <div class="col-6"><strong>12th:</strong><br><?= ($student['twelfth_percentage'] ?? 'N/A') . '%' ?></div>
                     <div class="col-6"><strong>Backlogs:</strong><br><?= $student['backlogs'] ?? 0 ?> (Active: <?= $student['active_backlogs'] ?? 0 ?>)</div>
                     <div class="col-6"><strong>Year:</strong><br><?= $student['passing_year'] ?? 'N/A' ?></div>
-                    <?php if ($student['placed_package']): ?><div class="col-12"><strong>Package:</strong> <?= formatCurrency($student['placed_package']) ?></div><?php endif; ?>
+                    <?php if ($student['placed_package']): ?><div class="col-12"><strong>Package:</strong> <?= formatPackage($student['placed_package']) ?></div><?php endif; ?>
                 </div>
                 <?php if ($student['skills']): ?><div class="mt-3"><strong>Skills:</strong><div class="d-flex flex-wrap gap-1 mt-1"><?php foreach (explode(',', $student['skills']) as $sk): ?><span class="job-tag"><?= htmlspecialchars(trim($sk)) ?></span><?php endforeach; ?></div></div><?php endif; ?>
                 <?php if ($student['resume_path']): ?><a href="<?= uploadUrl('resume/' . $student['resume_path']) ?>" target="_blank" class="btn btn-outline-primary btn-sm mt-3 w-100"><i class="fas fa-file-pdf me-1"></i>View Resume</a><?php endif; ?>

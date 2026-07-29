@@ -9,39 +9,75 @@
 </div>
 
 <?php if (!$company['is_approved']): ?>
-<div class="alert alert-warning animate-fade-in-up"><i class="fas fa-clock me-2"></i><strong>Pending Approval</strong> — Your company registration is under review. You'll be able to post jobs once approved.</div>
+<div class="alert alert-warning"><i class="fas fa-clock me-2"></i><strong>Pending Approval</strong> — Your company registration is under review. You'll be able to post jobs once approved.</div>
 <?php endif; ?>
 
 <!-- Stats -->
 <div class="row g-4 mb-4">
-    <div class="col-xl-2 col-lg-4 col-sm-6">
-        <a href="<?= url('/company/jobs') ?>" class="stat-card-link">
-            <div class="stat-card gradient-primary"><div class="stat-card-icon bg-primary-soft"><i class="fas fa-briefcase"></i></div><div class="stat-card-value"><?= $totalJobs ?></div><div class="stat-card-label">Total Jobs</div></div>
+    <div class="col-xl-2 col-lg-4 col-md-4 col-sm-6 d-flex">
+        <a href="<?= url('/company/jobs') ?>" class="stat-card-link w-100">
+            <div class="stat-card gradient-primary">
+                <div class="stat-card-icon bg-primary-soft"><i class="fas fa-briefcase"></i></div>
+                <div>
+                    <div class="stat-card-value"><?= $totalJobs ?></div>
+                    <div class="stat-card-label">Total Jobs</div>
+                </div>
+            </div>
         </a>
     </div>
-    <div class="col-xl-2 col-lg-4 col-sm-6">
-        <a href="<?= url('/company/jobs') ?>" class="stat-card-link">
-            <div class="stat-card gradient-success"><div class="stat-card-icon bg-success-soft"><i class="fas fa-check-circle"></i></div><div class="stat-card-value"><?= $activeJobs ?></div><div class="stat-card-label">Active Jobs</div></div>
+    <div class="col-xl-2 col-lg-4 col-md-4 col-sm-6 d-flex">
+        <a href="<?= url('/company/jobs') ?>" class="stat-card-link w-100">
+            <div class="stat-card gradient-success">
+                <div class="stat-card-icon bg-success-soft"><i class="fas fa-check-circle"></i></div>
+                <div>
+                    <div class="stat-card-value"><?= $activeJobs ?></div>
+                    <div class="stat-card-label">Active Jobs</div>
+                </div>
+            </div>
         </a>
     </div>
-    <div class="col-xl-2 col-lg-4 col-sm-6">
-        <a href="<?= url('/company/jobs') ?>" class="stat-card-link">
-            <div class="stat-card gradient-info"><div class="stat-card-icon bg-info-soft"><i class="fas fa-users"></i></div><div class="stat-card-value"><?= $uniqueApplicantsCount ?></div><div class="stat-card-label">Students Applied</div></div>
+    <div class="col-xl-2 col-lg-4 col-md-4 col-sm-6 d-flex">
+        <a href="<?= url('/company/jobs') ?>" class="stat-card-link w-100">
+            <div class="stat-card gradient-info">
+                <div class="stat-card-icon bg-info-soft"><i class="fas fa-users"></i></div>
+                <div>
+                    <div class="stat-card-value"><?= $uniqueApplicantsCount ?></div>
+                    <div class="stat-card-label">Students Applied</div>
+                </div>
+            </div>
         </a>
     </div>
-    <div class="col-xl-2 col-lg-4 col-sm-6">
-        <a href="<?= url('/company/jobs') ?>" class="stat-card-link">
-            <div class="stat-card gradient-warning"><div class="stat-card-icon bg-warning-soft"><i class="fas fa-star"></i></div><div class="stat-card-value"><?= $shortlisted ?></div><div class="stat-card-label">Shortlisted</div></div>
+    <div class="col-xl-2 col-lg-4 col-md-4 col-sm-6 d-flex">
+        <a href="<?= url('/company/jobs') ?>" class="stat-card-link w-100">
+            <div class="stat-card gradient-warning">
+                <div class="stat-card-icon bg-warning-soft"><i class="fas fa-star"></i></div>
+                <div>
+                    <div class="stat-card-value"><?= $shortlisted ?></div>
+                    <div class="stat-card-label">Shortlisted</div>
+                </div>
+            </div>
         </a>
     </div>
-    <div class="col-xl-2 col-lg-4 col-sm-6">
-        <a href="<?= url('/company/jobs') ?>" class="stat-card-link">
-            <div class="stat-card gradient-violet"><div class="stat-card-icon bg-violet-soft"><i class="fas fa-trophy"></i></div><div class="stat-card-value"><?= $selected ?></div><div class="stat-card-label">Selected</div></div>
+    <div class="col-xl-2 col-lg-4 col-md-4 col-sm-6 d-flex">
+        <a href="<?= url('/company/jobs') ?>" class="stat-card-link w-100">
+            <div class="stat-card gradient-violet">
+                <div class="stat-card-icon bg-violet-soft"><i class="fas fa-trophy"></i></div>
+                <div>
+                    <div class="stat-card-value"><?= $selected ?></div>
+                    <div class="stat-card-label">Selected</div>
+                </div>
+            </div>
         </a>
     </div>
-    <div class="col-xl-2 col-lg-4 col-sm-6">
-        <a href="<?= url('/company/interviews') ?>" class="stat-card-link">
-            <div class="stat-card gradient-danger"><div class="stat-card-icon bg-danger-soft"><i class="fas fa-calendar-check"></i></div><div class="stat-card-value"><?= $interviewCount ?></div><div class="stat-card-label">Interviews</div></div>
+    <div class="col-xl-2 col-lg-4 col-md-4 col-sm-6 d-flex">
+        <a href="<?= url('/company/interviews') ?>" class="stat-card-link w-100">
+            <div class="stat-card gradient-danger">
+                <div class="stat-card-icon bg-danger-soft"><i class="fas fa-calendar-check"></i></div>
+                <div>
+                    <div class="stat-card-value"><?= $interviewCount ?></div>
+                    <div class="stat-card-label">Interviews</div>
+                </div>
+            </div>
         </a>
     </div>
 </div>
@@ -124,4 +160,85 @@ new Chart(document.getElementById('companyFunnelChart'), {
     }
 });";
 ?>
+
+<!-- ── AI Recommendations Preview ──────────────────────────────── -->
+<?php
+require_once ROOT_PATH . '/models/Recommendation.php';
+$recoModel = new Recommendation();
+$topRecs   = $recoModel->getTopStudentsForCompany($company['id'], 3); // top 3 per job, show first job
+$recoStats = $recoModel->getCompanyRecommendationStats($company['id']);
+$firstRec  = $topRecs[0] ?? null;
+?>
+<div class="card mt-4">
+    <div class="card-header d-flex align-items-center justify-content-between">
+        <h6 class="mb-0"><i class="fas fa-robot text-primary me-2"></i>AI Student Recommendations</h6>
+        <a href="<?= url('/company/recommendations') ?>" class="btn btn-sm btn-outline-primary">
+            <i class="fas fa-expand-alt me-1"></i> View All
+        </a>
+    </div>
+    <div class="card-body">
+        <?php if (!$firstRec || empty($firstRec['students'])): ?>
+        <!-- No recommendations yet -->
+        <div class="text-center py-3">
+            <i class="fas fa-robot fa-2x text-muted mb-2 d-block"></i>
+            <p class="text-muted small mb-2">No recommendations computed yet.</p>
+            <a href="<?= url('/company/recommendations?refresh=1') ?>" class="btn btn-sm btn-primary">
+                <i class="fas fa-sync-alt me-1"></i> Generate Now
+            </a>
+        </div>
+        <?php else: ?>
+        <!-- Stats row -->
+        <div class="row g-2 mb-3">
+            <div class="col-4 text-center">
+                <div class="fw-bold text-primary" style="font-size:1.2rem;"><?= (int)($recoStats['total_candidates'] ?? 0) ?></div>
+                <div class="text-muted" style="font-size:0.7rem;">Analysed</div>
+            </div>
+            <div class="col-4 text-center border-start border-end">
+                <div class="fw-bold text-success" style="font-size:1.2rem;"><?= (int)($recoStats['excellent_matches'] ?? 0) ?></div>
+                <div class="text-muted" style="font-size:0.7rem;">Excellent</div>
+            </div>
+            <div class="col-4 text-center">
+                <div class="fw-bold text-warning" style="font-size:1.2rem;"><?= round((float)($recoStats['avg_score'] ?? 0), 0) ?>%</div>
+                <div class="text-muted" style="font-size:0.7rem;">Avg Score</div>
+            </div>
+        </div>
+        <!-- Top students for first job -->
+        <div class="text-muted mb-2" style="font-size:0.76rem;font-weight:600;text-transform:uppercase;letter-spacing:.4px;">
+            <i class="fas fa-briefcase me-1 text-primary"></i><?= htmlspecialchars($firstRec['job']['title']) ?>
+        </div>
+        <div class="d-flex flex-column gap-2">
+            <?php foreach (array_slice($firstRec['students'], 0, 3) as $s): ?>
+            <?php
+            $sc = (float)($s['recommendation_score'] ?? 0);
+            $sc_color = $sc >= 75 ? 'success' : ($sc >= 55 ? 'primary' : ($sc >= 35 ? 'warning' : 'danger'));
+            $avUrl = $s['profile_photo'] ? uploadUrl('profile_photos/' . $s['profile_photo']) : asset('images/default-avatar.png');
+            ?>
+            <div class="d-flex align-items-center gap-3 p-2 rounded-3 border">
+                <img src="<?= $avUrl ?>" onerror="this.src='<?= asset('images/default-avatar.png') ?>'"
+                     style="width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0;">
+                <div class="flex-grow-1 min-w-0">
+                    <div class="fw-semibold text-truncate" style="font-size:0.83rem;"><?= htmlspecialchars($s['first_name'] . ' ' . $s['last_name']) ?></div>
+                    <div class="d-flex align-items-center gap-2 mt-1">
+                        <div class="progress flex-grow-1" style="height:4px;border-radius:4px;">
+                            <div class="progress-bar bg-<?= $sc_color ?>" style="width:<?= round($sc) ?>%;"></div>
+                        </div>
+                        <span class="fw-bold text-<?= $sc_color ?>" style="font-size:0.75rem;flex-shrink:0;"><?= round($sc) ?>%</span>
+                    </div>
+                </div>
+                <a href="<?= url('/company/view-applicant/' . $s['student_id']) ?>" class="btn btn-xs btn-primary flex-shrink-0" style="padding:3px 8px;font-size:0.72rem;">
+                    View
+                </a>
+            </div>
+            <?php endforeach; ?>
+        </div>
+        <div class="text-center mt-3">
+            <a href="<?= url('/company/recommendations') ?>" class="btn btn-sm btn-outline-primary w-100">
+                <i class="fas fa-robot me-1"></i> See All Recommendations
+            </a>
+        </div>
+        <?php endif; ?>
+    </div>
+</div>
+
 <?php require_once ROOT_PATH . '/includes/footer.php'; ?>
+

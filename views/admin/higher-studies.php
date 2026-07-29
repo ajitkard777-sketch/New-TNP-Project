@@ -1,4 +1,4 @@
-﻿<?php require_once ROOT_PATH . '/includes/header.php'; ?>
+<?php require_once ROOT_PATH . '/includes/header.php'; ?>
 <div class="content-header">
     <div>
         <h1 class="page-title">Higher Studies Management</h1>
@@ -351,6 +351,26 @@
             </form>
         </div>
     </div>
-</div><!-- end #addUnivModal -->
-
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof $ !== 'undefined' && $.fn && $.fn.DataTable) {
+        if ($('#universitiesTable').length) {
+            $('#universitiesTable').DataTable({
+                pageLength: 10,
+                lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "All"]],
+                order: [[2, 'asc']]
+            });
+        }
+        if ($('#examsTable').length) {
+            $('#examsTable').DataTable({ pageLength: 10 });
+        }
+        if ($('#scholarshipsTable').length) {
+            $('#scholarshipsTable').DataTable({ pageLength: 10 });
+        }
+        if ($('#applicationsTable').length) {
+            $('#applicationsTable').DataTable({ pageLength: 10, order: [[4, 'desc']] });
+        }
+    }
+});
+</script>
 <?php require_once ROOT_PATH . '/includes/footer.php'; ?>

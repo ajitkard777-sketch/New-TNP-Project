@@ -41,7 +41,7 @@
         <div class="card-body p-0"><div class="table-responsive"><table class="table mb-0" id="companyReport">
             <thead><tr><th>Company</th><th>Placements</th><th>Avg Package (LPA)</th><th>Max Package (LPA)</th></tr></thead><tbody>
             <?php foreach ($companyWise as $cw): ?>
-            <tr><td class="fw-medium"><?= htmlspecialchars($cw['company_name']) ?></td><td><span class="badge bg-primary"><?= $cw['placements'] ?></span></td><td class="text-success fw-bold"><?= number_format($cw['avg_package'], 2) ?></td><td class="text-primary fw-bold"><?= number_format($cw['max_package'], 2) ?></td></tr>
+            <tr><td class="fw-medium"><?= htmlspecialchars($cw['company_name']) ?></td><td><span class="badge bg-primary"><?= $cw['placements'] ?></span></td><td class="text-success fw-bold"><?= formatPackage($cw['avg_package']) ?></td><td class="text-primary fw-bold"><?= formatPackage($cw['max_package']) ?></td></tr>
             <?php endforeach; ?>
         </tbody></table></div></div></div>
     </div>

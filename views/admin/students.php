@@ -1,5 +1,15 @@
 <?php require_once ROOT_PATH . '/includes/header.php'; ?>
-<div class="content-header"><div><h1 class="page-title">Manage Students</h1><p class="subtitle">Total: <?= $total ?> students</p></div></div>
+<div class="content-header">
+    <div>
+        <h1 class="page-title">Manage Students</h1>
+        <p class="subtitle">Total: <?= $total ?> students</p>
+    </div>
+    <div class="d-flex gap-2 align-items-center">
+        <a href="<?= url('/admin/import-students') ?>" class="btn btn-success" id="btnImportStudents">
+            <i class="fas fa-file-import me-2"></i>Import Students
+        </a>
+    </div>
+</div>
 
 <div class="card mb-4"><div class="card-body">
     <form method="GET" class="row g-3 align-items-end">

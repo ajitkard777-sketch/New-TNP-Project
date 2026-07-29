@@ -1,5 +1,5 @@
 RewriteEngine On
-RewriteBase /team1/
+RewriteBase /TNP/
 
 # Redirect to HTTPS (uncomment in production)
 # RewriteCond %{HTTPS} off

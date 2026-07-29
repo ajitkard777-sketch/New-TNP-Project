@@ -6,7 +6,7 @@
 <?php else: ?>
 <div class="card"><div class="card-body p-0"><div class="table-responsive">
     <table class="table mb-0">
-        <thead><tr><th>Job Title</th><th>Type</th><th>Salary</th><th>Applications</th><th>Deadline</th><th>Status</th><th>Actions</th></tr></thead>
+        <thead><tr><th>Job Title</th><th>Type</th><th>Package (LPA)</th><th>Applications</th><th>Deadline</th><th>Status</th><th>Actions</th></tr></thead>
         <tbody>
             <?php foreach ($jobs as $job): ?>
             <tr>

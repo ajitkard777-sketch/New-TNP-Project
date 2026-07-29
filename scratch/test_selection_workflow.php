@@ -62,7 +62,7 @@ $notifTitle = "Selected for Position! 🎉";
 $notifMsg   = "Congratulations! You have been selected for {$job['title']} at {$company['company_name']}.";
 $db->insert(
     "INSERT INTO notifications (user_id, title, message, type, category, link) VALUES (?, ?, ?, 'success', 'job', ?)",
-    [$student['user_id'], $notifTitle, $notifMsg, '/team1/student/applications']
+    [$student['user_id'], $notifTitle, $notifMsg, '/TNP/student/applications']
 );
 echo "✓ 5a. Database Updated: Application set to 'selected', Student marked placed.\n";
 echo "✓ 5b. In-App Notification Created in 'notifications' table (User ID: {$student['user_id']}).\n";

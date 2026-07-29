@@ -29,9 +29,15 @@ if (!isset($urlParts) || !is_array($urlParts)) {
 if (!function_exists('resolveCurrentPageKey')) {
     function resolveCurrentPageKey(?string $role = null, ?array $urlParts = []): string {
         $role = $role ?? getCurrentUserRole();
-        $urlParts = is_array($urlParts) ? $urlParts : [];
-        $action = $urlParts[1] ?? 'dashboard';
-        $subAction = $urlParts[2] ?? '';
+        $urlParts = is_array($urlParts) ? array_values($urlParts) : [];
+        $first = $urlParts[0] ?? '';
+        if (in_array($first, ['student', 'company', 'admin'])) {
+            $action = $urlParts[1] ?? 'dashboard';
+            $subAction = $urlParts[2] ?? '';
+        } else {
+            $action = $first ?: 'dashboard';
+            $subAction = $urlParts[1] ?? '';
+        }
 
         if ($role === 'admin') {
             switch ($action) {
@@ -70,6 +76,8 @@ if (!function_exists('resolveCurrentPageKey')) {
 
         if ($role === 'company') {
             switch ($action) {
+                case 'recommendations':
+                    return 'recommendations';
                 case 'edit-job':
                 case 'delete-job':
                 case 'applications':
@@ -89,16 +97,43 @@ if (!function_exists('resolveCurrentPageKey')) {
             if ($action === 'profile' && $subAction === 'edit') {
                 return 'resume';
             }
+            if ($action === 'jobs' && isset($_GET['ai']) && $_GET['ai'] == 1) {
+                return 'ai-jobs';
+            }
             switch ($action) {
+                case 'ai-jobs':
+                case 'recommendations':
+                    return 'ai-jobs';
+                case 'view-job':
+                    return (isset($_GET['ref']) && $_GET['ref'] === 'jobs') ? 'jobs' : 'ai-jobs';
                 case 'apply':
+                    return (isset($_GET['ref']) && $_GET['ref'] === 'ai') ? 'ai-jobs' : 'jobs';
                 case 'bookmark':
-                    return 'jobs';
+                    return 'bookmarks';
                 case 'withdraw':
                     return 'applications';
                 case 'register-training':
+                case 'withdraw-training':
                     return 'trainings';
                 case 'register-higher-study':
+                case 'apply-higher-study':
+                case 'edit-higher-study':
+                case 'withdraw-higher-study':
                     return 'higher-studies';
+                case 'upload-photo':
+                case 'upload-resume':
+                case 'delete-resume':
+                case 'upload-document':
+                case 'delete-document':
+                case 'add-project':
+                case 'delete-project':
+                case 'add-certification':
+                case 'delete-certification':
+                case 'add-language':
+                case 'delete-language':
+                case 'add-achievement':
+                case 'delete-achievement':
+                    return 'resume';
                 default:
                     return $action ?: 'dashboard';
             }

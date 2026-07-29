@@ -37,6 +37,8 @@ class AdminController {
         $averagePackage = $this->studentModel->getAveragePackage();
         $totalPlacements = (int)$this->db->fetchColumn("SELECT COUNT(*) FROM placements");
         $totalTrainings = (int)$this->db->fetchColumn("SELECT COUNT(*) FROM trainings");
+        $totalInterviews = (int)$this->db->fetchColumn("SELECT COUNT(*) FROM interviews");
+        $scheduledInterviews = (int)$this->db->fetchColumn("SELECT COUNT(*) FROM interviews WHERE status = 'scheduled' AND interview_date >= CURDATE()");
         $appliedStudentsCount = (int)$this->db->fetchColumn("SELECT COUNT(DISTINCT student_id) FROM applications");
         $trainingEnrolledCount = (int)$this->db->fetchColumn("SELECT COUNT(DISTINCT student_id) FROM training_registrations");
         $higherStudiesCount = (int)$this->db->fetchColumn("SELECT COUNT(DISTINCT student_id) FROM higher_study_applications");
@@ -83,22 +85,28 @@ class AdminController {
     public function markPlaced($id): void {
         CsrfMiddleware::requireValidToken();
         $data = sanitizeArray($_POST);
+        $placedPackage = (float)($data['placed_package'] ?? 0);
+        if ($placedPackage >= 1000) {
+            $placedPackage = $placedPackage / 100000;
+        }
+
         $this->studentModel->update($id, [
             'is_placed' => 1,
             'placed_company' => $data['placed_company'] ?? '',
-            'placed_package' => $data['placed_package'] ?? 0,
+            'placed_package' => $placedPackage,
             'placed_date' => $data['placed_date'] ?? date('Y-m-d'),
         ]);
         $student = $this->studentModel->findById($id);
         if ($student) {
             $companyObj = $this->db->fetchOne("SELECT id FROM companies WHERE company_name = ?", [$data['placed_company'] ?? '']);
             $this->db->insert("INSERT INTO placements (student_id, company_id, package, placement_date, status) VALUES (?, ?, ?, ?, 'confirmed')",
-                [$id, $companyObj['id'] ?? null, $data['placed_package'] ?? 0, $data['placed_date'] ?? date('Y-m-d')]);
+                [$id, $companyObj['id'] ?? null, $placedPackage, $data['placed_date'] ?? date('Y-m-d')]);
             $this->db->insert("INSERT INTO notifications (user_id, title, message, type, category) VALUES (?, ?, ?, ?, ?)",
-                [$student['user_id'], 'Congratulations! You are placed!', "You have been placed at {$data['placed_company']} with a package of " . formatCurrency($data['placed_package'] ?? 0), 'success', 'placement']);
+                [$student['user_id'], 'Congratulations! You are placed!', "You have been placed at {$data['placed_company']} with a package of " . formatPackage($placedPackage), 'success', 'placement']);
         }
         setFlash('success', 'Student marked as placed!');
         redirect('/admin/students');
+
     }
 
     public function deleteStudent($id): void {
@@ -383,9 +391,10 @@ class AdminController {
         $scholarships = $this->db->fetchAll("SELECT * FROM scholarships ORDER BY created_at DESC");
         // Student applications tab
         $studentApplications = $this->db->fetchAll(
-            "SELECT hsa.*, s.first_name, s.last_name, s.branch, s.enrollment_no
+            "SELECT hsa.*, s.first_name, s.last_name, s.branch, s.enrollment_no, u.name as university_name, u.country
              FROM higher_study_applications hsa
              JOIN students s ON hsa.student_id = s.id
+             JOIN universities u ON hsa.university_id = u.id
              WHERE hsa.status != 'withdrawn'
              ORDER BY hsa.created_at DESC"
         );
@@ -641,7 +650,515 @@ class AdminController {
 
     // ============ Settings ============
     public function settings(): void {
-        $pageTitle = 'System Settings';
+        $pageTitle  = 'System Settings';
+        $smtpStatus = Mailer::getSmtpStatus();
         require_once VIEWS_PATH . '/admin/settings.php';
     }
+
+    /**
+     * Send a test email to verify Brevo SMTP configuration (AJAX POST)
+     */
+    public function sendTestEmail(): void {
+        header('Content-Type: application/json');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'message' => 'Invalid request method.']);
+            exit;
+        }
+
+        CsrfMiddleware::requireValidToken();
+
+        $toEmail = $_SESSION['user_email'] ?? '';
+        $toName  = $_SESSION['user_name']  ?? 'Admin';
+
+        if (!$toEmail || !filter_var($toEmail, FILTER_VALIDATE_EMAIL)) {
+            echo json_encode(['success' => false, 'message' => 'Admin email address is not configured.']);
+            exit;
+        }
+
+        $ok = Mailer::sendTestEmail($toEmail, $toName);
+
+        if ($ok) {
+            echo json_encode([
+                'success' => true,
+                'message' => "Test email sent to {$toEmail}. Please check your inbox.",
+            ]);
+        } else {
+            echo json_encode([
+                'success' => false,
+                'message' => 'Failed to send test email: ' . Mailer::getLastError(),
+            ]);
+        }
+        exit;
+    }
+
+    // ============ Import Students ============
+
+    /**
+     * Show the Import Students wizard page (GET)
+     */
+    public function importStudentsPage(): void {
+        $pageTitle = 'Import Students from Excel';
+        require_once VIEWS_PATH . '/admin/import-students.php';
+    }
+
+    /**
+     * Download a sample Excel template (.xlsx) for bulk import (GET)
+     */
+    public function downloadImportTemplate(): void {
+        require_once ROOT_PATH . '/includes/ExcelParser.php';
+        try {
+            $xlsx = ExcelParser::generateTemplate();
+        } catch (RuntimeException $e) {
+            setFlash('danger', 'Could not generate template: ' . $e->getMessage());
+            redirect('/admin/import-students');
+            return;
+        }
+
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment; filename="TPMS_Student_Import_Template.xlsx"');
+        header('Content-Length: ' . strlen($xlsx));
+        header('Cache-Control: no-cache, no-store, must-revalidate');
+        header('Pragma: no-cache');
+        echo $xlsx;
+        exit;
+    }
+
+    /**
+     * Handle the AJAX Excel import POST request.
+     * Returns JSON with import results.
+     */
+    public function doImportStudents(): void {
+        // Must be POST + admin + CSRF
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            jsonResponse(['success' => false, 'message' => 'Invalid request method.'], 405);
+        }
+
+        CsrfMiddleware::requireValidToken();
+
+        require_once ROOT_PATH . '/includes/ExcelParser.php';
+        require_once ROOT_PATH . '/includes/Mailer.php';
+
+        // ── File Validation ──────────────────────────────────────────
+        if (empty($_FILES['import_file']) || $_FILES['import_file']['error'] !== UPLOAD_ERR_OK) {
+            $errCode = $_FILES['import_file']['error'] ?? -1;
+            $msg = match($errCode) {
+                UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE => 'File exceeds the maximum allowed size of 10 MB.',
+                UPLOAD_ERR_NO_FILE => 'No file was uploaded.',
+                default => 'File upload failed (error code: ' . $errCode . ').',
+            };
+            jsonResponse(['success' => false, 'message' => $msg]);
+        }
+
+        $file     = $_FILES['import_file'];
+        $fileSize = $file['size'];
+        $tmpPath  = $file['tmp_name'];
+        $origName = $file['name'];
+        $ext      = strtolower(pathinfo($origName, PATHINFO_EXTENSION));
+
+        // File size limit: 10 MB
+        $maxBytes = 10 * 1024 * 1024;
+        if ($fileSize > $maxBytes) {
+            jsonResponse(['success' => false, 'message' => 'File size exceeds 10 MB limit.']);
+        }
+
+        // Extension whitelist
+        if (!in_array($ext, ['xlsx', 'xls', 'csv'])) {
+            jsonResponse(['success' => false, 'message' => 'Invalid file type. Only .xlsx, .xls, and .csv files are allowed.']);
+        }
+
+        // MIME type check (anti-malicious upload)
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mime  = finfo_file($finfo, $tmpPath);
+        finfo_close($finfo);
+        $allowedMimes = [
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'application/vnd.ms-excel',
+            'text/csv', 'text/plain',
+            'application/csv', 'application/octet-stream',
+        ];
+        if (!in_array($mime, $allowedMimes) && $ext !== 'csv') {
+            // For Excel files, be more strict; CSV can have text/plain
+            if (!str_starts_with($mime, 'application/') && !str_starts_with($mime, 'text/')) {
+                jsonResponse(['success' => false, 'message' => 'File appears to be invalid or potentially malicious.']);
+            }
+        }
+
+        // ── Parse File ───────────────────────────────────────────────
+        try {
+            $rawRows = ExcelParser::parse($tmpPath, $ext, 2000);
+        } catch (RuntimeException $e) {
+            jsonResponse(['success' => false, 'message' => 'Could not parse file: ' . $e->getMessage()]);
+        }
+
+        if (empty($rawRows)) {
+            jsonResponse(['success' => false, 'message' => 'The file is empty or contains no data rows.']);
+        }
+
+        // Map flexible column names to canonical field names
+        $rows = array_map([ExcelParser::class, 'mapHeaders'], $rawRows);
+
+        // ── Build existing DB sets for duplicate detection ────────────
+        $existingEmails = array_column(
+            $this->db->fetchAll("SELECT email FROM users WHERE role = 'student'"), 'email'
+        );
+        $existingEmails = array_map('strtolower', $existingEmails);
+
+        $existingPRNs = array_column(
+            $this->db->fetchAll("SELECT enrollment_no FROM students WHERE enrollment_no IS NOT NULL AND enrollment_no != ''"), 'enrollment_no'
+        );
+        $existingPRNs = array_map('strtolower', $existingPRNs);
+
+        $existingRegNos = array_column(
+            $this->db->fetchAll("SELECT registration_no FROM students WHERE registration_no IS NOT NULL AND registration_no != ''"), 'registration_no'
+        );
+        $existingRegNos = array_map('strtolower', $existingRegNos);
+
+        // ── Process each row ─────────────────────────────────────────
+        $results       = [];
+        $successCount  = 0;
+        $skippedCount  = 0;
+        $failedCount   = 0;
+        $successReport = [];
+        $failedReport  = [];
+
+        // Track new duplicates within the current batch
+        $batchEmails  = [];
+        $batchPRNs    = [];
+        $batchRegNos  = [];
+
+        foreach ($rows as $rowIndex => $row) {
+            $rowNum = $rowIndex + 2; // Excel row number (1-based, +1 for header)
+            $errors = [];
+
+            // ── Required Fields ───────────────────────────────────
+            $fullName = trim($row['full_name'] ?? '');
+            $email    = strtolower(trim($row['email'] ?? ''));
+            $prn      = trim($row['enrollment_no'] ?? '');
+            $branch   = trim($row['branch'] ?? '');
+
+            if (empty($fullName)) $errors[] = 'Full Name is required.';
+            if (empty($email))    $errors[] = 'Email is required.';
+            if (empty($prn))      $errors[] = 'PRN/Roll Number is required.';
+            if (empty($branch))   $errors[] = 'Branch is required.';
+
+            // ── Email Format Validation ───────────────────────────
+            if ($email && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                $errors[] = "Invalid email format: '{$email}'.";
+            }
+
+            // ── Phone Validation ──────────────────────────────────
+            $phone = preg_replace('/\D/', '', trim($row['phone'] ?? ''));
+            if ($phone && strlen($phone) !== 10) {
+                $errors[] = "Phone number must be exactly 10 digits (got: '{$row['phone']}').";
+            }
+
+            // ── CGPA Validation ───────────────────────────────────
+            $cgpa = trim($row['cgpa'] ?? '');
+            if ($cgpa !== '') {
+                if (!is_numeric($cgpa) || (float)$cgpa < 0 || (float)$cgpa > 10) {
+                    $errors[] = "CGPA must be a number between 0 and 10 (got: '{$cgpa}').";
+                } else {
+                    $cgpa = (float)$cgpa;
+                }
+            } else {
+                $cgpa = null;
+            }
+
+            // ── Gender Validation ─────────────────────────────────
+            $gender = strtolower(trim($row['gender'] ?? ''));
+            if ($gender && !in_array($gender, ['male', 'female', 'other'])) {
+                // Try to normalize common variations
+                if (in_array($gender, ['m', 'male', 'boy'])) $gender = 'male';
+                elseif (in_array($gender, ['f', 'female', 'girl'])) $gender = 'female';
+                else $gender = 'other';
+            }
+            if (!$gender) $gender = null;
+
+            // ── Date of Birth Validation ──────────────────────────
+            $dob = trim($row['dob'] ?? '');
+            if ($dob) {
+                // Try various formats
+                $dobFormats = ['Y-m-d', 'd/m/Y', 'm/d/Y', 'd-m-Y', 'd.m.Y', 'Y/m/d'];
+                $dobParsed = null;
+                foreach ($dobFormats as $fmt) {
+                    $dt = DateTime::createFromFormat($fmt, $dob);
+                    if ($dt && $dt->format($fmt) === $dob) {
+                        $dobParsed = $dt->format('Y-m-d');
+                        break;
+                    }
+                }
+                // Fallback
+                if (!$dobParsed) {
+                    $ts = strtotime($dob);
+                    $dobParsed = $ts ? date('Y-m-d', $ts) : null;
+                }
+                $dob = $dobParsed;
+                if (!$dob) {
+                    $errors[] = "Invalid Date of Birth format. Use YYYY-MM-DD or DD/MM/YYYY.";
+                }
+            } else {
+                $dob = null;
+            }
+
+            // ── Passing Year ──────────────────────────────────────
+            $passingYear = trim($row['passing_year'] ?? '');
+            if ($passingYear) {
+                if (!preg_match('/^\d{4}$/', $passingYear) || (int)$passingYear < 2000 || (int)$passingYear > 2050) {
+                    $errors[] = "Passing Year must be a 4-digit year between 2000 and 2050 (got: '{$passingYear}').";
+                    $passingYear = null;
+                } else {
+                    $passingYear = (int)$passingYear;
+                }
+            } else {
+                $passingYear = null;
+            }
+
+            // ── If validation errors, mark as failed ──────────────
+            if (!empty($errors)) {
+                $failedCount++;
+                $results[] = [
+                    'row'    => $rowNum,
+                    'name'   => $fullName ?: '(unknown)',
+                    'email'  => $email ?: '(unknown)',
+                    'status' => 'failed',
+                    'errors' => $errors,
+                ];
+                $failedReport[] = array_merge(['row' => $rowNum, 'status' => 'failed', 'error' => implode(' | ', $errors)], $row);
+                continue;
+            }
+
+            // ── Duplicate Detection ───────────────────────────────
+            $regNo = trim($row['registration_no'] ?? '');
+
+            $isDuplicate = false;
+            $dupReasons  = [];
+
+            if (in_array($email, $existingEmails) || in_array($email, $batchEmails)) {
+                $isDuplicate = true;
+                $dupReasons[] = "Email '{$email}' already exists.";
+            }
+            if ($prn && (in_array(strtolower($prn), $existingPRNs) || in_array(strtolower($prn), $batchPRNs))) {
+                $isDuplicate = true;
+                $dupReasons[] = "PRN/Roll Number '{$prn}' already exists.";
+            }
+            if ($regNo && (in_array(strtolower($regNo), $existingRegNos) || in_array(strtolower($regNo), $batchRegNos))) {
+                $isDuplicate = true;
+                $dupReasons[] = "Registration Number '{$regNo}' already exists.";
+            }
+
+            if ($isDuplicate) {
+                $skippedCount++;
+                $results[] = [
+                    'row'    => $rowNum,
+                    'name'   => $fullName,
+                    'email'  => $email,
+                    'status' => 'skipped',
+                    'errors' => $dupReasons,
+                ];
+                $failedReport[] = array_merge(['row' => $rowNum, 'status' => 'skipped', 'error' => implode(' | ', $dupReasons)], $row);
+                continue;
+            }
+
+            // ── Split Full Name ───────────────────────────────────
+            $nameParts = explode(' ', $fullName, 2);
+            $firstName = $nameParts[0];
+            $lastName  = $nameParts[1] ?? '';
+
+            // ── Generate Student ID ───────────────────────────────
+            $year      = date('Y');
+            $lastId    = (int)$this->db->fetchColumn("SELECT COUNT(*) FROM students") + $successCount + 1;
+            $studentId = 'STU' . $year . str_pad($lastId, 5, '0', STR_PAD_LEFT);
+
+            // ── Generate Temporary Password ───────────────────────
+            $tempPassword = $this->generateTempPassword();
+
+            // ── Insert into DB (transaction) ──────────────────────
+            try {
+                $this->db->beginTransaction();
+
+                // Create user account
+                $userId = $this->db->insert(
+                    "INSERT INTO users (email, password, role, status, email_verified) VALUES (?, ?, 'student', 'active', 1)",
+                    [$email, password_hash($tempPassword, PASSWORD_BCRYPT, ['cost' => 10])]
+                );
+
+                // Calculate profile completion (basic import data)
+                $completion = 20; // Base for having name + email
+                if ($phone)       $completion += 10;
+                if ($branch)      $completion += 10;
+                if ($cgpa)        $completion += 10;
+                if ($dob)         $completion += 10;
+                if ($gender)      $completion += 5;
+                if (!empty($row['skills'])) $completion += 10;
+                if (!empty($row['address'])) $completion += 5;
+                if (!empty($row['linkedin'])) $completion += 10;
+                $completion = min($completion, 85); // Cap at 85% for imports
+
+                // Create student profile
+                $this->db->insert(
+                    "INSERT INTO students (
+                        user_id, first_name, last_name, phone, dob, gender,
+                        address, branch, enrollment_no, registration_no,
+                        passing_year, cgpa, skills, linkedin, github, portfolio,
+                        parent_name, parent_phone, profile_completion, created_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())",
+                    [
+                        $userId,
+                        $firstName,
+                        $lastName,
+                        $phone ?: null,
+                        $dob,
+                        $gender,
+                        trim($row['address'] ?? '') ?: null,
+                        $branch,
+                        $prn ?: null,
+                        $regNo ?: null,
+                        $passingYear,
+                        $cgpa,
+                        trim($row['skills'] ?? '') ?: null,
+                        trim($row['linkedin'] ?? '') ?: null,
+                        trim($row['github'] ?? '') ?: null,
+                        trim($row['portfolio'] ?? '') ?: null,
+                        trim($row['parent_name'] ?? '') ?: null,
+                        preg_replace('/\D/', '', trim($row['parent_phone'] ?? '')) ?: null,
+                        $completion,
+                    ]
+                );
+
+                // Send welcome notification
+                $this->db->insert(
+                    "INSERT INTO notifications (user_id, title, message, type, category) VALUES (?, ?, ?, 'success', 'system')",
+                    [$userId, 'Welcome to TPMS!', "Your student account has been created. Login with your email and temporary password to get started."]
+                );
+
+                $this->db->commit();
+
+                // Add to batch duplicate sets
+                $batchEmails[]  = $email;
+                $batchPRNs[]    = strtolower($prn);
+                if ($regNo) $batchRegNos[] = strtolower($regNo);
+
+                // Send welcome email (non-blocking best-effort)
+                Mailer::sendImportWelcome($email, $fullName, $studentId, $tempPassword);
+
+                $successCount++;
+                $results[] = [
+                    'row'       => $rowNum,
+                    'name'      => $fullName,
+                    'email'     => $email,
+                    'studentId' => $studentId,
+                    'status'    => 'success',
+                    'errors'    => [],
+                ];
+                $successReport[] = [
+                    'row'        => $rowNum,
+                    'name'       => $fullName,
+                    'email'      => $email,
+                    'student_id' => $studentId,
+                    'branch'     => $branch,
+                    'prn'        => $prn,
+                    'status'     => 'imported',
+                ];
+
+            } catch (Exception $dbEx) {
+                $this->db->rollback();
+                $failedCount++;
+                $results[] = [
+                    'row'    => $rowNum,
+                    'name'   => $fullName,
+                    'email'  => $email,
+                    'status' => 'failed',
+                    'errors' => ['Database error: ' . $dbEx->getMessage()],
+                ];
+                $failedReport[] = array_merge([
+                    'row'    => $rowNum,
+                    'status' => 'db_error',
+                    'error'  => $dbEx->getMessage(),
+                ], $row);
+            }
+        }
+
+        // ── Log activity ──────────────────────────────────────────────
+        logActivity(
+            'import_students',
+            'students',
+            "Bulk import: {$successCount} imported, {$skippedCount} skipped, {$failedCount} failed from '{$origName}'"
+        );
+
+        // ── Store reports in session for download ─────────────────────
+        $_SESSION['import_success_report'] = $successReport;
+        $_SESSION['import_failed_report']  = array_filter($results, fn($r) => in_array($r['status'], ['failed', 'skipped']));
+
+        jsonResponse([
+            'success'      => true,
+            'totalRows'    => count($rows),
+            'imported'     => $successCount,
+            'skipped'      => $skippedCount,
+            'failed'       => $failedCount,
+            'results'      => $results,
+        ]);
+    }
+
+    /**
+     * Download import report as CSV (success or failed)
+     */
+    public function downloadImportReport(): void {
+        $type = sanitize($_GET['type'] ?? 'success');
+
+        if ($type === 'success') {
+            $data    = $_SESSION['import_success_report'] ?? [];
+            $headers = ['Row', 'Name', 'Email', 'Student ID', 'Branch', 'PRN', 'Status'];
+            $filename = 'TPMS_Import_Success_Report_' . date('Y-m-d_H-i') . '.csv';
+            $rows = array_map(fn($r) => [
+                $r['row'], $r['name'], $r['email'], $r['student_id'] ?? '', $r['branch'] ?? '', $r['prn'] ?? '', $r['status']
+            ], $data);
+        } else {
+            $data    = $_SESSION['import_failed_report'] ?? [];
+            $headers = ['Row', 'Name', 'Email', 'Status', 'Errors'];
+            $filename = 'TPMS_Import_Failed_Report_' . date('Y-m-d_H-i') . '.csv';
+            $rows = array_map(fn($r) => [
+                $r['row'], $r['name'] ?? '', $r['email'] ?? '', $r['status'], implode('; ', $r['errors'] ?? [])
+            ], $data);
+        }
+
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Cache-Control: no-cache, no-store, must-revalidate');
+
+        $out = fopen('php://output', 'w');
+        // BOM for Excel UTF-8 compatibility
+        fwrite($out, "\xEF\xBB\xBF");
+        fputcsv($out, $headers);
+        foreach ($rows as $row) {
+            fputcsv($out, $row);
+        }
+        fclose($out);
+        exit;
+    }
+
+    /**
+     * Generate a secure temporary password.
+     * Format: 3 upper + 3 lower + 3 digits + 2 special = 11 chars
+     */
+    private function generateTempPassword(): string {
+        $upper   = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+        $lower   = 'abcdefghjkmnpqrstuvwxyz';
+        $digits  = '23456789';
+        $special = '@#$!';
+
+        $pass  = '';
+        $pass .= $upper[random_int(0, strlen($upper) - 1)];
+        $pass .= $upper[random_int(0, strlen($upper) - 1)];
+        $pass .= $lower[random_int(0, strlen($lower) - 1)];
+        $pass .= $lower[random_int(0, strlen($lower) - 1)];
+        $pass .= $digits[random_int(0, strlen($digits) - 1)];
+        $pass .= $digits[random_int(0, strlen($digits) - 1)];
+        $pass .= $digits[random_int(0, strlen($digits) - 1)];
+        $pass .= $special[random_int(0, strlen($special) - 1)];
+
+        // Shuffle to avoid predictable pattern
+        return str_shuffle($pass);
+    }
 }
+

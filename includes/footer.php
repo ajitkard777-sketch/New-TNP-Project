@@ -35,12 +35,28 @@
 
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+/* Disable ALL Chart.js animations globally — pages render charts instantly */
+if (typeof Chart !== 'undefined') {
+    Chart.defaults.animation = false;
+    Chart.defaults.animations = false;
+    Chart.defaults.transitions = {};
+    Chart.defaults.plugins.legend.display = true;
+}
+</script>
 
 <!-- SweetAlert2 -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <!-- App JS -->
 <script src="<?= asset('js/app.js') ?>"></script>
+
+<!-- AI Widget JS -->
+<script src="<?= asset('js/ai-widget.js') ?>"></script>
+
+<!-- Real-Time Chat System JS -->
+<script src="<?= asset('js/chat.js') ?>"></script>
+
 
 <?php if (isset($extraJs)): ?>
     <?php foreach ((array)$extraJs as $js): ?>
@@ -52,5 +68,10 @@
 <script><?= $inlineJs ?></script>
 <?php endif; ?>
 
+<?php if (AuthMiddleware::isLoggedIn()): ?>
+    <?php require_once ROOT_PATH . '/views/includes/chat-fab.php'; ?>
+    <?php require_once ROOT_PATH . '/views/includes/ai-widget.php'; ?>
+<?php endif; ?>
 </body>
 </html>
+

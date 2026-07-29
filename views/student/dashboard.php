@@ -13,7 +13,7 @@
 
 <!-- Profile Completion Alert -->
 <?php if (($student['profile_completion'] ?? 0) < 80): ?>
-<div class="alert alert-warning animate-fade-in-up" style="border-left:4px solid #f59e0b">
+<div class="alert alert-warning" style="border-left:4px solid #f59e0b">
     <i class="fas fa-exclamation-triangle me-2"></i>
     <div>
         <strong>Complete your profile!</strong> Your profile is <?= $student['profile_completion'] ?? 0 ?>% complete. 
@@ -253,4 +253,70 @@ new Chart(document.getElementById('studentAnalyticsChart'), {
     }
 });";
 ?>
+
+<!-- ── AI Job Recommendations ─────────────────────────────────── -->
+<?php if (!empty($aiRecommendedJobs)): ?>
+<div class="card mt-4">
+    <div class="card-header d-flex align-items-center justify-content-between">
+        <h6 class="mb-0">
+            <i class="fas fa-robot text-primary me-2"></i>AI Job Recommendations
+            <span class="badge bg-primary ms-1" style="font-size:0.65rem;">PERSONALIZED</span>
+        </h6>
+        <a href="<?= url('/student/jobs') ?>" class="btn btn-sm btn-outline-primary">Browse All Jobs</a>
+    </div>
+    <div class="card-body p-0">
+        <div class="row g-0">
+            <?php foreach ($aiRecommendedJobs as $rj): ?>
+            <?php
+            $sc     = (float)($rj['recommendation_score'] ?? 0);
+            $scCol  = $sc >= 75 ? 'success' : ($sc >= 55 ? 'primary' : ($sc >= 35 ? 'warning' : 'danger'));
+            $level  = $rj['recommendation_level'] ?? 'Fair Match';
+            $matched = array_filter(array_map('trim', explode(',', $rj['matched_skills'] ?? '')));
+            $logo   = $rj['logo'] ? uploadUrl('company/' . $rj['logo']) : asset('images/default-avatar.png');
+            ?>
+            <div class="col-md-6 p-3 border-bottom border-end-md">
+                <div class="d-flex gap-3 align-items-start">
+                    <!-- Company logo -->
+                    <img src="<?= $logo ?>" onerror="this.src='<?= asset('images/default-avatar.png') ?>'"
+                         style="width:44px;height:44px;border-radius:10px;object-fit:cover;border:1px solid var(--border-color);flex-shrink:0;">
+                    <div class="flex-grow-1 min-w-0">
+                        <div class="fw-bold text-truncate" style="font-size:0.88rem;"><?= htmlspecialchars($rj['title']) ?></div>
+                        <div class="text-muted small"><?= htmlspecialchars($rj['company_name']) ?></div>
+                        <div class="d-flex flex-wrap gap-1 mt-1">
+                            <span class="badge bg-light text-dark border" style="font-size:0.68rem;">
+                                <i class="fas fa-map-marker-alt me-1 text-muted"></i><?= htmlspecialchars($rj['location'] ?? 'N/A') ?>
+                            </span>
+                            <?php if ($rj['salary_min'] || $rj['salary_max']): ?>
+                            <span class="badge bg-success-subtle text-success border border-success-subtle" style="font-size:0.68rem;">
+                                <?= formatSalaryRange($rj['salary_min'], $rj['salary_max']) ?>
+                            </span>
+                            <?php endif; ?>
+                        </div>
+                        <!-- Match score bar -->
+                        <div class="mt-2 d-flex align-items-center gap-2">
+                            <div class="progress flex-grow-1" style="height:5px;border-radius:4px;">
+                                <div class="progress-bar bg-<?= $scCol ?>" style="width:<?= round($sc) ?>%;transition:width 1s;"></div>
+                            </div>
+                            <span class="fw-bold text-<?= $scCol ?>" style="font-size:0.72rem;flex-shrink:0;"><?= round($sc) ?>%</span>
+                            <span class="badge bg-<?= $scCol ?>-subtle text-<?= $scCol ?> border" style="font-size:0.62rem;"><?= $level ?></span>
+                        </div>
+                        <!-- Matching skills -->
+                        <?php if (!empty($matched)): ?>
+                        <div class="d-flex flex-wrap gap-1 mt-1">
+                            <?php foreach (array_slice($matched, 0, 3) as $sk): ?>
+                            <span class="badge bg-success-subtle text-success" style="font-size:0.62rem;"><?= htmlspecialchars($sk) ?></span>
+                            <?php endforeach; ?>
+                        </div>
+                        <?php endif; ?>
+                    </div>
+                    <a href="<?= url('/student/jobs') ?>" class="btn btn-xs btn-primary flex-shrink-0" style="font-size:0.72rem;padding:4px 10px;white-space:nowrap;">Apply</a>
+                </div>
+            </div>
+            <?php endforeach; ?>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
+
 <?php require_once ROOT_PATH . '/includes/footer.php'; ?>
+

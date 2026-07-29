@@ -177,14 +177,9 @@
 }
 
 .btn-change-password:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 6px 20px rgba(79, 70, 229, 0.4);
+    box-shadow: 0 4px 16px rgba(79, 70, 229, 0.3);
     background: linear-gradient(135deg, #4338ca 0%, #4f46e5 100%);
     color: #ffffff;
-}
-
-.btn-change-password:active {
-    transform: translateY(0);
 }
 
 @media (max-width: 576px) {

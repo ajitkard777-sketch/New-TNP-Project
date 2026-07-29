@@ -8,7 +8,7 @@
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table mb-0">
-                <thead><tr><th>Job</th><th>Company</th><th>Type</th><th>Salary</th><th>Status</th><th>Applied On</th><th>Action</th></tr></thead>
+                <thead><tr><th>Job</th><th>Company</th><th>Type</th><th>Package (LPA)</th><th>Status</th><th>Applied On</th><th>Action</th></tr></thead>
                 <tbody>
                     <?php foreach ($applications as $app): ?>
                     <tr>
@@ -27,10 +27,23 @@
                         <td><span class="badge <?= getStatusBadgeClass($app['status']) ?>"><?= ucfirst($app['status']) ?></span></td>
                         <td><small><?= formatDate($app['applied_at']) ?></small></td>
                         <td>
-                            <?php if ($app['status'] === 'applied'): ?>
-                            <a href="<?= url('/student/withdraw/' . $app['id']) ?>" class="btn btn-sm btn-outline-danger" data-confirm="Withdraw application?"><i class="fas fa-times"></i></a>
-                            <?php endif; ?>
+                            <div class="d-flex align-items-center gap-1">
+                                <?php $hrUserId = (int)($app['company_user_id'] ?? 0); ?>
+                                <?php if ($hrUserId > 0): ?>
+                                <a href="<?= url('/chat?user_id=' . $hrUserId) ?>" class="btn btn-sm btn-outline-primary" title="Message HR">
+                                    <i class="fas fa-comment-dots me-1"></i> Message HR
+                                </a>
+                                <?php else: ?>
+                                <button class="btn btn-sm btn-outline-secondary disabled" title="Chat Unavailable" disabled>
+                                    <i class="fas fa-comment-dots me-1"></i> Message HR
+                                </button>
+                                <?php endif; ?>
+                                <?php if ($app['status'] === 'applied'): ?>
+                                <a href="<?= url('/student/withdraw/' . $app['id']) ?>" class="btn btn-sm btn-outline-danger" data-confirm="Withdraw application?" title="Withdraw Application"><i class="fas fa-times"></i></a>
+                                <?php endif; ?>
+                            </div>
                         </td>
+
                     </tr>
                     <?php endforeach; ?>
                 </tbody>

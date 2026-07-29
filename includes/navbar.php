@@ -42,11 +42,19 @@
                         <i class="fas fa-check check-icon text-primary d-none"></i>
                     </button>
                 </li>
-            </ul>
         </div>
         
+        <!-- Chat & Messages Button -->
+        <div class="position-relative">
+            <a href="<?= url('/chat') ?>" class="navbar-icon-btn" id="navChatBtn" title="Chat & Messages">
+                <i class="fas fa-comment-dots text-primary"></i>
+                <span class="chat-unread-badge" id="navChatUnreadBadge" style="position:absolute;top:2px;right:2px;min-width:18px;height:18px;border-radius:9px;background:#6366f1;color:#fff;font-size:0.65rem;font-weight:700;display:none;align-items:center;justify-content:center;line-height:1;padding:0 4px;"></span>
+            </a>
+        </div>
+
         <!-- Notifications -->
         <div class="position-relative">
+
             <button class="navbar-icon-btn notification-toggle" id="notificationToggleBtn" title="Notifications">
                 <i class="fas fa-bell"></i>
                 <span class="badge-dot" style="display:none"></span>

@@ -5,6 +5,7 @@
 
 require_once ROOT_PATH . '/models/Student.php';
 require_once ROOT_PATH . '/models/User.php';
+require_once ROOT_PATH . '/models/Recommendation.php';
 require_once ROOT_PATH . '/includes/Mailer.php';
 
 class StudentController {
@@ -49,6 +50,17 @@ class StudentController {
             "SELECT i.*, j.title as job_title, c.company_name FROM interviews i JOIN jobs j ON i.job_id = j.id JOIN companies c ON i.company_id = c.id WHERE i.student_id = ? AND i.status = 'scheduled' ORDER BY i.interview_date ASC LIMIT 3",
             [$student['id']]
         );
+
+        // AI-recommended jobs for this student (load from cache or compute)
+        $recoModel = new Recommendation();
+        $aiRecommendedJobs = $recoModel->getTopJobsForStudent($student['id'], 4);
+        // If no cached scores exist yet, compute them now (first-time load)
+        if (empty($aiRecommendedJobs)) {
+            try {
+                $recoModel->recomputeForStudent($student['id']);
+                $aiRecommendedJobs = $recoModel->getTopJobsForStudent($student['id'], 4);
+            } catch (\Throwable $e) { $aiRecommendedJobs = []; }
+        }
 
         require_once VIEWS_PATH . '/student/dashboard.php';
     }
@@ -114,6 +126,8 @@ class StudentController {
 
         $this->studentModel->updateByUserId($_SESSION['user_id'], $updateData);
         $this->studentModel->updateProfileCompletion($this->student['id']);
+        // Refresh AI recommendations after profile change
+        try { (new Recommendation())->recomputeForStudent($this->student['id']); } catch (\Throwable $e) { /* non-fatal */ }
         logActivity('update_profile', 'student', 'Student updated profile');
         setFlash('success', 'Profile updated successfully!');
         redirect('/student/profile');
@@ -306,6 +320,63 @@ class StudentController {
         require_once VIEWS_PATH . '/student/jobs.php';
     }
 
+    public function aiJobs(): void {
+        $student = $this->student;
+        $pageTitle = 'AI Job Matches & Recommendations';
+
+        $search   = sanitize($_GET['search'] ?? '');
+        $type     = sanitize($_GET['type'] ?? '');
+        $minScore = (float)($_GET['min_score'] ?? 0);
+
+        $filters = [
+            'search'    => $search,
+            'job_type'  => $type,
+            'min_score' => $minScore
+        ];
+
+        $recoModel = new Recommendation();
+
+        if (isset($_GET['refresh'])) {
+            $recoModel->recomputeForStudent($student['id']);
+            setFlash('success', 'AI Job Recommendations refreshed successfully!');
+            redirect('/student/ai-jobs');
+            return;
+        }
+
+        $recommendations = $recoModel->getAllJobRecommendationsForStudent($student['id'], $filters);
+
+        require_once VIEWS_PATH . '/student/ai-jobs.php';
+    }
+
+    public function viewJob($jobId): void {
+        $student = $this->student;
+        if (!$jobId) { redirect('/student/jobs'); return; }
+
+        $job = $this->db->fetchOne(
+            "SELECT j.*, c.company_name, c.logo, c.website, c.description as company_description, c.industry, c.city as company_city,
+                    (SELECT COUNT(*) FROM applications a WHERE a.job_id = j.id) as total_applications,
+                    (SELECT COUNT(*) FROM applications a WHERE a.job_id = j.id AND a.student_id = ?) as has_applied,
+                    (SELECT COUNT(*) FROM bookmarks b WHERE b.job_id = j.id AND b.student_id = ?) as is_bookmarked
+             FROM jobs j JOIN companies c ON j.company_id = c.id
+             WHERE j.id = ?",
+            [$student['id'], $student['id'], $jobId]
+        );
+
+        if (!$job) {
+            setFlash('danger', 'Job posting not found or unavailable.');
+            redirect('/student/jobs');
+            return;
+        }
+
+        $pageTitle = $job['title'] . ' — ' . $job['company_name'];
+
+        $recoModel = new Recommendation();
+        $aiMatch = $recoModel->computeScore($student, $job);
+
+        require_once VIEWS_PATH . '/student/view-job.php';
+    }
+
+
     public function applyJob($jobId): void {
         if (!$jobId) { redirect('/student/jobs'); return; }
 
@@ -396,11 +467,12 @@ class StudentController {
         $pageTitle = 'My Applications';
         $student = $this->student;
         $applications = $this->db->fetchAll(
-            "SELECT a.*, j.title as job_title, j.salary_min, j.salary_max, j.location, j.job_type, c.company_name, c.logo
+            "SELECT a.*, j.title as job_title, j.salary_min, j.salary_max, j.location, j.job_type, c.company_name, c.logo, c.user_id as company_user_id
              FROM applications a JOIN jobs j ON a.job_id = j.id JOIN companies c ON j.company_id = c.id
              WHERE a.student_id = ? ORDER BY a.applied_at DESC",
             [$student['id']]
         );
+
         require_once VIEWS_PATH . '/student/applications.php';
     }
 

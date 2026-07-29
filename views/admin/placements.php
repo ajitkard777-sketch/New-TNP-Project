@@ -76,7 +76,7 @@
                 <td><small><?= htmlspecialchars($p['email'] ?? '') ?></small></td>
                 <td><span class="badge bg-light text-dark"><?= htmlspecialchars($p['branch']) ?></span></td>
                 <td class="fw-medium"><?= htmlspecialchars($p['company_name'] ?? 'N/A') ?></td>
-                <td class="fw-bold text-success"><?= $p['package'] ? number_format($p['package'], 2) : 'N/A' ?></td>
+                <td class="fw-bold text-success"><?= formatPackage($p['package']) ?></td>
                 <td><small><?= formatDate($p['placement_date']) ?></small></td>
                 <td><span class="badge bg-success"><?= ucfirst($p['status'] ?? 'confirmed') ?></span></td>
             </tr>

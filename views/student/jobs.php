@@ -27,7 +27,7 @@
 <div class="row g-4">
     <?php foreach ($jobs as $job): ?>
     <div class="col-lg-6">
-        <div class="job-card animate-fade-in-up">
+        <div class="job-card">
             <div class="job-card-header">
                 <div class="d-flex gap-3">
                     <img src="<?= $job['logo'] ? uploadUrl('company/' . $job['logo']) : asset('images/default-avatar.png') ?>" alt="" class="job-company-logo" onerror="this.src='<?= asset('images/default-avatar.png') ?>'">

@@ -171,8 +171,22 @@ switch ($page) {
             case 'preview-resume': $controller->previewResume(); break;
             case 'upload-document': $controller->uploadDocument(); break;
             case 'delete-document': $controller->deleteDocument($param); break;
-            case 'jobs': $controller->jobs(); break;
+            case 'jobs':
+                if (isset($_GET['ai']) && $_GET['ai'] == 1) {
+                    $controller->aiJobs();
+                } else {
+                    $controller->jobs();
+                }
+                break;
+            case 'ai-jobs':
+            case 'recommendations':
+                $controller->aiJobs();
+                break;
+            case 'view-job':
+                $controller->viewJob($param);
+                break;
             case 'apply': $controller->applyJob($param); break;
+
             case 'withdraw': $controller->withdrawApplication($param); break;
             case 'applications': $controller->applications(); break;
             case 'trainings': $controller->trainings(); break;
@@ -224,6 +238,10 @@ switch ($page) {
                 break;
             case 'delete-job': $controller->deleteJob($param); break;
             case 'applications': $controller->viewApplications($param); break;
+            case 'view-applicant': $controller->viewApplicant($param); break;
+            case 'serve-resume':   $controller->serveResume($param);    break;
+            case 'serve-document': $controller->serveDocument($param);  break;
+            case 'recommendations': $controller->recommendations();     break;
             case 'update-application':
                 $controller->updateApplicationStatus($param);
                 break;
@@ -241,6 +259,7 @@ switch ($page) {
             default: $controller->dashboard(); break;
         }
         break;
+
 
     // ========================
     // ADMIN ROUTES
@@ -291,6 +310,16 @@ switch ($page) {
             case 'reports': $controller->reports(); break;
             case 'logs': $controller->logs(); break;
             case 'settings': $controller->settings(); break;
+            case 'send-test-email': $controller->sendTestEmail(); break;
+            case 'import-students':
+                if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                    $controller->doImportStudents();
+                } else {
+                    $controller->importStudentsPage();
+                }
+                break;
+            case 'download-import-template': $controller->downloadImportTemplate(); break;
+            case 'download-import-report':   $controller->downloadImportReport();   break;
             default: $controller->dashboard(); break;
         }
         break;
@@ -322,6 +351,45 @@ switch ($page) {
             $controller->getUnreadCount();
         }
         break;
+
+    // ========================
+    // AI CHAT (AJAX)
+    // ========================
+    case 'ai-chat':
+        AuthMiddleware::requireLogin();
+        require_once __DIR__ . '/controllers/AIChatController.php';
+        $controller = new AIChatController();
+        switch ($action) {
+            case 'chat':    $controller->chat();         break;
+            case 'history': $controller->getHistory();   break;
+            case 'clear':   $controller->clearHistory(); break;
+            default:        jsonResponse(['error' => 'Not found'], 404);
+        }
+        break;
+
+    // ========================
+    // CHAT SYSTEM
+    // ========================
+    case 'chat':
+        AuthMiddleware::requireLogin();
+        require_once __DIR__ . '/controllers/ChatController.php';
+        $controller = new ChatController();
+        switch ($action) {
+            case 'contacts':       $controller->getContacts();                     break;
+            case 'conversations':  $controller->getConversations();                break;
+            case 'messages':       $controller->getMessages($param);               break;
+            case 'start':          $controller->startConversation();               break;
+            case 'send':           $controller->sendMessage();                     break;
+            case 'typing':         $controller->sendTyping();                      break;
+            case 'delete':         $controller->deleteConversation();              break;
+            case 'archive':        $controller->archiveConversation();             break;
+            case 'unread-count':   $controller->getUnreadCount();                  break;
+            case 'download':       $controller->downloadAttachment($param);        break;
+            default:               $controller->index();                           break;
+        }
+        break;
+
+
 
     // ========================
     // 404

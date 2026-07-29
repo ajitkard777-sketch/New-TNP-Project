@@ -124,27 +124,39 @@ function formatDateTime(string $datetime, string $format = 'd M Y, h:i A'): stri
 }
 
 /**
- * Format currency
+ * Format package / salary amount in LPA (Lakhs Per Annum)
+ */
+function formatPackage(?float $amount): string {
+    if (empty($amount) || $amount <= 0) {
+        return 'N/A';
+    }
+    // Auto-convert raw Rupees to LPA if stored in legacy format (>= 1000)
+    if ($amount >= 1000) {
+        $amount = $amount / 100000;
+    }
+    return number_format($amount, $amount == floor($amount) ? 0 : 2) . ' LPA';
+}
+
+/**
+ * Format currency — outputs LPA format cleanly without Rupee symbol
  */
 function formatCurrency(float $amount, string $currency = 'INR'): string {
-    if ($currency === 'INR') {
-        if ($amount >= 10000000) {
-            return '₹' . number_format($amount / 10000000, 2) . ' Cr';
-        } elseif ($amount >= 100000) {
-            return '₹' . number_format($amount / 100000, 2) . ' LPA';
-        } else {
-            return '₹' . number_format($amount);
-        }
+    if ($amount >= 10000000) {
+        return number_format($amount / 10000000, 2) . ' Cr';
+    } elseif ($amount >= 1000) {
+        return number_format($amount / 100000, 2) . ' LPA';
     }
-    return $currency . ' ' . number_format($amount, 2);
+    return number_format($amount, $amount == floor($amount) ? 0 : 2) . ' LPA';
 }
 
 /**
  * Format salary range in LPA (values stored as LPA, e.g. 3.5 = 3.5 LPA)
  */
 function formatSalaryRange(?float $min, ?float $max, string $currency = 'INR'): string {
-    // Values <= 200 are already in LPA (direct storage)
     $formatLPA = function(float $val): string {
+        if ($val >= 1000) {
+            $val = $val / 100000;
+        }
         return number_format($val, $val == floor($val) ? 0 : 2) . ' LPA';
     };
 
@@ -159,6 +171,7 @@ function formatSalaryRange(?float $min, ?float $max, string $currency = 'INR'): 
     }
     return 'Not Disclosed';
 }
+
 
 /**
  * Time ago format

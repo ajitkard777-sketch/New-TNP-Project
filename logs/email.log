@@ -83,3 +83,27 @@
 [2026-07-26 19:16:55] [SUCCESS] Training enrollment status email (approved) sent to student1@test.com
 [2026-07-26 19:17:04] [SUCCESS] Higher studies application email (approved) sent to student1@test.com
 [2026-07-26 19:19:07] [SUCCESS] Application status email (shortlisted) sent successfully to ajitkard777@gmail.com
+[2026-07-27 10:50:52] [SUCCESS] Password reset email sent successfully to ajitkard777@gmail.com
+[2026-07-28 02:43:23] [SUCCESS] Interview scheduled email sent to minato123@gmail.com
+[2026-07-28 11:51:13] [SUCCESS] Training registration email sent to ajitkard777@gmail.com
+[2026-07-29 02:21:33] [ERROR] Failed import welcome email to john.doe@example.com: SMTP Error: data not accepted. SMTP server error: DATA command failed Detail: Daily user sending limit exceeded. For more information on Gmail
+sending limits go to
+ https://support.google.com/a/answer/166852 a92af1059eb24-13e7263cfd9sm3078843c88.4 - gsmtp
+ SMTP code: 550 Additional SMTP info: 5.4.5
+[2026-07-29 02:21:37] [ERROR] Failed import welcome email to jane.smith@example.com: SMTP Error: data not accepted. SMTP server error: DATA command failed Detail: Daily user sending limit exceeded. For more information on Gmail
+sending limits go to
+ https://support.google.com/a/answer/166852 5a478bee46e88-31504b88e12sm2040067eec.11 - gsmtp
+ SMTP code: 550 Additional SMTP info: 5.4.5
+[2026-07-29 02:48:02] [ERROR] Failed to send password reset email to ajitkard777@gmail.com. Error: SMTP Error: data not accepted. SMTP server error: DATA command failed Detail: Daily user sending limit exceeded. For more information on Gmail
+sending limits go to
+ https://support.google.com/a/answer/166852 5a478bee46e88-31504e1ff81sm2190757eec.31 - gsmtp
+ SMTP code: 550 Additional SMTP info: 5.4.5
+[2026-07-29 03:06:17] [WARN] SMTP attempt 1 failed (SMTP Error: Could not authenticate.), retrying in 1.2s...
+[2026-07-29 03:06:18] [ERROR] Test email failed to maxkarad199@gmail.com: You must provide at least one recipient email address.
+[2026-07-29 03:06:59] [WARN] SMTP attempt 1 failed (SMTP Error: Could not authenticate.), retrying in 1.2s...
+[2026-07-29 03:07:00] [ERROR] Test email failed to maxkarad199@gmail.com: SMTP Error: Could not authenticate.
+[2026-07-29 03:12:16] [WARN] SMTP attempt 1 failed (SMTP Error: Could not authenticate.), retrying in 1.2s...
+[2026-07-29 03:12:18] [ERROR] Failed to send password reset email to ajitkard777@gmail.com. Error: SMTP Error: Could not authenticate.
+[2026-07-29 03:19:24] [SUCCESS] Test email sent successfully to maxkarad199@gmail.com
+[2026-07-29 03:22:11] [SUCCESS] Password reset email sent successfully to ajitkard777@gmail.com
+[2026-07-29 03:23:40] [SUCCESS] Interview scheduled email sent to ajitkard777@gmail.com
