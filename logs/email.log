@@ -1,0 +1,362 @@
+[2026-07-22 14:09:43] [SUCCESS] Password reset email sent successfully to kishorpanchal402@gmail.com
+[2026-07-22 14:09:58] [ERROR] Failed to send password reset email to invalid_address_format. Error: Invalid address:  (to): invalid_address_format
+[2026-07-22 14:13:16] [SUCCESS] Password reset email sent successfully to ajitkard777@gmail.com
+[2026-07-22 20:14:46] [ERROR] Failed to send password reset email to adityatathe900@gmail.com. Error: SMTP Error: Could not connect to SMTP host. Failed to connect to server SMTP server error: Failed to connect to server Additional SMTP info: php_network_getaddresses: getaddrinfo failed: No such host is known. 
+[2026-07-22 20:16:30] [SUCCESS] Password reset email sent successfully to adityatathe900@gmail.com
+[2026-07-22 20:17:37] [SUCCESS] Password reset email sent successfully to ajitkard777@gmail.com
+[2026-07-23 11:01:57] [SUCCESS] Password reset email sent successfully to ajitkard777@gmail.com
+[2026-07-23 11:38:33] [SUCCESS] OTP verification email sent successfully to student_browser_test@gmail.com
+[2026-07-23 11:43:45] [SUCCESS] OTP verification email sent successfully to shedgeshrey3@gmail.com
+[2026-07-23 11:44:49] [SUCCESS] Welcome email sent successfully to shedgeshrey3@gmail.com
+[2026-07-24 13:42:13] [SUCCESS] Job application email sent to ajitkard777@gmail.com for UI/UX Design Intern
+[2026-07-24 13:43:54] [SUCCESS] Application status email (selected) sent to ajitkard777@gmail.com
+[2026-07-24 13:49:11] [SUCCESS] Application status email (selected) sent to kishorpanchal402@gmail.com
+[2026-07-24 13:52:35] [SUCCESS] Application status email (selected) sent successfully to student1@test.com
+[2026-07-24 13:55:27] [SUCCESS] Job application email sent to kunteankita605@gmail.com for Software Engineer
+[2026-07-24 13:56:18] [SUCCESS] Application status email (selected) sent successfully to kunteankita605@gmail.com
+[2026-07-24 14:00:48] [SUCCESS] Job application email sent to shravanikulkarni62@gmail.com for Software Engineer
+[2026-07-24 14:01:41] [SUCCESS] Application status email (interview) sent successfully to shravanikulkarni62@gmail.com
+[2026-07-24 14:02:57] [SUCCESS] Interview scheduled email sent to shravanikulkarni62@gmail.com
+[2026-07-24 14:03:51] [SUCCESS] Application status email (rejected) sent successfully to ajitkard777@gmail.com
+[2026-07-24 14:08:38] [SUCCESS] OTP verification email sent successfully to kishorpanchal402@gmail.com
+[2026-07-24 14:08:45] [SUCCESS] OTP verification email sent successfully to kishorpanchal402@gmail.com
+[2026-07-24 14:08:50] [SUCCESS] Password reset email sent successfully to kishorpanchal402@gmail.com
+[2026-07-24 14:08:59] [SUCCESS] Job application email sent to kishorpanchal402@gmail.com for Software Engineer
+[2026-07-24 14:09:07] [SUCCESS] Application status email (selected) sent successfully to kishorpanchal402@gmail.com
+[2026-07-24 14:09:18] [SUCCESS] Interview scheduled email sent to kishorpanchal402@gmail.com
+[2026-07-24 14:09:42] [SUCCESS] Interview result email (passed) sent to kishorpanchal402@gmail.com
+[2026-07-24 14:10:03] [SUCCESS] Training registration email sent to kishorpanchal402@gmail.com
+[2026-07-24 14:10:13] [SUCCESS] Admin announcement email sent to kishorpanchal402@gmail.com
+[2026-07-24 14:10:23] [SUCCESS] Approval notification (Approved ✅) sent to kishorpanchal402@gmail.com
+[2026-07-24 14:13:10] [SUCCESS] OTP verification email sent successfully to kishorpanchal402@gmail.com
+[2026-07-24 14:13:16] [SUCCESS] OTP verification email sent successfully to kishorpanchal402@gmail.com
+[2026-07-24 14:13:26] [SUCCESS] Password reset email sent successfully to kishorpanchal402@gmail.com
+[2026-07-24 14:13:41] [SUCCESS] Job application email sent to kishorpanchal402@gmail.com for Software Engineer
+[2026-07-24 14:13:47] [SUCCESS] Application status email (selected) sent successfully to kishorpanchal402@gmail.com
+[2026-07-24 14:13:57] [SUCCESS] Interview scheduled email sent to kishorpanchal402@gmail.com
+[2026-07-24 14:14:06] [SUCCESS] Interview result email (passed) sent to kishorpanchal402@gmail.com
+[2026-07-24 14:14:15] [SUCCESS] Training registration email sent to kishorpanchal402@gmail.com
+[2026-07-24 14:14:24] [SUCCESS] Admin announcement email sent to kishorpanchal402@gmail.com
+[2026-07-24 14:14:44] [SUCCESS] Approval notification (Approved ✅) sent to kishorpanchal402@gmail.com
+[2026-07-24 14:16:19] [SUCCESS] OTP verification email sent successfully to sudrikyash1@gmail.com
+[2026-07-24 14:16:51] [SUCCESS] Welcome email sent successfully to sudrikyash1@gmail.com
+[2026-07-24 14:17:23] [SUCCESS] Job application email sent to sudrikyash1@gmail.com for Software Engineer
+[2026-07-24 14:20:21] [SUCCESS] Interview scheduled email sent to sudrikyash1@gmail.com
+[2026-07-24 14:29:09] [SUCCESS] OTP verification email sent successfully to ajitkard199@gmail.com
+[2026-07-24 14:31:31] [SUCCESS] OTP verification email sent successfully to ajitkard199@gmail.com
+[2026-07-24 14:36:53] [SUCCESS] OTP verification email sent successfully to ajitkard199@gmail.com
+[2026-07-24 14:41:15] [SUCCESS] OTP verification email sent successfully to ajitkard199@gmail.com
+[2026-07-24 14:42:06] [SUCCESS] Company email-verified/pending-approval email sent to ajitkard199@gmail.com for PALANTIR Technologies
+[2026-07-24 14:42:11] [SUCCESS] Company registration alert sent to admin for PALANTIR Technologies
+[2026-07-24 14:56:48] [SUCCESS] OTP verification email sent successfully to ajitkarad199@gmail.com
+[2026-07-24 14:57:15] [SUCCESS] Company email-verified/pending-approval email sent to ajitkarad199@gmail.com for PALANTIR
+[2026-07-24 14:57:20] [SUCCESS] Company registration alert sent to admin for PALANTIR
+[2026-07-24 14:57:56] [SUCCESS] Approval notification (Approved ✅) sent to ajitkarad199@gmail.com
+[2026-07-24 15:01:36] [SUCCESS] OTP verification email sent successfully to ajitkard199@gmail.com
+[2026-07-24 15:04:09] [SUCCESS] Application status email (selected) sent successfully to ajitkard777@gmail.com
+[2026-07-26 10:38:37] [SUCCESS] Approval notification (Approved ✅) sent to ajitkard199@gmail.com
+[2026-07-26 10:38:50] [SUCCESS] Approval notification (Approved ✅) sent to ajitkarad199@gmail.com
+[2026-07-26 10:40:31] [SUCCESS] Job application email sent to ajitkard777@gmail.com for PROJECT MANAGER
+[2026-07-26 18:55:08] [SUCCESS] OTP verification email sent successfully to student1@test.com
+[2026-07-26 18:55:14] [SUCCESS] Company email-verified/pending-approval email sent to hr@techcorp.com for TechCorp Solutions
+[2026-07-26 18:55:21] [SUCCESS] Password reset email sent successfully to student1@test.com
+[2026-07-26 18:55:27] [SUCCESS] Job application email sent to student1@test.com for Software Engineer
+[2026-07-26 18:55:33] [SUCCESS] Company new application email sent to hr@techcorp.com for Software Engineer
+[2026-07-26 18:55:38] [SUCCESS] Application status email (shortlisted) sent successfully to student1@test.com
+[2026-07-26 18:55:43] [SUCCESS] Application status email (selected) sent successfully to student1@test.com
+[2026-07-26 18:55:49] [SUCCESS] Interview scheduled email sent to student1@test.com
+[2026-07-26 18:55:54] [SUCCESS] Interview result email (passed) sent to student1@test.com
+[2026-07-26 18:55:59] [SUCCESS] Training registration email sent to student1@test.com
+[2026-07-26 18:56:06] [SUCCESS] Training enrollment status email (approved) sent to student1@test.com
+[2026-07-26 18:56:11] [SUCCESS] Training certificate email sent to student1@test.com
+[2026-07-26 18:56:17] [SUCCESS] Higher studies application email (approved) sent to student1@test.com
+[2026-07-26 18:56:23] [SUCCESS] Admin announcement email sent to student1@test.com
+[2026-07-26 18:56:28] [SUCCESS] Approval notification (Approved ✅) sent to hr@techcorp.com
+[2026-07-26 18:59:35] [SUCCESS] Job application email sent to minato123@gmail.com for PROJECT MANAGER
+[2026-07-26 18:59:40] [SUCCESS] Company new application email sent to ajitkarad199@gmail.com for PROJECT MANAGER
+[2026-07-26 19:01:43] [SUCCESS] Job application email sent to adityatathe900@gmail.com for PROJECT MANAGER
+[2026-07-26 19:01:48] [SUCCESS] Company new application email sent to ajitkarad199@gmail.com for PROJECT MANAGER
+[2026-07-26 19:05:13] [SUCCESS] Application status email (selected) sent successfully to ajitkard777@gmail.com
+[2026-07-26 19:16:37] [SUCCESS] Application status email (selected) sent successfully to student1@test.com
+[2026-07-26 19:16:43] [SUCCESS] Interview scheduled email sent to student1@test.com
+[2026-07-26 19:16:48] [SUCCESS] Interview result email (passed) sent to student1@test.com
+[2026-07-26 19:16:55] [SUCCESS] Training enrollment status email (approved) sent to student1@test.com
+[2026-07-26 19:17:04] [SUCCESS] Higher studies application email (approved) sent to student1@test.com
+[2026-07-26 19:19:07] [SUCCESS] Application status email (shortlisted) sent successfully to ajitkard777@gmail.com
+[2026-07-27 10:50:52] [SUCCESS] Password reset email sent successfully to ajitkard777@gmail.com
+[2026-07-28 02:43:23] [SUCCESS] Interview scheduled email sent to minato123@gmail.com
+[2026-07-28 11:51:13] [SUCCESS] Training registration email sent to ajitkard777@gmail.com
+[2026-07-29 02:21:33] [ERROR] Failed import welcome email to john.doe@example.com: SMTP Error: data not accepted. SMTP server error: DATA command failed Detail: Daily user sending limit exceeded. For more information on Gmail
+sending limits go to
+ https://support.google.com/a/answer/166852 a92af1059eb24-13e7263cfd9sm3078843c88.4 - gsmtp
+ SMTP code: 550 Additional SMTP info: 5.4.5
+[2026-07-29 02:21:37] [ERROR] Failed import welcome email to jane.smith@example.com: SMTP Error: data not accepted. SMTP server error: DATA command failed Detail: Daily user sending limit exceeded. For more information on Gmail
+sending limits go to
+ https://support.google.com/a/answer/166852 5a478bee46e88-31504b88e12sm2040067eec.11 - gsmtp
+ SMTP code: 550 Additional SMTP info: 5.4.5
+[2026-07-29 02:48:02] [ERROR] Failed to send password reset email to ajitkard777@gmail.com. Error: SMTP Error: data not accepted. SMTP server error: DATA command failed Detail: Daily user sending limit exceeded. For more information on Gmail
+sending limits go to
+ https://support.google.com/a/answer/166852 5a478bee46e88-31504e1ff81sm2190757eec.31 - gsmtp
+ SMTP code: 550 Additional SMTP info: 5.4.5
+[2026-07-29 03:06:17] [WARN] SMTP attempt 1 failed (SMTP Error: Could not authenticate.), retrying in 1.2s...
+[2026-07-29 03:06:18] [ERROR] Test email failed to maxkarad199@gmail.com: You must provide at least one recipient email address.
+[2026-07-29 03:06:59] [WARN] SMTP attempt 1 failed (SMTP Error: Could not authenticate.), retrying in 1.2s...
+[2026-07-29 03:07:00] [ERROR] Test email failed to maxkarad199@gmail.com: SMTP Error: Could not authenticate.
+[2026-07-29 03:12:16] [WARN] SMTP attempt 1 failed (SMTP Error: Could not authenticate.), retrying in 1.2s...
+[2026-07-29 03:12:18] [ERROR] Failed to send password reset email to ajitkard777@gmail.com. Error: SMTP Error: Could not authenticate.
+[2026-07-29 03:19:24] [SUCCESS] Test email sent successfully to maxkarad199@gmail.com
+[2026-07-29 03:22:11] [SUCCESS] Password reset email sent successfully to ajitkard777@gmail.com
+[2026-07-29 03:23:40] [SUCCESS] Interview scheduled email sent to ajitkard777@gmail.com
+[2026-07-29 10:27:54] [SUCCESS] Training registration email sent to ajitkard777@gmail.com
+[2026-07-29 10:32:10] [SUCCESS] OTP verification email sent successfully to ravindramude44@gmail.com
+[2026-07-29 10:32:36] [SUCCESS] Welcome email sent successfully to ravindramude44@gmail.com
+[2026-07-29 10:34:57] [SUCCESS] Password reset email sent successfully to ajitkard777@gmail.com
+[2026-07-29 10:41:35] [SUCCESS] Password reset email sent successfully to ajitkarad199@gmail.com
+[2026-07-29 10:44:34] [SUCCESS] Interview result email (failed) sent to minato123@gmail.com
+[2026-07-29 11:06:36] [SUCCESS] OTP verification email sent successfully to ishu@nikam.com
+[2026-07-29 11:08:16] [SUCCESS] OTP verification email sent successfully to srushtimokashe4@gmail.com
+[2026-07-29 11:08:46] [SUCCESS] Welcome email sent successfully to srushtimokashe4@gmail.com
+[2026-07-29 11:12:46] [SUCCESS] Approval notification (Rejected ❌) sent to company@tpms.com
+[2026-07-29 11:16:54] [SUCCESS] Training certificate email sent to ajitkard777@gmail.com
+[2026-07-29 11:18:14] [SUCCESS] Approval notification (Approved ✅) sent to company@tpms.com
+[2026-07-29 11:19:09] [SUCCESS] Test email sent successfully to admin@tpms.com
+[2026-07-29 11:33:29] [SUCCESS] OTP verification email sent successfully to ajitkard777@ee61494l.com
+[2026-07-29 11:45:06] [SUCCESS] OTP verification email sent successfully to ishu@nikam.com
+[2026-07-29 11:57:15] [SUCCESS] Password reset email sent successfully to ingleprarthana@gmail.com
+[2026-07-29 11:57:51] [SUCCESS] Password reset email sent successfully to ingleprarthana@gmail.com
+[2026-07-29 11:57:55] [SUCCESS] Password reset email sent successfully to ingleprarthana@gmail.com
+[2026-07-29 11:57:58] [SUCCESS] Password reset email sent successfully to ingleprarthana@gmail.com
+[2026-07-29 11:58:03] [SUCCESS] Password reset email sent successfully to ingleprarthana@gmail.com
+[2026-07-29 11:58:07] [SUCCESS] Password reset email sent successfully to ingleprarthana@gmail.com
+[2026-07-29 11:58:10] [SUCCESS] Password reset email sent successfully to ingleprarthana@gmail.com
+[2026-07-29 11:58:13] [SUCCESS] Password reset email sent successfully to ingleprarthana@gmail.com
+[2026-07-29 11:58:15] [SUCCESS] Password reset email sent successfully to ingleprarthana@gmail.com
+[2026-07-29 11:58:17] [SUCCESS] Password reset email sent successfully to ingleprarthana@gmail.com
+[2026-07-29 12:21:51] [SUCCESS] Training registration email sent to adityatathe900@gmail.com
+[2026-07-29 12:39:51] [SUCCESS] OTP verification email sent successfully to ajitkard@777gmail.com
+[2026-07-29 12:40:51] [SUCCESS] Password reset email sent successfully to adityatathe900@gmail.com
+[2026-07-29 12:40:53] [SUCCESS] Password reset email sent successfully to adityatathe900@gmail.com
+[2026-07-29 12:47:59] [SUCCESS] OTP verification email sent successfully to ajitkarad199@gmail.com
+[2026-07-29 12:48:21] [SUCCESS] Company email-verified/pending-approval email sent to ajitkarad199@gmail.com for LOCK-HEAD MARTIN
+[2026-07-29 12:48:23] [SUCCESS] Company registration alert sent to admin for LOCK-HEAD MARTIN
+[2026-07-29 12:48:51] [SUCCESS] Approval notification (Approved ✅) sent to ajitkarad199@gmail.com
+[2026-07-29 12:51:00] [SUCCESS] Training enrollment status email (approved) sent to rutujakahade44@gmail.com
+[2026-07-29 12:54:54] [SUCCESS] OTP verification email sent successfully to ajitkard777@gmail.com
+[2026-07-29 12:55:33] [SUCCESS] Welcome email sent successfully to ajitkard777@gmail.com
+[2026-07-29 12:56:29] [SUCCESS] Job application email sent to ajitkard777@gmail.com for Software Engineer
+[2026-07-29 12:56:31] [SUCCESS] Company new application email sent to hr@techcorp.com for Software Engineer
+[2026-07-29 12:56:37] [SUCCESS] Job application email sent to ajitkard777@gmail.com for Full Stack Developer
+[2026-07-29 12:56:38] [SUCCESS] Company new application email sent to hr@innovatesoft.com for Full Stack Developer
+[2026-07-29 13:38:14] [SUCCESS] Approval notification (Approved ✅) sent to ajitkarad199@gmail.com
+[2026-07-29 13:42:54] [SUCCESS] Job application email sent to ajitkard777@gmail.com for PROJECT MANAGER
+[2026-07-29 13:42:59] [SUCCESS] Company new application email sent to ajitkarad199@gmail.com for PROJECT MANAGER
+[2026-07-29 13:58:54] [SUCCESS] Job application email sent to ajitkard777@gmail.com for Data Analyst Intern
+[2026-07-29 13:58:56] [SUCCESS] Company new application email sent to hr@techcorp.com for Data Analyst Intern
+[2026-07-29 14:13:12] [SUCCESS] Application status email (shortlisted) sent successfully to ajitkard777@gmail.com
+[2026-07-29 14:36:43] [SUCCESS] Interview scheduled email sent to ajitkard777@gmail.com
+[2026-07-29 14:43:54] [SUCCESS] Interview result email (passed) sent to ajitkard777@gmail.com
+[2026-07-29 14:46:21] [SUCCESS] Training registration email sent to ajitkard777@gmail.com
+[2026-07-29 14:54:36] [SUCCESS] Training enrollment status email (approved) sent to ajitkard777@gmail.com
+[2026-07-29 16:18:17] [SUCCESS] Interview result email (cancelled) sent to ajitkard777@gmail.com
+[2026-07-29 16:18:48] [SUCCESS] Interview result email (passed) sent to ajitkard777@gmail.com
+[2026-07-29 16:23:38] [SUCCESS] Approval notification (Approved ✅) sent to ajitkarad199@gmail.com
+[2026-07-29 16:24:05] [SUCCESS] Job application email sent to ajitkard777@gmail.com for Sftware Developer
+[2026-07-29 16:24:06] [SUCCESS] Company new application email sent to ajitkarad199@gmail.com for Sftware Developer
+[2026-07-29 16:30:42] [SUCCESS] Interview scheduled email sent to ajitkard777@gmail.com
+[2026-07-30 10:27:17] [SUCCESS] OTP verification email sent successfully to prithvirajingle9999@gmail.com
+[2026-07-30 10:28:40] [SUCCESS] OTP verification email sent successfully to prithvirajingle9999@gmail.com
+[2026-07-30 11:04:51] [SUCCESS] Training registration email sent to ajitkard777@gmail.com
+[2026-07-30 11:10:02] [SUCCESS] Job application email sent to ajitkard777@gmail.com for UI/UX Design Intern
+[2026-07-30 11:10:15] [SUCCESS] Company new application email sent to hr@innovatesoft.com for UI/UX Design Intern
+[2026-07-30 11:23:41] [SUCCESS] Password reset email sent successfully to ajitkard777@gmail.com
+[2026-07-30 11:48:51] [SUCCESS] Application status email (selected) sent successfully to ajitkard777@gmail.com
+[2026-07-30 11:59:20] [SUCCESS] Interview result email (cancelled) sent to ajitkard777@gmail.com
+[2026-07-30 13:41:07] [SUCCESS] Higher studies application email (approved) sent to ajitkard777@gmail.com
+[2026-07-30 13:41:43] [SUCCESS] Approval notification (Approved ✅) sent to company@tpms.com
+[2026-07-30 13:46:41] [SUCCESS] Test email sent successfully to admin@tpms.com
+[2026-07-31 00:01:46] [SUCCESS] OTP verification email sent successfully to maxkarad199@gmail.com
+[2026-07-31 00:02:10] [SUCCESS] Company email-verified/pending-approval email sent to maxkarad199@gmail.com for PALANTIR
+[2026-07-31 00:02:11] [SUCCESS] Company registration alert sent to admin for PALANTIR
+[2026-07-31 00:02:40] [SUCCESS] Approval notification (Approved ✅) sent to maxkarad199@gmail.com
+[2026-07-31 00:21:39] [SUCCESS] Interview scheduled email sent to ajitkard777@gmail.com
+[2026-07-31 00:39:42] [SUCCESS] Admin announcement email sent to admin@tpms.com
+[2026-07-31 00:39:43] [SUCCESS] Admin announcement email sent to student1@test.com
+[2026-07-31 00:39:44] [SUCCESS] Admin announcement email sent to student2@test.com
+[2026-07-31 00:39:45] [SUCCESS] Admin announcement email sent to hr@techcorp.com
+[2026-07-31 00:39:46] [SUCCESS] Admin announcement email sent to hr@innovatesoft.com
+[2026-07-31 00:39:46] [SUCCESS] Admin announcement email sent to kishorpanchal402@gmail.com
+[2026-07-31 00:39:48] [SUCCESS] Admin announcement email sent to minato123@gmail.com
+[2026-07-31 00:39:48] [SUCCESS] Admin announcement email sent to ingleprarthana@gmail.com
+[2026-07-31 00:39:49] [SUCCESS] Admin announcement email sent to adityakalaskar255@gmail.com
+[2026-07-31 00:39:50] [SUCCESS] Admin announcement email sent to poonamgitte20@gmail.com
+[2026-07-31 00:39:51] [SUCCESS] Admin announcement email sent to shravanikulkarni62@gmail.com
+[2026-07-31 00:39:52] [SUCCESS] Admin announcement email sent to kunteankita605@gmail.com
+[2026-07-31 00:39:52] [SUCCESS] Admin announcement email sent to rutujakahade44@gmail.com
+[2026-07-31 00:39:53] [SUCCESS] Admin announcement email sent to google123@gmai.com
+[2026-07-31 00:39:54] [SUCCESS] Admin announcement email sent to yash@gmqail.com
+[2026-07-31 00:39:55] [SUCCESS] Admin announcement email sent to adityatathe900@gmail.com
+[2026-07-31 00:39:55] [SUCCESS] Admin announcement email sent to warriorbabu402@gmail.com
+[2026-07-31 00:39:56] [SUCCESS] Admin announcement email sent to nikhilraut9848@gmail.com
+[2026-07-31 00:39:57] [SUCCESS] Admin announcement email sent to sudrikyash1@gmail.com
+[2026-07-31 00:39:58] [SUCCESS] Admin announcement email sent to student@tpms.com
+[2026-07-31 00:39:59] [SUCCESS] Admin announcement email sent to company@tpms.com
+[2026-07-31 00:40:00] [SUCCESS] Admin announcement email sent to john.doe@example.com
+[2026-07-31 00:40:01] [SUCCESS] Admin announcement email sent to jane.smith@example.com
+[2026-07-31 00:40:01] [SUCCESS] Admin announcement email sent to srushtimokashe4@gmail.com
+[2026-07-31 00:40:02] [SUCCESS] Admin announcement email sent to ajitkarad199@gmail.com
+[2026-07-31 00:40:03] [SUCCESS] Admin announcement email sent to ajitkard777@gmail.com
+[2026-07-31 00:40:04] [SUCCESS] Admin announcement email sent to maxkarad199@gmail.com
+[2026-07-31 00:40:20] [SUCCESS] Admin announcement email sent to admin@tpms.com
+[2026-07-31 00:40:21] [SUCCESS] Admin announcement email sent to student1@test.com
+[2026-07-31 00:40:22] [SUCCESS] Admin announcement email sent to student2@test.com
+[2026-07-31 00:40:23] [SUCCESS] Admin announcement email sent to hr@techcorp.com
+[2026-07-31 00:40:23] [SUCCESS] Admin announcement email sent to hr@innovatesoft.com
+[2026-07-31 00:40:24] [SUCCESS] Admin announcement email sent to kishorpanchal402@gmail.com
+[2026-07-31 00:40:25] [SUCCESS] Admin announcement email sent to minato123@gmail.com
+[2026-07-31 00:40:26] [SUCCESS] Admin announcement email sent to ingleprarthana@gmail.com
+[2026-07-31 00:40:27] [SUCCESS] Admin announcement email sent to adityakalaskar255@gmail.com
+[2026-07-31 00:40:27] [SUCCESS] Admin announcement email sent to poonamgitte20@gmail.com
+[2026-07-31 00:40:28] [SUCCESS] Admin announcement email sent to shravanikulkarni62@gmail.com
+[2026-07-31 00:40:29] [SUCCESS] Admin announcement email sent to kunteankita605@gmail.com
+[2026-07-31 00:40:29] [SUCCESS] Admin announcement email sent to rutujakahade44@gmail.com
+[2026-07-31 00:40:30] [SUCCESS] Admin announcement email sent to google123@gmai.com
+[2026-07-31 00:40:31] [SUCCESS] Admin announcement email sent to yash@gmqail.com
+[2026-07-31 00:40:32] [SUCCESS] Admin announcement email sent to adityatathe900@gmail.com
+[2026-07-31 00:40:33] [SUCCESS] Admin announcement email sent to warriorbabu402@gmail.com
+[2026-07-31 00:40:33] [SUCCESS] Admin announcement email sent to nikhilraut9848@gmail.com
+[2026-07-31 00:40:34] [SUCCESS] Admin announcement email sent to sudrikyash1@gmail.com
+[2026-07-31 00:40:35] [SUCCESS] Admin announcement email sent to student@tpms.com
+[2026-07-31 00:40:36] [SUCCESS] Admin announcement email sent to company@tpms.com
+[2026-07-31 00:40:36] [SUCCESS] Admin announcement email sent to john.doe@example.com
+[2026-07-31 00:40:37] [SUCCESS] Admin announcement email sent to jane.smith@example.com
+[2026-07-31 00:40:38] [SUCCESS] Admin announcement email sent to srushtimokashe4@gmail.com
+[2026-07-31 00:40:39] [SUCCESS] Admin announcement email sent to ajitkarad199@gmail.com
+[2026-07-31 00:40:40] [SUCCESS] Admin announcement email sent to ajitkard777@gmail.com
+[2026-07-31 00:40:40] [SUCCESS] Admin announcement email sent to maxkarad199@gmail.com
+[2026-07-31 00:40:41] [SUCCESS] Admin announcement email sent to admin@tpms.com
+[2026-07-31 00:40:42] [SUCCESS] Admin announcement email sent to student1@test.com
+[2026-07-31 00:40:43] [SUCCESS] Admin announcement email sent to student2@test.com
+[2026-07-31 00:40:43] [SUCCESS] Admin announcement email sent to hr@techcorp.com
+[2026-07-31 00:40:44] [SUCCESS] Admin announcement email sent to hr@innovatesoft.com
+[2026-07-31 00:40:45] [SUCCESS] Admin announcement email sent to kishorpanchal402@gmail.com
+[2026-07-31 00:40:45] [SUCCESS] Admin announcement email sent to minato123@gmail.com
+[2026-07-31 00:40:46] [SUCCESS] Admin announcement email sent to ingleprarthana@gmail.com
+[2026-07-31 00:40:47] [SUCCESS] Admin announcement email sent to adityakalaskar255@gmail.com
+[2026-07-31 00:40:48] [SUCCESS] Admin announcement email sent to poonamgitte20@gmail.com
+[2026-07-31 00:40:49] [SUCCESS] Admin announcement email sent to shravanikulkarni62@gmail.com
+[2026-07-31 00:40:49] [SUCCESS] Admin announcement email sent to kunteankita605@gmail.com
+[2026-07-31 00:40:50] [SUCCESS] Admin announcement email sent to rutujakahade44@gmail.com
+[2026-07-31 00:40:51] [SUCCESS] Admin announcement email sent to google123@gmai.com
+[2026-07-31 00:40:51] [SUCCESS] Admin announcement email sent to yash@gmqail.com
+[2026-07-31 00:40:52] [SUCCESS] Admin announcement email sent to adityatathe900@gmail.com
+[2026-07-31 00:40:53] [SUCCESS] Admin announcement email sent to warriorbabu402@gmail.com
+[2026-07-31 00:40:54] [SUCCESS] Admin announcement email sent to nikhilraut9848@gmail.com
+[2026-07-31 00:40:54] [SUCCESS] Admin announcement email sent to sudrikyash1@gmail.com
+[2026-07-31 00:40:55] [SUCCESS] Admin announcement email sent to student@tpms.com
+[2026-07-31 00:40:56] [SUCCESS] Admin announcement email sent to company@tpms.com
+[2026-07-31 00:40:57] [SUCCESS] Admin announcement email sent to john.doe@example.com
+[2026-07-31 00:40:57] [SUCCESS] Admin announcement email sent to jane.smith@example.com
+[2026-07-31 00:40:58] [SUCCESS] Admin announcement email sent to srushtimokashe4@gmail.com
+[2026-07-31 00:40:59] [SUCCESS] Admin announcement email sent to ajitkarad199@gmail.com
+[2026-07-31 00:40:59] [SUCCESS] Admin announcement email sent to ajitkard777@gmail.com
+[2026-07-31 00:41:00] [SUCCESS] Admin announcement email sent to maxkarad199@gmail.com
+[2026-07-31 00:41:01] [SUCCESS] Admin announcement email sent to admin@tpms.com
+[2026-07-31 00:41:02] [SUCCESS] Admin announcement email sent to student1@test.com
+[2026-07-31 00:41:03] [SUCCESS] Admin announcement email sent to student2@test.com
+[2026-07-31 00:41:04] [SUCCESS] Admin announcement email sent to hr@techcorp.com
+[2026-07-31 00:41:05] [SUCCESS] Admin announcement email sent to hr@innovatesoft.com
+[2026-07-31 00:41:05] [SUCCESS] Admin announcement email sent to kishorpanchal402@gmail.com
+[2026-07-31 00:41:06] [SUCCESS] Admin announcement email sent to minato123@gmail.com
+[2026-07-31 00:41:07] [SUCCESS] Admin announcement email sent to ingleprarthana@gmail.com
+[2026-07-31 00:41:07] [SUCCESS] Admin announcement email sent to adityakalaskar255@gmail.com
+[2026-07-31 00:41:08] [SUCCESS] Admin announcement email sent to poonamgitte20@gmail.com
+[2026-07-31 00:41:09] [SUCCESS] Admin announcement email sent to shravanikulkarni62@gmail.com
+[2026-07-31 00:41:10] [SUCCESS] Admin announcement email sent to kunteankita605@gmail.com
+[2026-07-31 00:41:11] [SUCCESS] Admin announcement email sent to rutujakahade44@gmail.com
+[2026-07-31 00:41:11] [SUCCESS] Admin announcement email sent to google123@gmai.com
+[2026-07-31 00:41:12] [SUCCESS] Admin announcement email sent to yash@gmqail.com
+[2026-07-31 00:41:13] [SUCCESS] Admin announcement email sent to adityatathe900@gmail.com
+[2026-07-31 00:41:13] [SUCCESS] Admin announcement email sent to warriorbabu402@gmail.com
+[2026-07-31 00:41:14] [SUCCESS] Admin announcement email sent to nikhilraut9848@gmail.com
+[2026-07-31 00:41:15] [SUCCESS] Admin announcement email sent to sudrikyash1@gmail.com
+[2026-07-31 00:41:15] [SUCCESS] Admin announcement email sent to student@tpms.com
+[2026-07-31 00:41:16] [SUCCESS] Admin announcement email sent to company@tpms.com
+[2026-07-31 00:41:17] [SUCCESS] Admin announcement email sent to john.doe@example.com
+[2026-07-31 00:41:18] [SUCCESS] Admin announcement email sent to jane.smith@example.com
+[2026-07-31 00:41:18] [SUCCESS] Admin announcement email sent to srushtimokashe4@gmail.com
+[2026-07-31 00:41:19] [SUCCESS] Admin announcement email sent to ajitkarad199@gmail.com
+[2026-07-31 00:41:20] [SUCCESS] Admin announcement email sent to ajitkard777@gmail.com
+[2026-07-31 00:41:21] [SUCCESS] Admin announcement email sent to maxkarad199@gmail.com
+[2026-07-31 00:52:40] [SUCCESS] Admin announcement email sent to admin@tpms.com
+[2026-07-31 00:52:41] [SUCCESS] Admin announcement email sent to student1@test.com
+[2026-07-31 00:52:42] [SUCCESS] Admin announcement email sent to student2@test.com
+[2026-07-31 00:52:43] [SUCCESS] Admin announcement email sent to hr@techcorp.com
+[2026-07-31 00:52:44] [SUCCESS] Admin announcement email sent to hr@innovatesoft.com
+[2026-07-31 00:52:45] [SUCCESS] Admin announcement email sent to kishorpanchal402@gmail.com
+[2026-07-31 00:52:46] [SUCCESS] Admin announcement email sent to minato123@gmail.com
+[2026-07-31 00:52:46] [SUCCESS] Admin announcement email sent to ingleprarthana@gmail.com
+[2026-07-31 00:52:47] [SUCCESS] Admin announcement email sent to adityakalaskar255@gmail.com
+[2026-07-31 00:52:48] [SUCCESS] Admin announcement email sent to poonamgitte20@gmail.com
+[2026-07-31 00:52:49] [SUCCESS] Admin announcement email sent to shravanikulkarni62@gmail.com
+[2026-07-31 00:52:50] [SUCCESS] Admin announcement email sent to kunteankita605@gmail.com
+[2026-07-31 00:52:51] [SUCCESS] Admin announcement email sent to rutujakahade44@gmail.com
+[2026-07-31 00:52:52] [SUCCESS] Admin announcement email sent to google123@gmai.com
+[2026-07-31 00:52:53] [SUCCESS] Admin announcement email sent to yash@gmqail.com
+[2026-07-31 00:52:53] [SUCCESS] Admin announcement email sent to adityatathe900@gmail.com
+[2026-07-31 00:52:55] [SUCCESS] Admin announcement email sent to warriorbabu402@gmail.com
+[2026-07-31 00:52:55] [SUCCESS] Admin announcement email sent to nikhilraut9848@gmail.com
+[2026-07-31 00:52:56] [SUCCESS] Admin announcement email sent to sudrikyash1@gmail.com
+[2026-07-31 00:52:57] [SUCCESS] Admin announcement email sent to student@tpms.com
+[2026-07-31 00:52:58] [SUCCESS] Admin announcement email sent to company@tpms.com
+[2026-07-31 00:52:58] [SUCCESS] Admin announcement email sent to john.doe@example.com
+[2026-07-31 00:52:59] [SUCCESS] Admin announcement email sent to jane.smith@example.com
+[2026-07-31 00:53:00] [SUCCESS] Admin announcement email sent to srushtimokashe4@gmail.com
+[2026-07-31 00:53:01] [SUCCESS] Admin announcement email sent to ajitkarad199@gmail.com
+[2026-07-31 00:53:02] [SUCCESS] Admin announcement email sent to ajitkard777@gmail.com
+[2026-07-31 00:53:03] [SUCCESS] Admin announcement email sent to maxkarad199@gmail.com
+[2026-07-31 00:54:12] [SUCCESS] Admin announcement email sent to student1@test.com
+[2026-07-31 00:54:13] [SUCCESS] Admin announcement email sent to student2@test.com
+[2026-07-31 00:54:13] [SUCCESS] Admin announcement email sent to kishorpanchal402@gmail.com
+[2026-07-31 00:54:15] [SUCCESS] Admin announcement email sent to minato123@gmail.com
+[2026-07-31 00:54:16] [SUCCESS] Admin announcement email sent to ingleprarthana@gmail.com
+[2026-07-31 00:54:17] [SUCCESS] Admin announcement email sent to adityakalaskar255@gmail.com
+[2026-07-31 00:54:18] [SUCCESS] Admin announcement email sent to poonamgitte20@gmail.com
+[2026-07-31 00:54:18] [SUCCESS] Admin announcement email sent to shravanikulkarni62@gmail.com
+[2026-07-31 00:54:19] [SUCCESS] Admin announcement email sent to kunteankita605@gmail.com
+[2026-07-31 00:54:20] [SUCCESS] Admin announcement email sent to rutujakahade44@gmail.com
+[2026-07-31 00:54:21] [SUCCESS] Admin announcement email sent to yash@gmqail.com
+[2026-07-31 00:54:22] [SUCCESS] Admin announcement email sent to adityatathe900@gmail.com
+[2026-07-31 00:54:22] [SUCCESS] Admin announcement email sent to warriorbabu402@gmail.com
+[2026-07-31 00:54:23] [SUCCESS] Admin announcement email sent to nikhilraut9848@gmail.com
+[2026-07-31 00:54:24] [SUCCESS] Admin announcement email sent to sudrikyash1@gmail.com
+[2026-07-31 00:54:25] [SUCCESS] Admin announcement email sent to student@tpms.com
+[2026-07-31 00:54:26] [SUCCESS] Admin announcement email sent to john.doe@example.com
+[2026-07-31 00:54:26] [SUCCESS] Admin announcement email sent to jane.smith@example.com
+[2026-07-31 00:54:27] [SUCCESS] Admin announcement email sent to ajitkard777@gmail.com
+[2026-07-31 00:54:50] [SUCCESS] Admin announcement email sent to admin@tpms.com
+[2026-07-31 00:54:50] [SUCCESS] Admin announcement email sent to student1@test.com
+[2026-07-31 00:54:51] [SUCCESS] Admin announcement email sent to student2@test.com
+[2026-07-31 00:54:52] [SUCCESS] Admin announcement email sent to hr@techcorp.com
+[2026-07-31 00:54:53] [SUCCESS] Admin announcement email sent to hr@innovatesoft.com
+[2026-07-31 00:54:53] [SUCCESS] Admin announcement email sent to kishorpanchal402@gmail.com
+[2026-07-31 00:54:54] [SUCCESS] Admin announcement email sent to minato123@gmail.com
+[2026-07-31 00:54:55] [SUCCESS] Admin announcement email sent to ingleprarthana@gmail.com
+[2026-07-31 00:54:56] [SUCCESS] Admin announcement email sent to adityakalaskar255@gmail.com
+[2026-07-31 00:54:56] [SUCCESS] Admin announcement email sent to poonamgitte20@gmail.com
+[2026-07-31 00:54:57] [SUCCESS] Admin announcement email sent to shravanikulkarni62@gmail.com
+[2026-07-31 00:54:58] [SUCCESS] Admin announcement email sent to kunteankita605@gmail.com
+[2026-07-31 00:54:59] [SUCCESS] Admin announcement email sent to rutujakahade44@gmail.com
+[2026-07-31 00:55:00] [SUCCESS] Admin announcement email sent to google123@gmai.com
+[2026-07-31 00:55:00] [SUCCESS] Admin announcement email sent to yash@gmqail.com
+[2026-07-31 00:55:01] [SUCCESS] Admin announcement email sent to adityatathe900@gmail.com
+[2026-07-31 00:55:02] [SUCCESS] Admin announcement email sent to warriorbabu402@gmail.com
+[2026-07-31 00:55:03] [SUCCESS] Admin announcement email sent to nikhilraut9848@gmail.com
+[2026-07-31 00:55:04] [SUCCESS] Admin announcement email sent to sudrikyash1@gmail.com
+[2026-07-31 00:55:04] [SUCCESS] Admin announcement email sent to student@tpms.com
+[2026-07-31 00:55:05] [SUCCESS] Admin announcement email sent to company@tpms.com
+[2026-07-31 00:55:06] [SUCCESS] Admin announcement email sent to john.doe@example.com
+[2026-07-31 00:55:06] [SUCCESS] Admin announcement email sent to jane.smith@example.com
+[2026-07-31 00:55:07] [SUCCESS] Admin announcement email sent to srushtimokashe4@gmail.com
+[2026-07-31 00:55:08] [SUCCESS] Admin announcement email sent to ajitkarad199@gmail.com
+[2026-07-31 00:55:09] [SUCCESS] Admin announcement email sent to ajitkard777@gmail.com
+[2026-07-31 00:55:10] [SUCCESS] Admin announcement email sent to maxkarad199@gmail.com

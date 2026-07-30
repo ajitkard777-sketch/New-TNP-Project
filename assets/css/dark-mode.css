@@ -1,0 +1,1212 @@
+/* ===================================================================
+   TPMS – Enterprise Design System
+   2 Premium Themes: Light · OLED Midnight
+   Selector: html[data-theme="..."]  — beats Bootstrap specificity
+   =================================================================== */
+
+/* ===================================================================
+   1. LIGHT (default)
+   Clean enterprise palette
+   =================================================================== */
+:root,
+html[data-theme="light"] {
+    --primary:           #2563EB;
+    --primary-hover:     #1D4ED8;
+    --primary-light:     #3B82F6;
+    --primary-subtle:    rgba(37, 99, 235, 0.08);
+    --primary-gradient:  linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
+
+    --secondary:         #0EA5E9;
+    --success:           #16A34A;
+    --success-subtle:    rgba(22, 163, 74, 0.10);
+    --warning:           #D97706;
+    --warning-subtle:    rgba(217, 119, 6, 0.10);
+    --danger:            #DC2626;
+    --danger-subtle:     rgba(220, 38, 38, 0.10);
+    --info:              #0891B2;
+    --info-subtle:       rgba(8, 145, 178, 0.10);
+
+    --bg-page:           #F8FAFC;
+    --bg-primary:        #F8FAFC;
+    --bg-secondary:      #F1F5F9;
+    --bg-card:           #FFFFFF;
+    --bg-sidebar:        #FFFFFF;
+    --bg-glass:          rgba(255,255,255,0.95);
+
+    --text-primary:      #0F172A;
+    --text-secondary:    #475569;
+    --text-muted:        #94A3B8;
+    --text-heading:      #0F172A;
+    --text-white:        #FFFFFF;
+
+    --border-color:      #E2E8F0;
+    --border-light:      rgba(255,255,255,0.10);
+
+    --shadow-sm:  0 1px 2px rgba(15,23,42,0.05);
+    --shadow-md:  0 4px 6px -1px rgba(15,23,42,0.07), 0 2px 4px -2px rgba(15,23,42,0.05);
+    --shadow-lg:  0 10px 15px -3px rgba(15,23,42,0.08), 0 4px 6px -4px rgba(15,23,42,0.05);
+    --shadow-xl:  0 20px 25px -5px rgba(15,23,42,0.09), 0 8px 10px -6px rgba(15,23,42,0.05);
+    --shadow-card:0 0 0 1px rgba(15,23,42,0.06), 0 2px 4px rgba(15,23,42,0.05);
+
+    --gray-50:  #F8FAFC;
+    --gray-100: #F1F5F9;
+    --gray-200: #E2E8F0;
+    --gray-300: #CBD5E1;
+    --gray-400: #94A3B8;
+    --gray-500: #64748B;
+    --gray-600: #475569;
+    --gray-700: #334155;
+    --gray-800: #1E293B;
+    --gray-900: #0F172A;
+}
+
+/* ===================================================================
+   2. OLED MIDNIGHT (midnight)
+   True OLED Black — max contrast, zero waste
+   =================================================================== */
+html[data-theme="midnight"] {
+    --primary:           #38BDF8;
+    --primary-hover:     #0EA5E9;
+    --primary-light:     #7DD3FC;
+    --primary-subtle:    rgba(56, 189, 248, 0.12);
+    --primary-gradient:  linear-gradient(135deg, #0EA5E9 0%, #0284C7 100%);
+
+    --secondary:         #818CF8;
+    --success:           #22C55E;
+    --success-subtle:    rgba(34, 197, 94, 0.12);
+    --warning:           #FBBF24;
+    --warning-subtle:    rgba(251, 191, 36, 0.12);
+    --danger:            #FB7185;
+    --danger-subtle:     rgba(251, 113, 133, 0.12);
+    --info:              #38BDF8;
+    --info-subtle:       rgba(56, 189, 248, 0.12);
+
+    --bg-page:           #000000;
+    --bg-primary:        #000000;
+    --bg-secondary:      #09090B;
+    --bg-card:           #0E0E10;
+    --bg-sidebar:        linear-gradient(180deg, #000000 0%, #09090B 100%);
+    --bg-glass:          rgba(14,14,16,0.97);
+
+    --text-primary:      #F1F5F9;
+    --text-secondary:    #94A3B8;
+    --text-muted:        #475569;
+    --text-heading:      #FFFFFF;
+    --text-white:        #FFFFFF;
+
+    --border-color:      #1C1C1E;
+    --border-light:      rgba(255,255,255,0.06);
+
+    --shadow-sm:  0 1px 3px rgba(0,0,0,0.8);
+    --shadow-md:  0 4px 12px rgba(0,0,0,0.9);
+    --shadow-lg:  0 16px 32px rgba(0,0,0,0.95);
+    --shadow-xl:  0 24px 48px rgba(0,0,0,0.99);
+    --shadow-card:0 0 0 1px rgba(255,255,255,0.04), 0 4px 16px rgba(0,0,0,0.8);
+
+    --gray-50:  #0E0E10;
+    --gray-100: #1C1C1E;
+    --gray-200: #2C2C2E;
+    --gray-300: #3A3A3C;
+    --gray-400: #48484A;
+    --gray-500: #636366;
+    --gray-600: #AEAEB2;
+}
+
+/* ===================================================================
+   UNIVERSAL SMOOTH TRANSITIONS
+   =================================================================== */
+body,
+.top-navbar,
+.sidebar,
+.card, .stat-card, .job-card,
+.app-footer,
+.form-control, .form-select,
+.input-group-text,
+.btn-light,
+.modal-content, .modal-header, .modal-footer,
+.dropdown-menu,
+.notification-dropdown,
+.search-results-dropdown,
+.table,
+.toast {
+    transition-property: background-color, background, border-color, color, box-shadow;
+    transition-duration: 220ms;
+    transition-timing-function: ease;
+}
+
+/* ===================================================================
+   BODY & PAGE
+   =================================================================== */
+html[data-theme] body {
+    background: var(--bg-page) !important;
+    color: var(--text-primary) !important;
+}
+
+/* ===================================================================
+   SIDEBAR
+   =================================================================== */
+html[data-theme] .sidebar {
+    background: var(--bg-sidebar) !important;
+}
+
+/* ===================================================================
+   TOP NAVBAR
+   =================================================================== */
+html[data-theme] .top-navbar {
+    background: var(--bg-card) !important;
+    border-bottom-color: var(--border-color) !important;
+    color: var(--text-primary) !important;
+    box-shadow: var(--shadow-sm) !important;
+}
+
+html[data-theme] .menu-toggle {
+    color: var(--text-secondary) !important;
+}
+
+html[data-theme] .navbar-brand-header .brand-acronym {
+    color: var(--primary) !important;
+}
+
+html[data-theme] .navbar-brand-header .brand-divider {
+    color: var(--gray-300) !important;
+}
+
+html[data-theme] .navbar-brand-header .brand-fullname {
+    color: var(--text-secondary) !important;
+}
+
+/* ===================================================================
+   NAVBAR ICON BUTTONS & SEARCH
+   =================================================================== */
+html[data-theme] .navbar-icon-btn {
+    background: var(--bg-secondary) !important;
+    color: var(--text-secondary) !important;
+    border: 1px solid var(--border-color) !important;
+}
+
+html[data-theme] .navbar-icon-btn:hover {
+    background: var(--gray-200) !important;
+    color: var(--primary) !important;
+    border-color: var(--primary) !important;
+}
+
+html[data-theme] .global-search input {
+    background: var(--bg-secondary) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-primary) !important;
+}
+
+html[data-theme] .global-search input:focus {
+    border-color: var(--primary) !important;
+    background: var(--bg-card) !important;
+    box-shadow: 0 0 0 3px var(--primary-subtle) !important;
+}
+
+html[data-theme] .global-search input::placeholder {
+    color: var(--text-muted) !important;
+}
+
+html[data-theme] .global-search i {
+    color: var(--text-muted) !important;
+}
+
+/* ===================================================================
+   CARDS
+   =================================================================== */
+html[data-theme] .card,
+html[data-theme] .stat-card,
+html[data-theme] .job-card {
+    background: var(--bg-card) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-primary) !important;
+    box-shadow: var(--shadow-card) !important;
+}
+
+html[data-theme] .card-header {
+    background: transparent !important;
+    border-bottom-color: var(--border-color) !important;
+}
+
+html[data-theme] .card-footer {
+    background: var(--bg-secondary) !important;
+    border-top-color: var(--border-color) !important;
+}
+
+html[data-theme] .card-header h5,
+html[data-theme] .card-header h6,
+html[data-theme] .card-body h5,
+html[data-theme] .card-body h6 {
+    color: var(--text-heading) !important;
+}
+
+/* Clickable stat card link */
+html[data-theme] .stat-card-link:hover .stat-card {
+    box-shadow: var(--shadow-md) !important;
+    border-color: var(--primary) !important;
+}
+
+/* ===================================================================
+   TYPOGRAPHY & HEADINGS
+   =================================================================== */
+html[data-theme] h1,
+html[data-theme] h2,
+html[data-theme] h3,
+html[data-theme] h4,
+html[data-theme] h5,
+html[data-theme] h6 {
+    color: var(--text-heading) !important;
+}
+
+html[data-theme] .page-title {
+    color: var(--text-heading) !important;
+}
+
+html[data-theme] .text-muted,
+html[data-theme] .subtitle {
+    color: var(--text-muted) !important;
+}
+
+html[data-theme] .text-secondary {
+    color: var(--text-secondary) !important;
+}
+
+html[data-theme] a {
+    color: var(--primary) !important;
+}
+
+html[data-theme] a:hover {
+    color: var(--primary-hover) !important;
+}
+
+/* ===================================================================
+   FORMS
+   =================================================================== */
+html[data-theme] .form-control,
+html[data-theme] .form-select {
+    background-color: var(--bg-card) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-primary) !important;
+}
+
+html[data-theme] .form-control:focus,
+html[data-theme] .form-select:focus {
+    background-color: var(--bg-card) !important;
+    border-color: var(--primary) !important;
+    color: var(--text-primary) !important;
+    box-shadow: 0 0 0 3px var(--primary-subtle) !important;
+}
+
+html[data-theme] .form-control::placeholder {
+    color: var(--text-muted) !important;
+    opacity: 1;
+}
+
+html[data-theme] .form-label {
+    color: var(--text-primary) !important;
+    font-weight: 600;
+}
+
+html[data-theme] .form-text {
+    color: var(--text-muted) !important;
+}
+
+html[data-theme] .input-group-text {
+    background-color: var(--bg-secondary) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-secondary) !important;
+}
+
+html[data-theme] .form-check-label {
+    color: var(--text-primary) !important;
+}
+
+html[data-theme] .form-check-input {
+    background-color: var(--bg-secondary) !important;
+    border-color: var(--border-color) !important;
+}
+
+html[data-theme] .form-check-input:checked {
+    background-color: var(--primary) !important;
+    border-color: var(--primary) !important;
+}
+
+/* ===================================================================
+   BUTTONS
+   =================================================================== */
+html[data-theme] .btn-primary {
+    background: var(--primary-gradient) !important;
+    border-color: var(--primary) !important;
+    color: #ffffff !important;
+    box-shadow: 0 1px 3px var(--primary-subtle) !important;
+}
+
+html[data-theme] .btn-primary:hover {
+    background: linear-gradient(135deg, var(--primary-hover) 0%, var(--primary) 100%) !important;
+    box-shadow: 0 4px 12px var(--primary-subtle) !important;
+}
+
+html[data-theme] .btn-outline-primary {
+    color: var(--primary) !important;
+    border-color: var(--primary) !important;
+}
+
+html[data-theme] .btn-outline-primary:hover {
+    background: var(--primary) !important;
+    color: #ffffff !important;
+}
+
+html[data-theme] .btn-light {
+    background: var(--bg-secondary) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-primary) !important;
+}
+
+html[data-theme] .btn-light:hover {
+    background: var(--gray-200) !important;
+    color: var(--text-heading) !important;
+}
+
+html[data-theme] .btn-outline-secondary {
+    border-color: var(--border-color) !important;
+    color: var(--text-secondary) !important;
+}
+
+/* ===================================================================
+   TABLES
+   =================================================================== */
+html[data-theme] .table {
+    color: var(--text-primary) !important;
+    border-color: var(--border-color) !important;
+}
+
+html[data-theme] .table thead th {
+    background: var(--bg-secondary) !important;
+    color: var(--text-secondary) !important;
+    border-bottom-color: var(--border-color) !important;
+}
+
+html[data-theme] .table > :not(caption) > * > * {
+    color: var(--text-primary) !important;
+    background-color: var(--bg-card) !important;
+    border-bottom-color: var(--border-color) !important;
+}
+
+html[data-theme] .table tbody tr:hover > * {
+    background: var(--bg-secondary) !important;
+    color: var(--text-primary) !important;
+}
+
+html[data-theme] .table-bordered > :not(caption) > * > * {
+    border-color: var(--border-color) !important;
+}
+
+/* ===================================================================
+   DATATABLES
+   =================================================================== */
+html[data-theme] .dataTables_wrapper {
+    color: var(--text-primary) !important;
+}
+
+html[data-theme] .dataTables_wrapper .dataTables_length label,
+html[data-theme] .dataTables_wrapper .dataTables_filter label,
+html[data-theme] .dataTables_wrapper .dataTables_info {
+    color: var(--text-secondary) !important;
+}
+
+html[data-theme] .dataTables_wrapper .dataTables_length select,
+html[data-theme] .dataTables_wrapper .dataTables_filter input {
+    background-color: var(--bg-card) !important;
+    border: 1px solid var(--border-color) !important;
+    color: var(--text-primary) !important;
+    border-radius: 6px;
+    padding: 6px 10px;
+}
+
+html[data-theme] .dataTables_wrapper .dataTables_paginate .paginate_button {
+    border-radius: 6px !important;
+    border: 1px solid var(--border-color) !important;
+    background: var(--bg-card) !important;
+    color: var(--text-primary) !important;
+}
+
+html[data-theme] .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+    background: var(--primary) !important;
+    color: #ffffff !important;
+    border-color: var(--primary) !important;
+}
+
+html[data-theme] .dataTables_wrapper .dataTables_paginate .paginate_button.current,
+html[data-theme] .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
+    background: var(--primary) !important;
+    color: #ffffff !important;
+    border-color: var(--primary) !important;
+}
+
+html[data-theme] .dataTables_wrapper .dataTables_paginate .paginate_button.disabled {
+    color: var(--text-muted) !important;
+    background: var(--bg-secondary) !important;
+}
+
+/* Dark themes table striping */
+html[data-theme="midnight"] .table-striped > tbody > tr:nth-of-type(odd) > * {
+    background-color: rgba(255,255,255,0.02) !important;
+    color: var(--text-primary) !important;
+}
+
+/* ===================================================================
+   DROPDOWN MENUS
+   =================================================================== */
+html[data-theme] .dropdown-menu {
+    background: var(--bg-card) !important;
+    border: 1px solid var(--border-color) !important;
+    box-shadow: var(--shadow-xl) !important;
+    border-radius: 10px;
+}
+
+html[data-theme] .dropdown-item {
+    color: var(--text-primary) !important;
+    font-size: 0.875rem;
+}
+
+html[data-theme] .dropdown-item:hover,
+html[data-theme] .dropdown-item:focus {
+    background: var(--bg-secondary) !important;
+    color: var(--text-heading) !important;
+}
+
+html[data-theme] .dropdown-item.active,
+html[data-theme] .dropdown-item:active {
+    background: var(--primary-subtle) !important;
+    color: var(--primary) !important;
+}
+
+html[data-theme] .dropdown-header {
+    color: var(--text-muted) !important;
+}
+
+html[data-theme] .dropdown-divider {
+    border-top-color: var(--border-color) !important;
+}
+
+/* ===================================================================
+   MODALS
+   =================================================================== */
+html[data-theme] .modal-content {
+    background: var(--bg-card) !important;
+    border: 1px solid var(--border-color) !important;
+    color: var(--text-primary) !important;
+    box-shadow: var(--shadow-xl) !important;
+    border-radius: 14px;
+}
+
+html[data-theme] .modal-header {
+    background: var(--bg-secondary) !important;
+    border-bottom-color: var(--border-color) !important;
+    border-radius: 14px 14px 0 0;
+}
+
+html[data-theme] .modal-footer {
+    background: var(--bg-secondary) !important;
+    border-top-color: var(--border-color) !important;
+    border-radius: 0 0 14px 14px;
+}
+
+html[data-theme] .modal-title {
+    color: var(--text-heading) !important;
+    font-weight: 700;
+}
+
+html[data-theme="midnight"] .btn-close {
+    filter: invert(1) grayscale(100%) !important;
+}
+
+/* ===================================================================
+   ALERTS
+   =================================================================== */
+html[data-theme] .alert-success {
+    background: var(--success-subtle) !important;
+    border-left-color: var(--success) !important;
+    color: var(--success) !important;
+}
+
+html[data-theme] .alert-danger {
+    background: var(--danger-subtle) !important;
+    border-left-color: var(--danger) !important;
+    color: var(--danger) !important;
+}
+
+html[data-theme] .alert-warning {
+    background: var(--warning-subtle) !important;
+    border-left-color: var(--warning) !important;
+    color: var(--warning) !important;
+}
+
+html[data-theme] .alert-info {
+    background: var(--info-subtle) !important;
+    border-left-color: var(--info) !important;
+    color: var(--info) !important;
+}
+
+html[data-theme="midnight"] .alert-success {
+    color: #4ADE80 !important;
+}
+
+html[data-theme="midnight"] .alert-danger {
+    color: #FCA5A5 !important;
+}
+
+html[data-theme="midnight"] .alert-warning {
+    color: #FCD34D !important;
+}
+
+/* ===================================================================
+   TOASTS
+   =================================================================== */
+html[data-theme] .toast {
+    background: var(--bg-card) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--border-color) !important;
+    box-shadow: var(--shadow-xl) !important;
+}
+
+/* ===================================================================
+   BADGES - semantic colors using CSS vars
+   =================================================================== */
+html[data-theme] .badge.bg-primary {
+    background: var(--primary) !important;
+    color: #ffffff !important;
+}
+
+html[data-theme] .badge.bg-success {
+    background: var(--success) !important;
+    color: #ffffff !important;
+}
+
+html[data-theme] .badge.bg-warning {
+    background: var(--warning) !important;
+    color: #ffffff !important;
+}
+
+html[data-theme] .badge.bg-danger {
+    background: var(--danger) !important;
+    color: #ffffff !important;
+}
+
+html[data-theme] .badge.bg-info {
+    background: var(--info) !important;
+    color: #ffffff !important;
+}
+
+html[data-theme] .badge.bg-light {
+    background: var(--bg-secondary) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--border-color) !important;
+}
+
+html[data-theme="midnight"] .badge.bg-light {
+    background: var(--gray-100) !important;
+    color: var(--text-primary) !important;
+}
+
+/* Soft status badges */
+html[data-theme] .badge-soft-primary {
+    background: var(--primary-subtle) !important;
+    color: var(--primary) !important;
+}
+
+html[data-theme] .badge-soft-success {
+    background: var(--success-subtle) !important;
+    color: var(--success) !important;
+}
+
+html[data-theme] .badge-soft-warning {
+    background: var(--warning-subtle) !important;
+    color: var(--warning) !important;
+}
+
+html[data-theme] .badge-soft-danger {
+    background: var(--danger-subtle) !important;
+    color: var(--danger) !important;
+}
+
+/* ===================================================================
+   STAT CARD ICONS — dark theme adjustments
+   =================================================================== */
+html[data-theme="midnight"] .stat-card-icon.bg-primary-soft   { background: rgba(59,130,246,.16) !important; color: #60A5FA !important; }
+html[data-theme="midnight"] .stat-card-icon.bg-success-soft   { background: rgba(34,197,94,.14) !important; color: #4ADE80 !important; }
+html[data-theme="midnight"] .stat-card-icon.bg-warning-soft   { background: rgba(245,158,11,.14) !important; color: #FBBF24 !important; }
+html[data-theme="midnight"] .stat-card-icon.bg-danger-soft    { background: rgba(248,113,133,.14) !important; color: #FB7185 !important; }
+html[data-theme="midnight"] .stat-card-icon.bg-info-soft      { background: rgba(34,211,238,.14) !important; color: #22D3EE !important; }
+html[data-theme="midnight"] .stat-card-icon.bg-violet-soft    { background: rgba(129,140,248,.14) !important; color: #818CF8 !important; }
+
+/* ===================================================================
+   NOTIFICATION DROPDOWN
+   =================================================================== */
+html[data-theme] .notification-dropdown,
+html[data-theme] .search-results-dropdown {
+    background: var(--bg-card) !important;
+    border-color: var(--border-color) !important;
+    box-shadow: var(--shadow-xl) !important;
+}
+
+html[data-theme] .notification-dropdown-header {
+    border-bottom-color: var(--border-color) !important;
+}
+
+html[data-theme] .notification-dropdown-header h6 {
+    color: var(--text-heading) !important;
+}
+
+html[data-theme] .notification-item {
+    border-bottom-color: var(--border-color) !important;
+    color: var(--text-primary) !important;
+}
+
+html[data-theme] .notification-item:hover {
+    background: var(--bg-secondary) !important;
+}
+
+html[data-theme] .notification-item.unread {
+    background: var(--primary-subtle) !important;
+    border-left-color: var(--primary) !important;
+}
+
+html[data-theme] .notification-item .n-title {
+    color: var(--text-primary) !important;
+}
+
+html[data-theme] .notification-item .n-text {
+    color: var(--text-secondary) !important;
+}
+
+html[data-theme] .notification-item .n-time {
+    color: var(--text-muted) !important;
+}
+
+html[data-theme] .notif-mark-read-btn {
+    color: var(--text-muted) !important;
+}
+html[data-theme] .notif-mark-read-btn:hover {
+    color: var(--primary) !important;
+}
+
+/* ===================================================================
+   PROGRESS BARS
+   =================================================================== */
+html[data-theme] .progress {
+    background-color: var(--gray-200) !important;
+}
+
+/* ===================================================================
+   PAGINATION
+   =================================================================== */
+html[data-theme] .page-link {
+    background-color: var(--bg-card) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-primary) !important;
+}
+
+html[data-theme] .page-link:hover {
+    background-color: var(--bg-secondary) !important;
+    color: var(--primary) !important;
+}
+
+html[data-theme] .page-item.active .page-link {
+    background-color: var(--primary) !important;
+    border-color: var(--primary) !important;
+    color: #ffffff !important;
+}
+
+html[data-theme] .page-item.disabled .page-link {
+    background-color: var(--bg-secondary) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-muted) !important;
+}
+
+/* ===================================================================
+   LIST GROUPS
+   =================================================================== */
+html[data-theme] .list-group-item {
+    background-color: var(--bg-card) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-primary) !important;
+}
+
+html[data-theme] .list-group-item:hover {
+    background-color: var(--bg-secondary) !important;
+}
+
+html[data-theme] .list-group-item.active {
+    background-color: var(--primary) !important;
+    border-color: var(--primary) !important;
+    color: #ffffff !important;
+}
+
+/* ===================================================================
+   HR & DIVIDERS
+   =================================================================== */
+html[data-theme] hr,
+html[data-theme] .dropdown-divider {
+    border-color: var(--border-color) !important;
+    opacity: 1 !important;
+}
+
+/* ===================================================================
+   BOOTSTRAP UTILITY OVERRIDES
+   =================================================================== */
+html[data-theme] .bg-white { background-color: var(--bg-card) !important; }
+html[data-theme] .bg-light { background-color: var(--bg-secondary) !important; }
+html[data-theme] .border   { border-color: var(--border-color) !important; }
+
+html[data-theme="midnight"] .bg-white,
+html[data-theme="midnight"] .bg-light {
+    background-color: var(--bg-secondary) !important;
+    color: var(--text-primary) !important;
+}
+
+/* ===================================================================
+   TABS (nav-tabs)
+   =================================================================== */
+html[data-theme] .nav-tabs {
+    border-bottom-color: var(--border-color) !important;
+}
+
+html[data-theme] .nav-tabs .nav-link {
+    color: var(--text-secondary) !important;
+}
+
+html[data-theme] .nav-tabs .nav-link:hover {
+    color: var(--primary) !important;
+    background: var(--primary-subtle) !important;
+}
+
+html[data-theme] .nav-tabs .nav-link.active {
+    color: var(--primary) !important;
+    border-bottom-color: var(--primary) !important;
+    background: transparent !important;
+}
+
+/* ===================================================================
+   BREADCRUMBS
+   =================================================================== */
+html[data-theme] .breadcrumb-item a       { color: var(--primary) !important; }
+html[data-theme] .breadcrumb-item.active  { color: var(--text-muted) !important; }
+html[data-theme] .breadcrumb-item + .breadcrumb-item::before { color: var(--text-muted) !important; }
+
+/* ===================================================================
+   JOB CARDS extras
+   =================================================================== */
+html[data-theme] .job-card-footer {
+    border-top-color: var(--border-color) !important;
+}
+
+html[data-theme] .job-tag {
+    background: var(--primary-subtle) !important;
+    color: var(--primary) !important;
+}
+
+html[data-theme] .job-salary {
+    color: var(--success) !important;
+}
+
+html[data-theme] .job-company {
+    color: var(--primary) !important;
+}
+
+/* ===================================================================
+   APP FOOTER
+   =================================================================== */
+html[data-theme] .app-footer {
+    background: var(--bg-card) !important;
+    border-top-color: var(--border-color) !important;
+    color: var(--text-muted) !important;
+}
+
+html[data-theme] .app-footer-brand {
+    color: var(--primary) !important;
+}
+
+html[data-theme] .app-footer-right a {
+    color: var(--text-secondary) !important;
+}
+
+html[data-theme] .app-footer-right a:hover {
+    color: var(--primary) !important;
+}
+
+/* ===================================================================
+   AUTH PAGES — card styling per theme
+   =================================================================== */
+html[data-theme="midnight"] .auth-card {
+    background: var(--bg-card) !important;
+    border: 1px solid var(--border-color) !important;
+    color: var(--text-primary) !important;
+}
+
+html[data-theme="midnight"] .auth-card h2,
+html[data-theme="midnight"] .auth-card p {
+    color: var(--text-primary) !important;
+}
+
+html[data-theme="midnight"] .auth-role-tab {
+    background: var(--bg-secondary) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-primary) !important;
+}
+
+html[data-theme="midnight"] .auth-role-tab.active {
+    background: var(--primary) !important;
+    color: #ffffff !important;
+}
+
+/* ===================================================================
+   THEME SELECTOR BUTTON ACTIVE INDICATOR
+   =================================================================== */
+html[data-theme] .theme-opt-btn.active {
+    background: var(--primary-subtle) !important;
+    color: var(--primary) !important;
+    font-weight: 600 !important;
+}
+
+/* ===================================================================
+   CHART CONTAINER & EMPTY STATE
+   =================================================================== */
+html[data-theme] .empty-state h5 {
+    color: var(--text-secondary) !important;
+}
+
+html[data-theme] .empty-state p {
+    color: var(--text-muted) !important;
+}
+
+html[data-theme] .empty-state i {
+    color: var(--gray-300) !important;
+}
+
+/* ===================================================================
+   STAT CARD TRENDS
+   =================================================================== */
+html[data-theme] .stat-card-trend.up {
+    background: var(--success-subtle) !important;
+    color: var(--success) !important;
+}
+
+html[data-theme] .stat-card-trend.down {
+    background: var(--danger-subtle) !important;
+    color: var(--danger) !important;
+}
+
+/* ===================================================================
+   SEARCH RESULTS
+   =================================================================== */
+html[data-theme] .search-result-item {
+    border-bottom-color: var(--border-color) !important;
+    color: var(--text-primary) !important;
+}
+
+html[data-theme] .search-result-item:hover {
+    background: var(--bg-secondary) !important;
+}
+
+/* ===================================================================
+   SKELETON LOADER
+   =================================================================== */
+html[data-theme] .skeleton {
+    background: linear-gradient(90deg, var(--gray-100) 25%, var(--gray-200) 50%, var(--gray-100) 75%) !important;
+    background-size: 200% 100% !important;
+}
+
+/* ===================================================================
+   SCROLLBAR (themed)
+   =================================================================== */
+html[data-theme] ::-webkit-scrollbar-track {
+    background: var(--bg-secondary) !important;
+}
+
+html[data-theme] ::-webkit-scrollbar-thumb {
+    background: var(--gray-300) !important;
+}
+
+html[data-theme] ::-webkit-scrollbar-thumb:hover {
+    background: var(--gray-400) !important;
+}
+
+/* ===================================================================
+   SIDEBAR COLLAPSE BUTTON
+   =================================================================== */
+html[data-theme] .sidebar-collapse-btn {
+    background: rgba(255,255,255,0.05) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    color: #94a3b8 !important;
+}
+
+html[data-theme] .sidebar-collapse-btn:hover {
+    background: rgba(255,255,255,0.12) !important;
+    color: #ffffff !important;
+}
+
+/* ===================================================================
+   NOTIFICATION COUNT BADGE
+   =================================================================== */
+html[data-theme] .notification-count {
+    background: var(--danger) !important;
+    color: #ffffff !important;
+}
+
+/* =====================================================
+   AI CHAT WIDGET â€” Dark Mode Overrides
+   Applies when html[data-theme="midnight"]
+   ===================================================== */
+
+html[data-theme="midnight"] .ai-chat-panel {
+    background: #1e1e2e;
+    border-color: rgba(255,255,255,.07);
+    box-shadow: 0 8px 40px rgba(0,0,0,.5), 0 2px 12px rgba(0,0,0,.3);
+}
+
+html[data-theme="midnight"] .ai-msg-ai .ai-msg-bubble {
+    background: #2a2a3e;
+    color: #e2e8f0;
+    border-color: rgba(255,255,255,.06);
+}
+
+html[data-theme="midnight"] .ai-msg-ai .ai-msg-bubble code,
+html[data-theme="midnight"] .ai-msg-ai .ai-msg-bubble pre {
+    background: rgba(255,255,255,.06);
+    color: #c4b5fd;
+}
+
+html[data-theme="midnight"] .ai-msg-ai .ai-msg-bubble a {
+    color: #a5b4fc;
+}
+
+html[data-theme="midnight"] .ai-input-area {
+    background: #1e1e2e;
+    border-top-color: rgba(255,255,255,.07);
+}
+
+html[data-theme="midnight"] .ai-input-wrapper {
+    background: #2a2a3e;
+    border-color: rgba(255,255,255,.1);
+}
+
+html[data-theme="midnight"] .ai-input-wrapper:focus-within {
+    border-color: #818cf8;
+    box-shadow: 0 0 0 3px rgba(129,140,248,.15);
+}
+
+html[data-theme="midnight"] .ai-textarea {
+    color: #e2e8f0;
+}
+
+html[data-theme="midnight"] .ai-textarea::placeholder {
+    color: #64748b;
+}
+
+html[data-theme="midnight"] .ai-messages-area::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,.12);
+}
+
+html[data-theme="midnight"] .ai-msg-time,
+html[data-theme="midnight"] .ai-powered-by,
+html[data-theme="midnight"] .ai-char-count {
+    color: #4b5563;
+}
+
+html[data-theme="midnight"] .ai-typing span {
+    background: #4b5563;
+}
+
+/* =====================================================
+   APPLICANT CARDS — Midnight Dark Mode
+   ===================================================== */
+html[data-theme="midnight"] .applicant-card {
+    background: #181825;
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+html[data-theme="midnight"] .applicant-card:hover {
+    border-color: #6366f1;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+}
+
+html[data-theme="midnight"] .applicant-meta-grid {
+    background: #212133;
+    border-color: rgba(255, 255, 255, 0.06);
+}
+
+/* =====================================================
+   REAL-TIME CHAT SYSTEM — OLED Midnight Dark Mode
+   ===================================================== */
+html[data-theme="midnight"] .chat-app-card,
+html[data-theme="midnight"] .chat-sidebar-panel,
+html[data-theme="midnight"] .chat-header-bar,
+html[data-theme="midnight"] .chat-input-footer,
+html[data-theme="midnight"] .chat-typing-banner,
+html[data-theme="midnight"] .chat-emoji-picker {
+    background: #12121c;
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+/* Main window & empty state get darker message area background */
+html[data-theme="midnight"] .chat-main-window,
+html[data-theme="midnight"] .chat-empty-state {
+    background: #0d0d15;
+}
+
+html[data-theme="midnight"] .chat-messages-area {
+    background: #0d0d15;
+    scrollbar-color: rgba(255,255,255,0.08) transparent;
+}
+
+html[data-theme="midnight"] .chat-messages-area::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.08);
+}
+
+html[data-theme="midnight"] .chat-conversations-list {
+    scrollbar-color: rgba(255,255,255,0.08) transparent;
+}
+
+html[data-theme="midnight"] .chat-conversations-list::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.08);
+}
+
+html[data-theme="midnight"] .chat-search-input,
+html[data-theme="midnight"] .chat-textarea {
+    background: #1c1c2b;
+    border-color: rgba(255, 255, 255, 0.12);
+    color: #f3f4f6;
+}
+
+html[data-theme="midnight"] .chat-search-input::placeholder,
+html[data-theme="midnight"] .chat-textarea::placeholder {
+    color: rgba(255,255,255,0.3);
+}
+
+html[data-theme="midnight"] .chat-search-input:focus,
+html[data-theme="midnight"] .chat-textarea:focus {
+    border-color: #818cf8;
+    box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.15);
+    background: #1e1e2e;
+}
+
+html[data-theme="midnight"] .chat-conv-item:hover {
+    background: #1e1e2e;
+}
+
+html[data-theme="midnight"] .chat-conv-item.active {
+    background: rgba(99, 102, 241, 0.15);
+    border-left-color: #818cf8;
+}
+
+html[data-theme="midnight"] .chat-conv-item.active .chat-conv-name {
+    color: #818cf8;
+}
+
+html[data-theme="midnight"] .chat-conv-item {
+    border-bottom-color: rgba(255, 255, 255, 0.04);
+}
+
+html[data-theme="midnight"] .chat-conv-name {
+    color: #f3f4f6;
+}
+
+html[data-theme="midnight"] .chat-conv-snippet,
+html[data-theme="midnight"] .chat-conv-time {
+    color: rgba(255,255,255,0.45);
+}
+
+html[data-theme="midnight"] .msg-incoming .chat-msg-bubble {
+    background: #1e1e2e;
+    color: #f3f4f6;
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+html[data-theme="midnight"] .chat-date-divider::before,
+html[data-theme="midnight"] .chat-date-divider::after {
+    background: rgba(255, 255, 255, 0.07);
+}
+
+html[data-theme="midnight"] .chat-date-divider span {
+    background: #1c1c2b;
+    border-color: rgba(255, 255, 255, 0.08);
+    color: #9ca3af;
+}
+
+html[data-theme="midnight"] .chat-input-action-btn {
+    background: #1c1c2b;
+    border-color: rgba(255, 255, 255, 0.1);
+    color: #9ca3af;
+}
+
+html[data-theme="midnight"] .chat-input-action-btn:hover {
+    color: #818cf8;
+    border-color: #818cf8;
+    background: rgba(129, 140, 248, 0.1);
+}
+
+html[data-theme="midnight"] .chat-emoji-trigger {
+    color: rgba(255,255,255,0.35);
+}
+
+html[data-theme="midnight"] .chat-emoji-trigger:hover {
+    color: #818cf8;
+}
+
+html[data-theme="midnight"] .chat-emoji-grid span:hover {
+    background: rgba(129, 140, 248, 0.15);
+}
+
+html[data-theme="midnight"] .chat-icon-action-btn:hover {
+    background: rgba(255,255,255,0.07);
+    color: #818cf8;
+}
+
+html[data-theme="midnight"] .chat-filter-btn {
+    color: rgba(255,255,255,0.55);
+}
+
+html[data-theme="midnight"] .chat-filter-btn.active {
+    background: rgba(99, 102, 241, 0.15);
+    color: #818cf8;
+}
+
+html[data-theme="midnight"] .chat-filter-btn:hover:not(.active) {
+    background: rgba(255,255,255,0.06);
+}
+
+html[data-theme="midnight"] .chat-filter-tabs,
+html[data-theme="midnight"] .chat-search-wrapper {
+    border-bottom-color: rgba(255, 255, 255, 0.07);
+}
+
+html[data-theme="midnight"] .chat-online-dot {
+    border-color: #12121c;
+}
+
+html[data-theme="midnight"] .chat-attachment-preview {
+    background: #12121c;
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+html[data-theme="midnight"] .chat-send-btn {
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.35);
+}
+
+html[data-theme="midnight"] .chat-send-btn:hover:not(:disabled) {
+    box-shadow: 0 4px 14px rgba(99, 102, 241, 0.5);
+}
+
+html[data-theme="midnight"] .chat-fab-btn {
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    box-shadow: 0 4px 18px rgba(99, 102, 241, 0.45);
+}
+
+html[data-theme="midnight"] .chat-fab-badge {
+    border-color: #12121c;
+}
+
+
+
+
