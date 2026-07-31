@@ -6,9 +6,12 @@
     </div>
 </div>
 
+<?php
+$isAppsTab = ($_GET['tab'] ?? '') === 'applications';
+?>
 <ul class="nav nav-tabs mb-4" id="hsMainTab" role="tablist">
     <li class="nav-item" role="presentation">
-        <a class="nav-link active" id="univ-tab" data-bs-toggle="tab" href="#univ" role="tab" aria-controls="univ" aria-selected="true">
+        <a class="nav-link <?= !$isAppsTab ? 'active' : '' ?>" id="univ-tab" data-bs-toggle="tab" href="#univ" role="tab" aria-controls="univ" aria-selected="true">
             <i class="fas fa-university me-1"></i>Universities (<?= count($universities) ?>)
         </a>
     </li>
@@ -23,7 +26,7 @@
         </a>
     </li>
     <li class="nav-item" role="presentation">
-        <a class="nav-link" id="applications-tab" data-bs-toggle="tab" href="#applications" role="tab" aria-controls="applications" aria-selected="false">
+        <a class="nav-link <?= $isAppsTab ? 'active' : '' ?>" id="applications-tab" data-bs-toggle="tab" href="#applications" role="tab" aria-controls="applications" aria-selected="false">
             <i class="fas fa-paper-plane me-1"></i>Student Applications
             <?php $pendingApps = count(array_filter($studentApplications, fn($a) => $a['status'] === 'pending')); ?>
             <?php if ($pendingApps): ?>
@@ -38,7 +41,7 @@
 <div class="tab-content" id="hsMainTabContent">
 
     <!-- ===== UNIVERSITIES TAB ===== -->
-    <div class="tab-pane fade show active" id="univ" role="tabpanel" aria-labelledby="univ-tab">
+    <div class="tab-pane fade <?= !$isAppsTab ? 'show active' : '' ?>" id="univ" role="tabpanel" aria-labelledby="univ-tab">
         <div class="d-flex justify-content-end mb-3">
             <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addUnivModal">
                 <i class="fas fa-plus me-1"></i>Add University
@@ -164,7 +167,7 @@
     </div><!-- end #schol -->
 
     <!-- ===== STUDENT APPLICATIONS TAB ===== -->
-    <div class="tab-pane fade" id="applications" role="tabpanel" aria-labelledby="applications-tab">
+    <div class="tab-pane fade <?= $isAppsTab ? 'show active' : '' ?>" id="applications" role="tabpanel" aria-labelledby="applications-tab">
         <?php if (empty($studentApplications)): ?>
         <div class="card">
             <div class="card-body empty-state">
@@ -332,7 +335,7 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Admission Deadline</label>
-                            <input type="date" class="form-control" name="admission_deadline">
+                            <input type="date" class="form-control" name="admission_deadline" min="<?= date('Y-m-d') ?>">
                         </div>
                         <div class="col-12">
                             <label class="form-label">Website</label>
@@ -369,6 +372,15 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         if ($('#applicationsTable').length) {
             $('#applicationsTable').DataTable({ pageLength: 10, order: [[4, 'desc']] });
+        }
+    }
+
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('tab') === 'applications' || window.location.hash === '#applications') {
+        const appTabBtn = document.getElementById('applications-tab');
+        if (appTabBtn) {
+            const tab = new bootstrap.Tab(appTabBtn);
+            tab.show();
         }
     }
 });

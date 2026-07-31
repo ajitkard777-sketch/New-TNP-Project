@@ -2,7 +2,7 @@
 <div class="content-header">
     <div>
         <h1 class="page-title">Notifications</h1>
-        <p class="subtitle">Stay updated with the latest alerts</p>
+        <p class="subtitle">Company alerts and system updates</p>
     </div>
     <a href="javascript:void(0)" onclick="TPMS.markAllNotificationsRead()" class="btn btn-outline-primary btn-sm">
         <i class="fas fa-check-double me-1"></i> Mark All Read
@@ -22,7 +22,7 @@
     <div class="card-body p-0">
         <?php foreach ($notifications as $n): ?>
         <?php 
-            $targetUrl = getNotificationUrl($n, 'student'); 
+            $targetUrl = getNotificationUrl($n, 'company'); 
             $nData = [
                 'id'        => (int)$n['id'],
                 'title'     => $n['title'],

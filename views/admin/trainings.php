@@ -289,11 +289,11 @@
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">Start Date <span class="text-danger">*</span></label>
-                            <input type="date" class="form-control" name="start_date" required>
+                            <input type="date" class="form-control" name="start_date" min="<?= date('Y-m-d') ?>" required>
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">End Date <span class="text-danger">*</span></label>
-                            <input type="date" class="form-control" name="end_date" required>
+                            <input type="date" class="form-control" name="end_date" min="<?= date('Y-m-d') ?>" required>
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">Start Time</label>
@@ -316,5 +316,21 @@
         </div>
     </div>
 </div><!-- end #addTrainingModal -->
+
+<script>
+// Auto-activate the tab that matches the URL hash (e.g. #enrollmentsTab)
+(function () {
+    var hash = window.location.hash;
+    if (hash) {
+        var tabTrigger = document.querySelector('a[href="' + hash + '"][data-bs-toggle="tab"]');
+        if (tabTrigger) {
+            var bsTab = new bootstrap.Tab(tabTrigger);
+            bsTab.show();
+            // Smooth scroll to top so the tab is visible
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    }
+})();
+</script>
 
 <?php require_once ROOT_PATH . '/includes/footer.php'; ?>

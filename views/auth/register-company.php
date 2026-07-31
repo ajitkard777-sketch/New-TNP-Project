@@ -33,7 +33,7 @@
             </div>
             <?php endif; ?>
 
-            <form class="auth-form" action="<?= url('/register/company') ?>" method="POST" data-validate>
+            <form class="auth-form" action="<?= url('/register/company') ?>" method="POST" data-validate data-tpms-validate>
                 <?= CsrfMiddleware::tokenField() ?>
 
                 <div class="row">
@@ -73,7 +73,11 @@
                     <div class="col-md-6">
                         <div class="form-group">
                             <label class="form-label">Website</label>
-                            <input type="url" class="form-control" name="website" placeholder="https://company.com">
+                            <input type="url" class="form-control" name="website" id="company_website"
+                                   placeholder="https://company.com"
+                                   data-validate-rule="optionalUrl"
+                                   data-validate-label2="Website URL">
+                            <div class="invalid-feedback"></div>
                         </div>
                     </div>
                 </div>
@@ -88,7 +92,12 @@
                     <div class="col-md-6">
                         <div class="form-group">
                             <label class="form-label">Contact Phone *</label>
-                            <input type="text" class="form-control" name="contact_phone" placeholder="10-digit number" maxlength="10" required>
+                            <input type="text" class="form-control" name="contact_phone" id="contact_phone"
+                                   placeholder="10-digit number" maxlength="10" required
+                                   inputmode="numeric" pattern="[0-9]{10}"
+                                   data-validate-rule="phone"
+                                   data-validate-label="Contact phone">
+                            <div class="invalid-feedback"></div>
                         </div>
                     </div>
                 </div>
@@ -172,5 +181,6 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="<?= asset('js/app.js') ?>"></script>
 <script src="<?= asset('js/auth.js') ?>"></script>
+<script src="<?= asset('js/validation.js') ?>"></script>
 </body>
 </html>

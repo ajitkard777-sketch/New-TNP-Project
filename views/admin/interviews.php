@@ -10,42 +10,7 @@
     </button>
 </div>
 
-<!-- Summary Stats -->
-<?php
-$scheduled = array_filter($interviews, fn($i) => $i['status'] === 'scheduled' || $i['status'] === 'rescheduled');
-$completed = array_filter($interviews, fn($i) => $i['status'] === 'completed');
-$passed    = array_filter($interviews, fn($i) => $i['result'] === 'passed');
-?>
-<div class="row g-3 mb-4">
-    <div class="col-6 col-md-3">
-        <div class="stat-card gradient-primary">
-            <div class="stat-card-icon bg-primary-soft"><i class="fas fa-calendar-alt"></i></div>
-            <div class="stat-card-value"><?= count($interviews) ?></div>
-            <div class="stat-card-label">Total Interviews</div>
-        </div>
-    </div>
-    <div class="col-6 col-md-3">
-        <div class="stat-card gradient-info">
-            <div class="stat-card-icon bg-info-soft"><i class="fas fa-clock"></i></div>
-            <div class="stat-card-value"><?= count($scheduled) ?></div>
-            <div class="stat-card-label">Upcoming / Active</div>
-        </div>
-    </div>
-    <div class="col-6 col-md-3">
-        <div class="stat-card gradient-success">
-            <div class="stat-card-icon bg-success-soft"><i class="fas fa-check-circle"></i></div>
-            <div class="stat-card-value"><?= count($completed) ?></div>
-            <div class="stat-card-label">Completed</div>
-        </div>
-    </div>
-    <div class="col-6 col-md-3">
-        <div class="stat-card gradient-warning">
-            <div class="stat-card-icon bg-warning-soft"><i class="fas fa-trophy"></i></div>
-            <div class="stat-card-value"><?= count($passed) ?></div>
-            <div class="stat-card-label">Passed</div>
-        </div>
-    </div>
-</div>
+
 
 <?php if (empty($interviews)): ?>
 <div class="card">
@@ -92,8 +57,8 @@ $passed    = array_filter($interviews, fn($i) => $i['result'] === 'passed');
                 </select>
             </div>
             <div class="col-md-3">
-                <button class="btn btn-light btn-sm w-100" onclick="resetFilters()">
-                    <i class="fas fa-times me-1"></i> Clear Filters
+                <button class="btn btn-primary btn-sm w-100" onclick="applyFilters()">
+                    <i class="fas fa-search me-1"></i> Search
                 </button>
             </div>
         </div>
@@ -241,8 +206,9 @@ $passed    = array_filter($interviews, fn($i) => $i['result'] === 'passed');
                             <input type="text" class="form-control" name="venue" placeholder="Room/Building/Address">
                         </div>
                         <div class="col-12">
-                            <label class="form-label fw-semibold">Meeting Link (Online)</label>
-                            <input type="url" class="form-control" name="meeting_link" placeholder="https://meet.google.com/...">
+                            <label class="form-label fw-semibold">Meeting Link *</label>
+                            <input type="url" class="form-control" name="meeting_link" placeholder="https://meet.google.com/..." required data-validate-rule="meetingLink" data-validate-label="Meeting Link">
+                            <div class="invalid-feedback"></div>
                         </div>
                         <div class="col-12">
                             <label class="form-label fw-semibold">Instructions</label>
@@ -267,7 +233,7 @@ $passed    = array_filter($interviews, fn($i) => $i['result'] === 'passed');
                 <h5 class="modal-title"><i class="fas fa-edit me-2 text-primary"></i>Reschedule / Edit Interview</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form id="adminEditInterviewForm" method="POST">
+            <form id="adminEditInterviewForm" method="POST" data-tpms-validate>
                 <?= CsrfMiddleware::tokenField() ?>
                 <div class="modal-body">
                     <div class="row g-3">
@@ -284,7 +250,7 @@ $passed    = array_filter($interviews, fn($i) => $i['result'] === 'passed');
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Date *</label>
-                            <input type="date" class="form-control" name="interview_date" id="adminEditDate" required>
+                            <input type="date" class="form-control" name="interview_date" id="adminEditDate" min="<?= date('Y-m-d') ?>" required>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Time *</label>
@@ -295,8 +261,9 @@ $passed    = array_filter($interviews, fn($i) => $i['result'] === 'passed');
                             <input type="text" class="form-control" name="venue" id="adminEditVenue" placeholder="Room/Building/Address">
                         </div>
                         <div class="col-12">
-                            <label class="form-label fw-semibold">Meeting Link (Online)</label>
-                            <input type="url" class="form-control" name="meeting_link" id="adminEditLink" placeholder="https://meet.google.com/...">
+                            <label class="form-label fw-semibold">Meeting Link *</label>
+                            <input type="url" class="form-control" name="meeting_link" id="adminEditLink" placeholder="https://meet.google.com/..." required data-validate-rule="meetingLink" data-validate-label="Meeting Link">
+                            <div class="invalid-feedback"></div>
                         </div>
                         <div class="col-12">
                             <label class="form-label fw-semibold">Instructions</label>
@@ -344,15 +311,19 @@ function adminCancelInterview(id) {
 }
 
 function openAdminEditModal(interview) {
-    document.getElementById('adminEditInterviewForm').action = TPMS.baseUrl + '/admin/edit-interview/' + interview.id;
-    document.getElementById('adminEditRound').value = interview.round || 'Round 1';
-    document.getElementById('adminEditMode').value = interview.mode || 'offline';
-    document.getElementById('adminEditDate').value = interview.interview_date || '';
-    document.getElementById('adminEditTime').value = interview.interview_time || '';
-    document.getElementById('adminEditVenue').value = interview.venue || '';
-    document.getElementById('adminEditLink').value = interview.meeting_link || '';
-    document.getElementById('adminEditInstructions').value = interview.instructions || '';
-    new bootstrap.Modal(document.getElementById('adminEditInterviewModal')).show();
+    var form = document.getElementById('adminEditInterviewForm');
+    if (form) form.action = TPMS.baseUrl + '/admin/edit-interview/' + interview.id;
+    if (document.getElementById('adminEditRound')) document.getElementById('adminEditRound').value = interview.round || 'Round 1';
+    if (document.getElementById('adminEditMode')) document.getElementById('adminEditMode').value = interview.mode || 'offline';
+    if (document.getElementById('adminEditDate')) document.getElementById('adminEditDate').value = interview.interview_date || '';
+    if (document.getElementById('adminEditTime')) document.getElementById('adminEditTime').value = interview.interview_time || '';
+    if (document.getElementById('adminEditVenue')) document.getElementById('adminEditVenue').value = interview.venue || '';
+    if (document.getElementById('adminEditLink')) document.getElementById('adminEditLink').value = interview.meeting_link || '';
+    if (document.getElementById('adminEditInstructions')) document.getElementById('adminEditInstructions').value = interview.instructions || '';
+    var modalEl = document.getElementById('adminEditInterviewModal');
+    if (modalEl && typeof bootstrap !== 'undefined') {
+        bootstrap.Modal.getOrCreateInstance(modalEl).show();
+    }
 }
 
 function resetFilters() {

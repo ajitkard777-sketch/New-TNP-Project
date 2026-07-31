@@ -33,6 +33,7 @@ class CompanyController {
         $interviewCount = (int)$this->db->fetchColumn("SELECT COUNT(*) FROM interviews WHERE company_id = ? AND status = 'scheduled'", [$company['id']]);
         $recentApps = $this->db->fetchAll("SELECT a.*, s.first_name, s.last_name, s.branch, s.profile_photo, j.title as job_title FROM applications a JOIN students s ON a.student_id = s.id JOIN jobs j ON a.job_id = j.id WHERE j.company_id = ? ORDER BY a.applied_at DESC LIMIT 10", [$company['id']]);
         $jobs = $this->jobModel->getByCompany($company['id']);
+        $notifications = $this->db->fetchAll("SELECT * FROM notifications WHERE user_id = ? OR is_global = 1 ORDER BY created_at DESC LIMIT 5", [$_SESSION['user_id']]);
         require_once VIEWS_PATH . '/company/dashboard.php';
     }
 
@@ -62,6 +63,27 @@ class CompanyController {
             'established_year' => $data['established_year'] ?: null,
         ];
 
+        // Validate location fields (city, state, country)
+        $errors = [];
+        if (isset($data['city']) && $data['city'] !== '') {
+            $cRes = Validator::city($data['city'], false);
+            if (!$cRes['valid']) $errors[] = $cRes['message'];
+        }
+        if (isset($data['state']) && $data['state'] !== '') {
+            $sRes = Validator::state($data['state'], false);
+            if (!$sRes['valid']) $errors[] = $sRes['message'];
+        }
+        if (isset($data['country']) && $data['country'] !== '') {
+            $coRes = Validator::country($data['country'], false);
+            if (!$coRes['valid']) $errors[] = $coRes['message'];
+        }
+
+        if (!empty($errors)) {
+            setFlash('danger', '<strong>Validation Error:</strong><br>' . implode('<br>', $errors));
+            redirect('/company/profile');
+            return;
+        }
+
         // Logo upload
         if (isset($_FILES['logo']) && $_FILES['logo']['error'] === UPLOAD_ERR_OK) {
             $file = $_FILES['logo'];
@@ -83,24 +105,62 @@ class CompanyController {
     public function postJobPage(): void {
         $company = $this->company;
         $pageTitle = 'Post New Job';
+        $oldInput = $_SESSION['old_job_input'] ?? null;
+        unset($_SESSION['old_job_input']);
         require_once VIEWS_PATH . '/company/post-job.php';
     }
 
     public function postJob(): void {
         CsrfMiddleware::requireValidToken();
-        if (!$this->company['is_approved']) { setFlash('danger', 'Your company must be approved before posting jobs.'); redirect('/company/dashboard'); return; }
+        if (!$this->company['is_approved']) {
+            setFlash('danger', 'Your company must be approved before posting jobs.');
+            redirect('/company/dashboard');
+            return;
+        }
+
         $data = sanitizeArray($_POST);
+        $errors = $this->validateJobData($data);
+
+        if (!empty($errors)) {
+            $_SESSION['old_job_input'] = $_POST;
+            setFlash('danger', '<strong>Please correct the following errors:</strong><br>' . implode('<br>', $errors));
+            redirect('/company/post-job');
+            return;
+        }
+
         $data['company_id'] = $this->company['id'];
-        if (empty($data['title'])) { setFlash('danger', 'Job title is required.'); redirect('/company/post-job'); return; }
+        $data['status'] = 'pending';
+
+        // Salary LPA normalization if raw rupees passed
         if (isset($data['salary_min']) && (float)$data['salary_min'] >= 1000) { $data['salary_min'] = (float)$data['salary_min'] / 100000; }
         if (isset($data['salary_max']) && (float)$data['salary_max'] >= 1000) { $data['salary_max'] = (float)$data['salary_max'] / 100000; }
+
+        // Clean skills (deduplicate)
+        $skRes = Validator::skills($data['skills_required']);
+        $data['skills_required'] = $skRes['normalized'] ?? $data['skills_required'];
+
         $newJobId = $this->jobModel->create($data);
         logActivity('post_job', 'job', "Posted job: {$data['title']}");
-        // Trigger AI recommendation computation for the new job
+
         if ($newJobId) {
             try { (new Recommendation())->recomputeForJob($newJobId); } catch (\Throwable $e) { /* non-fatal */ }
+
+            // Company in-app notification
+            $this->db->insert(
+                "INSERT INTO notifications (user_id, title, message, type, category, reference_id, link) VALUES (?, ?, ?, 'info', 'job', ?, ?)",
+                [$_SESSION['user_id'], 'Job Submitted for Review', "Your job posting '{$data['title']}' has been submitted and is awaiting admin approval.", $newJobId, url('/company/jobs')]
+            );
+            // Admin in-app notification
+            $adminUser = $this->db->fetchOne("SELECT id FROM users WHERE role = 'admin' LIMIT 1");
+            if ($adminUser) {
+                $this->db->insert(
+                    "INSERT INTO notifications (user_id, title, message, type, category, reference_id, link) VALUES (?, ?, ?, 'warning', 'job', ?, ?)",
+                    [$adminUser['id'], 'New Job Pending Approval 📋', "Company '{$this->company['company_name']}' posted a new job: '{$data['title']}'. Approval required.", $newJobId, url('/admin/jobs')]
+                );
+            }
         }
-        setFlash('success', 'Job posted successfully! It will be active after admin approval.');
+
+        setFlash('success', 'Job posted successfully! All mandatory details recorded. It will be active after admin approval.');
         redirect('/company/jobs');
     }
 
@@ -116,6 +176,8 @@ class CompanyController {
         if (!$job) { setFlash('danger', 'Job not found.'); redirect('/company/jobs'); return; }
         $company = $this->company;
         $pageTitle = 'Edit Job';
+        $oldInput = $_SESSION['old_job_input_' . $id] ?? null;
+        unset($_SESSION['old_job_input_' . $id]);
         require_once VIEWS_PATH . '/company/edit-job.php';
     }
 
@@ -123,46 +185,192 @@ class CompanyController {
         CsrfMiddleware::requireValidToken();
         $job = $this->db->fetchOne("SELECT * FROM jobs WHERE id = ? AND company_id = ?", [$id, $this->company['id']]);
         if (!$job) { setFlash('danger', 'Job not found.'); redirect('/company/jobs'); return; }
+        
         $data = sanitizeArray($_POST);
-        $salMin = (float)($data['salary_min'] ?? $job['salary_min']);
-        $salMax = (float)($data['salary_max'] ?? $job['salary_max']);
+        $errors = $this->validateJobData($data);
+
+        if (!empty($errors)) {
+            $_SESSION['old_job_input_' . $id] = $_POST;
+            setFlash('danger', '<strong>Please correct the following errors:</strong><br>' . implode('<br>', $errors));
+            redirect('/company/edit-job/' . $id);
+            return;
+        }
+
+        $salMin = (float)$data['salary_min'];
+        $salMax = (float)$data['salary_max'];
         if ($salMin >= 1000) $salMin /= 100000;
         if ($salMax >= 1000) $salMax /= 100000;
 
-        // Trigger AI recommendation recompute after edit
-        try { (new Recommendation())->recomputeForJob($id); } catch (\Throwable $e) { /* non-fatal */ }
+        $skRes = Validator::skills($data['skills_required']);
+        $skillsNorm = $skRes['normalized'] ?? $data['skills_required'];
 
         $this->jobModel->update($id, [
-            'title' => $data['title'] ?? $job['title'],
-            'description' => $data['description'] ?? $job['description'],
-            'job_type' => $data['job_type'] ?? $job['job_type'],
-            'work_mode' => $data['work_mode'] ?? $job['work_mode'],
-            'location' => $data['location'] ?? $job['location'],
+            'title' => $data['title'],
+            'description' => $data['description'],
+            'job_type' => $data['job_type'],
+            'work_mode' => $data['work_mode'],
+            'location' => $data['location'],
             'salary_min' => $salMin,
             'salary_max' => $salMax,
-            'openings' => $data['openings'] ?? $job['openings'],
-            'skills_required' => $data['skills_required'] ?? $job['skills_required'],
-            'eligibility_cgpa' => $data['eligibility_cgpa'] ?? $job['eligibility_cgpa'],
-            'eligibility_branches' => $data['eligibility_branches'] ?? $job['eligibility_branches'],
-            'eligibility_backlogs' => $data['eligibility_backlogs'] ?? $job['eligibility_backlogs'],
-            'application_deadline' => $data['application_deadline'] ?: null,
+            'openings' => $data['openings'],
+            'skills_required' => $skillsNorm,
+            'experience_required' => $data['experience_required'],
+            'qualification' => $data['qualification'],
+            'eligibility_cgpa' => $data['eligibility_cgpa'],
+            'eligibility_branches' => $data['eligibility_branches'],
+            'passing_year' => $data['passing_year'],
+            'eligibility_backlogs' => $data['eligibility_backlogs'],
+            'selection_process' => $data['selection_process'],
+            'application_deadline' => $data['application_deadline'],
+            'joining_date' => $data['joining_date'],
+            'contact_person' => $data['contact_person'],
+            'contact_email' => $data['contact_email'],
+            'contact_phone' => $data['contact_phone'],
+            'website' => $data['website'],
         ]);
+
+        try { (new Recommendation())->recomputeForJob($id); } catch (\Throwable $e) { /* non-fatal */ }
+
         setFlash('success', 'Job updated successfully!');
         redirect('/company/jobs');
     }
 
+    /**
+     * Validate all job posting input fields
+     */
+    private function validateJobData(array $data): array {
+        $errors = [];
+
+        // Title
+        $titleRes = Validator::text($data['title'] ?? '', 'Job title', 3, 150, true);
+        if (!$titleRes['valid']) $errors[] = $titleRes['message'];
+
+        // Job Type
+        if (empty($data['job_type']) || !array_key_exists($data['job_type'], JOB_TYPES)) {
+            $errors[] = 'Please select a valid job type.';
+        }
+
+        // Work Mode
+        if (empty($data['work_mode']) || !in_array($data['work_mode'], ['onsite', 'remote', 'hybrid'])) {
+            $errors[] = 'Please select a valid work mode.';
+        }
+
+        // Location
+        $locRes = Validator::text($data['location'] ?? '', 'Location', 2, 150, true);
+        if (!$locRes['valid']) $errors[] = $locRes['message'];
+
+        // Vacancies / Openings
+        $openRes = Validator::integer($data['openings'] ?? null, 'Number of vacancies', 1);
+        if (!$openRes['valid']) $errors[] = $openRes['message'];
+
+        // Salary Min
+        $salMinRes = Validator::numeric($data['salary_min'] ?? null, 'Minimum salary', 0);
+        if (!$salMinRes['valid']) $errors[] = $salMinRes['message'];
+
+        // Salary Max
+        $salMinVal = is_numeric($data['salary_min'] ?? null) ? (float)$data['salary_min'] : 0;
+        $salMaxRes = Validator::numeric($data['salary_max'] ?? null, 'Maximum salary', $salMinVal);
+        if (!$salMaxRes['valid']) $errors[] = $salMaxRes['message'];
+
+        // Application Deadline
+        $deadRes = Validator::date($data['application_deadline'] ?? '', 'Application deadline', true);
+        if (!$deadRes['valid']) $errors[] = $deadRes['message'];
+
+        // Expected Joining Date
+        $joinRes = Validator::date($data['joining_date'] ?? '', 'Expected joining date', true);
+        if (!$joinRes['valid']) $errors[] = $joinRes['message'];
+
+        // Skills Required
+        $skRes = Validator::skills($data['skills_required'] ?? '');
+        if (empty($data['skills_required']) || !$skRes['valid'] || empty($skRes['normalized'])) {
+            $errors[] = 'Required skills field is mandatory.';
+        }
+
+        // Experience Required
+        $expRes = Validator::text($data['experience_required'] ?? '', 'Experience required', 2, 100, true);
+        if (!$expRes['valid']) $errors[] = $expRes['message'];
+
+        // Qualification
+        $qualRes = Validator::text($data['qualification'] ?? '', 'Qualification', 2, 100, true);
+        if (!$qualRes['valid']) $errors[] = $qualRes['message'];
+
+        // Eligible Branches (Optional)
+        $branchRes = Validator::text($data['eligibility_branches'] ?? '', 'Eligible branches', 2, 200, false);
+        if (!$branchRes['valid']) $errors[] = $branchRes['message'];
+
+        // Passing Year
+        $passRes = Validator::text($data['passing_year'] ?? '', 'Passing year', 2, 50, true);
+        if (!$passRes['valid']) $errors[] = $passRes['message'];
+
+        // Eligibility CGPA
+        $cgpaRes = Validator::numeric($data['eligibility_cgpa'] ?? null, 'Minimum CGPA', 0, 10);
+        if (!$cgpaRes['valid']) $errors[] = $cgpaRes['message'];
+
+        // Eligibility Backlogs
+        $backRes = Validator::integer($data['eligibility_backlogs'] ?? null, 'Max active backlogs', 0);
+        if (!$backRes['valid']) $errors[] = $backRes['message'];
+
+        // Selection Process
+        $selRes = Validator::text($data['selection_process'] ?? '', 'Selection process', 10, 1000, true);
+        if (!$selRes['valid']) $errors[] = $selRes['message'];
+
+        // Contact Person
+        $cpRes = Validator::text($data['contact_person'] ?? '', 'Contact person', 2, 100, true);
+        if (!$cpRes['valid']) $errors[] = $cpRes['message'];
+
+        // Contact Email
+        $ceRes = Validator::email($data['contact_email'] ?? '', 'Contact email');
+        if (!$ceRes['valid']) $errors[] = $ceRes['message'];
+
+        // Contact Phone
+        $phoneRes = Validator::phone($data['contact_phone'] ?? '');
+        if (!$phoneRes['valid']) $errors[] = $phoneRes['message'];
+
+        // Company Website / URL
+        $webRes = Validator::projectUrl($data['website'] ?? '');
+        if (!$webRes['valid']) $errors[] = $webRes['message'];
+
+        // Description
+        $descRes = Validator::text($data['description'] ?? '', 'Job description', 20, 2000, true);
+        if (!$descRes['valid']) $errors[] = $descRes['message'];
+
+        return $errors;
+    }
+
     public function deleteJob($id): void {
-        $this->db->delete("DELETE FROM jobs WHERE id = ? AND company_id = ?", [$id, $this->company['id']]);
+        $job = $this->jobModel->findById($id);
+        if ($job && $job['company_id'] == $this->company['id']) {
+            $this->db->delete("DELETE FROM jobs WHERE id = ? AND company_id = ?", [$id, $this->company['id']]);
+            $this->db->insert(
+                "INSERT INTO notifications (user_id, title, message, type, category, link) VALUES (?, ?, ?, 'warning', 'job', ?)",
+                [$_SESSION['user_id'], 'Job Posting Deleted', "Your job posting '{$job['title']}' has been deleted.", url('/company/jobs')]
+            );
+        }
         setFlash('success', 'Job deleted.');
         redirect('/company/jobs');
     }
 
-    public function viewApplications($jobId): void {
-        $job = $this->db->fetchOne("SELECT * FROM jobs WHERE id = ? AND company_id = ?", [$jobId, $this->company['id']]);
-        if (!$job) { setFlash('danger', 'Job not found.'); redirect('/company/jobs'); return; }
+    public function viewApplications($jobId = null): void {
         $company = $this->company;
-        $pageTitle = 'Applications - ' . $job['title'];
-        $applications = $this->jobModel->getApplications($jobId);
+        if (empty($jobId) || $jobId === 'all' || (int)$jobId === 0) {
+            $job = ['id' => 0, 'title' => 'All Jobs'];
+            $pageTitle = 'Applications — All Jobs';
+            $applications = $this->db->fetchAll(
+                "SELECT a.*, s.first_name, s.last_name, u.email, s.phone, s.branch, s.cgpa, s.profile_photo, s.resume_path, s.user_id, j.title as job_title
+                 FROM applications a
+                 JOIN students s ON a.student_id = s.id
+                 JOIN users u ON s.user_id = u.id
+                 JOIN jobs j ON a.job_id = j.id
+                 WHERE j.company_id = ?
+                 ORDER BY a.applied_at DESC",
+                [$company['id']]
+            );
+        } else {
+            $job = $this->db->fetchOne("SELECT * FROM jobs WHERE id = ? AND company_id = ?", [(int)$jobId, $company['id']]);
+            if (!$job) { setFlash('danger', 'Job not found.'); redirect('/company/jobs'); return; }
+            $pageTitle = 'Applications — ' . $job['title'];
+            $applications = $this->jobModel->getApplications((int)$jobId);
+        }
         require_once VIEWS_PATH . '/company/applications.php';
     }
 
@@ -260,8 +468,17 @@ class CompanyController {
         if (!$app || $app['company_id'] != $this->company['id']) { setFlash('danger', 'Not found.'); redirect('/company/jobs'); return; }
 
         $data = sanitizeArray($_POST);
+
+        // Validate Meeting Link (Mandatory & must be valid URL)
+        $linkRes = Validator::meetingLink($data['meeting_link'] ?? '');
+        if (!$linkRes['valid']) {
+            setFlash('danger', $linkRes['message']);
+            redirect('/company/applications/' . $app['job_id']);
+            return;
+        }
+
         $this->db->insert("INSERT INTO interviews (student_id, company_id, job_id, round, interview_date, interview_time, mode, venue, meeting_link, instructions, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'scheduled')",
-            [$app['student_id'], $this->company['id'], $app['job_id'], $data['round'] ?? 'Round 1', $data['interview_date'], $data['interview_time'], $data['mode'] ?? 'offline', $data['venue'] ?? null, $data['meeting_link'] ?? null, $data['instructions'] ?? null]);
+            [$app['student_id'], $this->company['id'], $app['job_id'], $data['round'] ?? 'Round 1', $data['interview_date'], $data['interview_time'], 'online', $data['venue'] ?? null, trim($data['meeting_link']), $data['instructions'] ?? null]);
 
         $this->jobModel->updateApplicationStatus($appId, 'interview');
 
@@ -335,15 +552,26 @@ class CompanyController {
         if (!$interview) { setFlash('danger', 'Interview not found.'); redirect('/company/interviews'); return; }
 
         $data = sanitizeArray($_POST);
+
+        // Validate Meeting Link (Mandatory & must be valid URL)
+        $linkRes = Validator::meetingLink($data['meeting_link'] ?? '');
+        if (!$linkRes['valid']) {
+            setFlash('danger', $linkRes['message']);
+            redirect('/company/interviews');
+            return;
+        }
+
+        $mode = in_array($data['mode'] ?? '', ['online', 'offline'], true) ? $data['mode'] : ($interview['mode'] ?? 'online');
+
         $this->db->update(
             "UPDATE interviews SET round = ?, interview_date = ?, interview_time = ?, mode = ?, venue = ?, meeting_link = ?, instructions = ?, status = 'rescheduled' WHERE id = ?",
             [
                 $data['round'] ?? $interview['round'],
                 $data['interview_date'] ?? $interview['interview_date'],
                 $data['interview_time'] ?? $interview['interview_time'],
-                $data['mode'] ?? $interview['mode'],
+                $mode,
                 $data['venue'] ?? null,
-                $data['meeting_link'] ?? null,
+                trim($data['meeting_link']),
                 $data['instructions'] ?? null,
                 $id
             ]
@@ -369,7 +597,7 @@ class CompanyController {
                     $this->company['company_name'],
                     $data['interview_date'],
                     $data['interview_time'],
-                    $data['mode'] ?? 'offline',
+                    $mode,
                     $data['venue'] ?? ''
                 );
             }
@@ -446,6 +674,15 @@ class CompanyController {
         }
 
         require_once VIEWS_PATH . '/company/recommendations.php';
+    }
+
+    public function notifications(): void {
+        $pageTitle = 'Notifications';
+        $notifications = $this->db->fetchAll(
+            "SELECT * FROM notifications WHERE user_id = ? OR is_global = 1 ORDER BY created_at DESC LIMIT 50",
+            [$_SESSION['user_id']]
+        );
+        require_once VIEWS_PATH . '/company/notifications.php';
     }
 
     public function viewApplicant($studentId): void {

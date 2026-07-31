@@ -104,6 +104,22 @@
     --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
+.applicant-card {
+    height: 100%;
+    width: 100%;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    border-radius: var(--radius-xl);
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow var(--transition-base), transform var(--transition-base), border-color var(--transition-base);
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
 /* =====================================================
    Reset & Base
    ===================================================== */
@@ -204,7 +220,8 @@ h6 { font-size: 0.875rem; }
     flex: 1;
     margin-left: var(--sidebar-width);
     min-height: 100vh;
-    transition: margin-left var(--transition-base);
+    transition: margin-left 280ms cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: margin-left;
 }
 
 .content-wrapper {
@@ -225,9 +242,6 @@ h6 { font-size: 0.875rem; }
 /* =====================================================
    Sidebar
    ===================================================== */
-/* =====================================================
-   Sidebar (Modern ERP / Admin Dashboard Style)
-   ===================================================== */
 .sidebar {
     width: var(--sidebar-width, 268px);
     height: 100vh;
@@ -241,6 +255,7 @@ h6 { font-size: 0.875rem; }
     display: flex;
     flex-direction: column;
     transition: width 280ms cubic-bezier(0.4, 0, 0.2, 1), background 280ms ease;
+    will-change: width;
     scrollbar-width: thin;
     scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
     border-right: 1px solid var(--border-color);
@@ -345,6 +360,7 @@ h6 { font-size: 0.875rem; }
     min-width: 0;
     overflow: hidden;
     white-space: nowrap;
+    transition: opacity 200ms ease, visibility 200ms;
 }
 
 .sidebar-user-name {
@@ -377,6 +393,7 @@ h6 { font-size: 0.875rem; }
     letter-spacing: 1.3px;
     color: var(--gray-400);
     font-weight: 700;
+    transition: opacity 200ms ease, visibility 200ms;
 }
 
 .sidebar-nav-list {
@@ -420,6 +437,7 @@ h6 { font-size: 0.875rem; }
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    transition: opacity 200ms ease, visibility 200ms;
 }
 
 /* Hover State */
@@ -448,7 +466,7 @@ h6 { font-size: 0.875rem; }
 .submenu-arrow {
     font-size: 0.72rem;
     color: var(--gray-400);
-    transition: transform 250ms ease, color 200ms ease;
+    transition: transform 250ms ease, color 200ms ease, opacity 200ms ease;
     margin-left: auto;
 }
 
@@ -461,6 +479,7 @@ h6 { font-size: 0.875rem; }
     display: none;
     padding: 4px 0;
     margin-top: 4px;
+    transition: opacity 200ms ease, visibility 200ms;
 }
 
 .sidebar-submenu-link {
@@ -523,7 +542,11 @@ h6 { font-size: 0.875rem; }
     .app-wrapper.sidebar-collapsed .sidebar-brand,
     .app-wrapper.sidebar-collapsed .sidebar-user-info,
     .app-wrapper.sidebar-collapsed .nav-text,
-    .app-wrapper.sidebar-collapsed .submenu-arrow,
+    .app-wrapper.sidebar-collapsed .submenu-arrow {
+        opacity: 0;
+        visibility: hidden;
+    }
+    
     .app-wrapper.sidebar-collapsed .sidebar-nav-title,
     .app-wrapper.sidebar-collapsed .sidebar-submenu {
         display: none !important;
@@ -1017,12 +1040,24 @@ h6 { font-size: 0.875rem; }
     background: var(--bg-card);
     border: 1px solid var(--border-color);
     box-shadow: var(--shadow-sm);
-    transition: box-shadow var(--transition-base), border-color var(--transition-base);
+    width: 100%;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    border-radius: var(--radius-xl);
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow var(--transition-base), transform var(--transition-base), border-color var(--transition-base);
+    overflow: hidden;
+    box-sizing: border-box;
 }
 
 .applicant-card:hover {
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--shadow-lg);
     border-color: var(--primary-light);
+    transform: translateY(-2px);
 }
 
 .applicant-card .card-body {
@@ -3016,4 +3051,88 @@ textarea.form-control {
     }
 }
 
+
+
+/* ============================================================
+   TPMS - Form Validation Styles
+   Complements Bootstrap 5 .is-invalid / .invalid-feedback
+   ============================================================ */
+
+/* Invalid field border */
+.form-control.is-invalid,
+.form-select.is-invalid,
+textarea.is-invalid {
+    border-color: #dc3545 !important;
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.18) !important;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Valid field border */
+.form-control.is-valid,
+.form-select.is-valid,
+textarea.is-valid {
+    border-color: #28a745 !important;
+    box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.12) !important;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Inline error message */
+.invalid-feedback {
+    display: none;
+    width: 100%;
+    margin-top: 0.3rem;
+    font-size: 0.78rem;
+    color: #dc3545;
+    font-weight: 500;
+    animation: tpms-fade-in 0.15s ease;
+}
+
+.is-invalid ~ .invalid-feedback,
+.is-invalid + .invalid-feedback {
+    display: block !important;
+}
+
+/* Input groups with invalid state */
+.input-group .form-control.is-invalid,
+.input-group .form-control.is-valid {
+    z-index: 1;
+}
+
+/* Error fade-in */
+@keyframes tpms-fade-in {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Character counters */
+#bio_counter, #skills_counter, #address_counter {
+    font-size: 0.75rem;
+    color: var(--text-muted, #888);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* =====================================================
+   Global Dropdown Un-clipping & Responsive Positioning
+   ===================================================== */
+.table-responsive {
+    position: static;
+}
+
+.dropdown-menu {
+    z-index: 1070 !important;
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18), 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+    border: 1px solid var(--border-color, rgba(0,0,0,0.12)) !important;
+}
+
+.dropdown-menu.show {
+    animation: tpmsDropdownFadeIn 0.15s ease-out;
+}
+
+@keyframes tpmsDropdownFadeIn {
+    from { opacity: 0; transform: scale(0.96); }
+    to   { opacity: 1; transform: scale(1); }
+}
 

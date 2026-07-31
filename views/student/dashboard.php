@@ -61,7 +61,7 @@
         </a>
     </div>
     <div class="col-xl-2 col-lg-4 col-md-4 col-sm-6">
-        <a href="<?= url('/student/trainings') ?>" class="stat-card-link">
+        <a href="<?= url('/student/trainings?tab=registered') ?>" class="stat-card-link">
             <div class="stat-card gradient-violet">
                 <div class="stat-card-icon bg-violet-soft"><i class="fas fa-chalkboard-teacher"></i></div>
                 <div class="stat-card-value"><?= $trainingCount ?></div>
@@ -70,7 +70,7 @@
         </a>
     </div>
     <div class="col-xl-2 col-lg-4 col-md-4 col-sm-6">
-        <a href="<?= url('/student/higher-studies') ?>" class="stat-card-link">
+        <a href="<?= url('/student/higher-studies?tab=myapps') ?>" class="stat-card-link">
             <div class="stat-card gradient-danger">
                 <div class="stat-card-icon bg-danger-soft"><i class="fas fa-graduation-cap"></i></div>
                 <div class="stat-card-value"><?= $higherStudiesCount ?></div>

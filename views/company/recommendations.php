@@ -15,32 +15,6 @@
     </div>
 </div>
 
-<!-- ── AI Stats Strip ─────────────────────────────────────────────── -->
-<div class="row g-3 mb-4">
-    <?php
-    $statCards = [
-        ['fas fa-users',        'Candidates Analysed',  (int)($stats['total_candidates']  ?? 0), 'primary'],
-        ['fas fa-fire',         'Excellent Matches',    (int)($stats['excellent_matches']  ?? 0), 'success'],
-        ['fas fa-thumbs-up',    'Good Matches',         (int)($stats['good_matches']       ?? 0), 'info'],
-        ['fas fa-chart-line',   'Avg Match Score',      round((float)($stats['avg_score'] ?? 0), 1) . '%', 'warning'],
-    ];
-    foreach ($statCards as [$icon, $label, $val, $color]):
-    ?>
-    <div class="col-sm-6 col-xl-3">
-        <div class="card shadow-sm h-100 border-0" style="border-left: 4px solid var(--bs-<?= $color ?>) !important; border-radius: 12px;">
-            <div class="card-body d-flex align-items-center gap-3 py-3">
-                <div style="width:46px;height:46px;border-radius:50%;background:rgba(var(--bs-<?= $color ?>-rgb),0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                    <i class="<?= $icon ?> text-<?= $color ?>"></i>
-                </div>
-                <div>
-                    <div class="fw-bold" style="font-size:1.4rem;line-height:1;"><?= $val ?></div>
-                    <div class="text-muted" style="font-size:0.75rem;"><?= $label ?></div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <?php endforeach; ?>
-</div>
 
 <!-- ── Score Color Legend ─────────────────────────────────────────── -->
 <div class="d-flex flex-wrap align-items-center gap-3 mb-4 px-1">
@@ -248,23 +222,22 @@
                         </button>
                         <?php endif; ?>
 
-                        <?php if ($chatUserId > 0): ?>
-                        <a href="<?= url('/chat?user_id=' . $chatUserId) ?>"
-                           class="btn btn-outline-info btn-sm" style="font-size:0.78rem;" title="Message Candidate">
-                            <i class="fas fa-comment-dots"></i>
-                        </a>
-                        <?php else: ?>
-                        <button class="btn btn-outline-secondary btn-sm disabled" style="font-size:0.78rem;" title="Chat Unavailable" disabled>
-                            <i class="fas fa-comment-dots"></i>
-                        </button>
-                        <?php endif; ?>
-
-                        <?php if (!empty($s['resume_path']) && $studentId > 0): ?>
-                        <a href="<?= url('/company/serve-resume/' . $studentId) ?>"
-                           target="_blank" class="btn btn-outline-secondary btn-sm" style="font-size:0.78rem;" title="Resume">
-                            <i class="fas fa-file-pdf"></i>
-                        </a>
-                        <?php endif; ?>
+                        <!-- Action Dropdown -->
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-light border dropdown-toggle fw-semibold" style="font-size:0.78rem;" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}'>
+                                Action
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end shadow-lg" style="border-radius:10px;font-size:0.82rem;min-width:190px;">
+                                <li><a class="dropdown-item py-2" href="<?= url('/company/view-applicant/' . $studentId) ?>"><i class="fas fa-user text-primary me-2"></i>View Profile</a></li>
+                                <?php if (!empty($s['resume_path']) && $studentId > 0): ?>
+                                <li><a class="dropdown-item py-2" href="<?= url('/company/serve-resume/' . $studentId) ?>" target="_blank"><i class="fas fa-file-pdf text-danger me-2"></i>View Resume</a></li>
+                                <li><a class="dropdown-item py-2" href="<?= url('/company/serve-resume/' . $studentId . '?download=1') ?>"><i class="fas fa-download text-success me-2"></i>Download Resume</a></li>
+                                <?php endif; ?>
+                                <?php if ($chatUserId > 0): ?>
+                                <li><a class="dropdown-item py-2" href="<?= url('/chat?user_id=' . $chatUserId) ?>"><i class="fas fa-comment-dots text-info me-2"></i>Send Message</a></li>
+                                <?php endif; ?>
+                            </ul>
+                        </div>
                     </div>
                 </div>
             </div>

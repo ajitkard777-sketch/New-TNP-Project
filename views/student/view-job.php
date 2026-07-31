@@ -141,8 +141,8 @@ $logoUrl     = $job['logo'] ? uploadUrl('company/' . $job['logo']) : asset('imag
                 <div class="row g-3">
                     <div class="col-md-6">
                         <div class="p-3 border rounded-3 bg-light">
-                            <div class="text-muted small fw-semibold text-uppercase">Minimum CGPA</div>
-                            <div class="fw-bold text-dark mt-1"><?= $job['eligibility_cgpa'] > 0 ? number_format($job['eligibility_cgpa'], 2) . ' / 10.0' : 'No CGPA cut-off' ?></div>
+                            <div class="text-muted small fw-semibold text-uppercase">Qualification / Degree</div>
+                            <div class="fw-bold text-dark mt-1"><?= $job['qualification'] ? htmlspecialchars($job['qualification']) : 'Any Graduate' ?></div>
                         </div>
                     </div>
                     <div class="col-md-6">
@@ -151,9 +151,21 @@ $logoUrl     = $job['logo'] ? uploadUrl('company/' . $job['logo']) : asset('imag
                             <div class="fw-bold text-dark mt-1"><?= $job['eligibility_branches'] ? htmlspecialchars($job['eligibility_branches']) : 'Open to All Branches' ?></div>
                         </div>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <div class="p-3 border rounded-3 bg-light">
-                            <div class="text-muted small fw-semibold text-uppercase">Max Allowed Active Backlogs</div>
+                            <div class="text-muted small fw-semibold text-uppercase">Passing Year</div>
+                            <div class="fw-bold text-dark mt-1"><?= $job['passing_year'] ? htmlspecialchars($job['passing_year']) : 'Batch of ' . date('Y') ?></div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 border rounded-3 bg-light">
+                            <div class="text-muted small fw-semibold text-uppercase">Minimum CGPA</div>
+                            <div class="fw-bold text-dark mt-1"><?= $job['eligibility_cgpa'] > 0 ? number_format($job['eligibility_cgpa'], 2) . ' / 10.0' : 'No CGPA cut-off' ?></div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 border rounded-3 bg-light">
+                            <div class="text-muted small fw-semibold text-uppercase">Max Active Backlogs</div>
                             <div class="fw-bold text-dark mt-1"><?= $job['eligibility_backlogs'] ?> backlog(s)</div>
                         </div>
                     </div>
@@ -163,9 +175,54 @@ $logoUrl     = $job['logo'] ? uploadUrl('company/' . $job['logo']) : asset('imag
                             <div class="fw-bold text-dark mt-1"><?= htmlspecialchars($job['experience_required'] ?: 'Fresher / Entry level') ?></div>
                         </div>
                     </div>
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded-3 bg-light">
+                            <div class="text-muted small fw-semibold text-uppercase">Expected Joining Date</div>
+                            <div class="fw-bold text-dark mt-1"><?= !empty($job['joining_date']) ? formatDate($job['joining_date']) : 'Immediate' ?></div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
+
+        <?php if (!empty($job['selection_process'])): ?>
+        <!-- ── Selection Process Card ────────────────────────────── -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header py-3 px-4 bg-transparent border-0">
+                <h5 class="fw-bold mb-0"><i class="fas fa-tasks text-primary me-2"></i>Selection Process</h5>
+            </div>
+            <div class="card-body pt-0 px-4 pb-4">
+                <div class="lh-lg text-secondary" style="font-size:0.92rem;white-space:pre-line;">
+                    <?= htmlspecialchars($job['selection_process']) ?>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
+
+        <?php if (!empty($job['contact_person']) || !empty($job['contact_email']) || !empty($job['website'])): ?>
+        <!-- ── Contact Information Card ────────────────────────────── -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header py-3 px-4 bg-transparent border-0">
+                <h5 class="fw-bold mb-0"><i class="fas fa-address-book text-primary me-2"></i>Recruiter &amp; Company Contact</h5>
+            </div>
+            <div class="card-body pt-0 px-4 pb-4">
+                <div class="row g-2 text-secondary small">
+                    <?php if (!empty($job['contact_person'])): ?>
+                    <div class="col-sm-6"><i class="fas fa-user me-2 text-primary"></i><strong>Contact HR:</strong> <?= htmlspecialchars($job['contact_person']) ?></div>
+                    <?php endif; ?>
+                    <?php if (!empty($job['contact_email'])): ?>
+                    <div class="col-sm-6"><i class="fas fa-envelope me-2 text-primary"></i><strong>Email:</strong> <a href="mailto:<?= htmlspecialchars($job['contact_email']) ?>"><?= htmlspecialchars($job['contact_email']) ?></a></div>
+                    <?php endif; ?>
+                    <?php if (!empty($job['contact_phone'])): ?>
+                    <div class="col-sm-6"><i class="fas fa-phone me-2 text-primary"></i><strong>Phone:</strong> <?= htmlspecialchars($job['contact_phone']) ?></div>
+                    <?php endif; ?>
+                    <?php if (!empty($job['website'])): ?>
+                    <div class="col-sm-6"><i class="fas fa-globe me-2 text-primary"></i><strong>Website:</strong> <a href="<?= htmlspecialchars($job['website']) ?>" target="_blank"><?= htmlspecialchars($job['website']) ?></a></div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
 
     </div>
 

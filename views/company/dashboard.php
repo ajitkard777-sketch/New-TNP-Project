@@ -37,7 +37,7 @@
         </a>
     </div>
     <div class="col-xl-2 col-lg-4 col-md-4 col-sm-6 d-flex">
-        <a href="<?= url('/company/jobs') ?>" class="stat-card-link w-100">
+        <a href="<?= url('/company/applications/all?status=applied') ?>" class="stat-card-link w-100">
             <div class="stat-card gradient-info">
                 <div class="stat-card-icon bg-info-soft"><i class="fas fa-users"></i></div>
                 <div>
@@ -48,7 +48,7 @@
         </a>
     </div>
     <div class="col-xl-2 col-lg-4 col-md-4 col-sm-6 d-flex">
-        <a href="<?= url('/company/jobs') ?>" class="stat-card-link w-100">
+        <a href="<?= url('/company/applications/all?status=shortlisted') ?>" class="stat-card-link w-100">
             <div class="stat-card gradient-warning">
                 <div class="stat-card-icon bg-warning-soft"><i class="fas fa-star"></i></div>
                 <div>
@@ -59,7 +59,7 @@
         </a>
     </div>
     <div class="col-xl-2 col-lg-4 col-md-4 col-sm-6 d-flex">
-        <a href="<?= url('/company/jobs') ?>" class="stat-card-link w-100">
+        <a href="<?= url('/company/applications/all?status=selected') ?>" class="stat-card-link w-100">
             <div class="stat-card gradient-violet">
                 <div class="stat-card-icon bg-violet-soft"><i class="fas fa-trophy"></i></div>
                 <div>
@@ -235,6 +235,49 @@ $firstRec  = $topRecs[0] ?? null;
             <a href="<?= url('/company/recommendations') ?>" class="btn btn-sm btn-outline-primary w-100">
                 <i class="fas fa-robot me-1"></i> See All Recommendations
             </a>
+        </div>
+        <?php endif; ?>
+    </div>
+</div>
+
+<!-- Recent Notifications Widget Card -->
+<div class="card shadow-sm border-0 mt-4" style="border-radius:12px;">
+    <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center pt-3 px-3 pb-0">
+        <h6 class="fw-bold mb-0" style="font-size:0.9rem;">
+            <i class="fas fa-bell text-warning me-2"></i>Recent Notifications
+        </h6>
+        <a href="<?= url('/company/notifications') ?>" class="text-primary fw-semibold" style="font-size:0.78rem;">View All</a>
+    </div>
+    <div class="card-body p-2">
+        <?php if (empty($notifications)): ?>
+        <div class="p-3 text-center text-muted"><small>No notifications yet.</small></div>
+        <?php else: ?>
+        <div class="d-flex flex-column gap-1">
+            <?php foreach ($notifications as $n): ?>
+            <?php
+                $targetUrl = getNotificationUrl($n, 'company');
+                $nData = [
+                    'id' => (int)$n['id'],
+                    'title' => $n['title'],
+                    'message' => $n['message'],
+                    'type' => $n['type'] ?? 'info',
+                    'category' => $n['category'] ?? 'system',
+                    'time_ago' => timeAgo($n['created_at']),
+                    'is_read' => (int)($n['is_read'] ?? 0),
+                    'link' => $targetUrl
+                ];
+                $jsonNotif = htmlspecialchars(json_encode($nData), ENT_QUOTES, 'UTF-8');
+            ?>
+            <a href="javascript:void(0)" onclick='TPMS.openNotificationFullView(<?= $jsonNotif ?>, event)' class="d-flex align-items-center gap-2 p-2 rounded-2 text-decoration-none <?= !$n['is_read'] ? 'fw-bold bg-light' : '' ?>">
+                <div class="p-2 rounded-circle bg-<?= $n['type'] === 'success' ? 'success' : ($n['type'] === 'warning' ? 'warning' : 'primary') ?>-soft flex-shrink-0" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;">
+                    <i class="fas fa-<?= $n['type'] === 'success' ? 'check-circle' : ($n['type'] === 'warning' ? 'exclamation-triangle' : 'bell') ?> text-<?= $n['type'] === 'success' ? 'success' : ($n['type'] === 'warning' ? 'warning' : 'primary') ?>" style="font-size:0.75rem;"></i>
+                </div>
+                <div class="flex-grow-1 min-w-0">
+                    <div class="text-dark text-truncate" style="font-size:0.8rem;"><?= htmlspecialchars($n['title']) ?></div>
+                    <div class="text-muted text-truncate" style="font-size:0.72rem;"><?= htmlspecialchars($n['message']) ?></div>
+                </div>
+            </a>
+            <?php endforeach; ?>
         </div>
         <?php endif; ?>
     </div>

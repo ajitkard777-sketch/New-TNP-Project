@@ -9,8 +9,35 @@ class Job {
     public function findById(int $id): ?array { return $this->db->fetchOne("SELECT j.*, c.company_name, c.logo, c.city as company_city FROM jobs j JOIN companies c ON j.company_id = c.id WHERE j.id = ?", [$id]); }
 
     public function create(array $data): int {
-        return $this->db->insert("INSERT INTO jobs (company_id, title, description, job_type, work_mode, location, salary_min, salary_max, openings, skills_required, eligibility_cgpa, eligibility_branches, eligibility_backlogs, experience_required, application_deadline, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            [$data['company_id'], $data['title'], $data['description'] ?? '', $data['job_type'] ?? 'full-time', $data['work_mode'] ?? 'onsite', $data['location'] ?? '', $data['salary_min'] ?? 0, $data['salary_max'] ?? 0, $data['openings'] ?? 1, $data['skills_required'] ?? '', $data['eligibility_cgpa'] ?? 0, $data['eligibility_branches'] ?? '', $data['eligibility_backlogs'] ?? 0, $data['experience_required'] ?? '', $data['application_deadline'] ?? null, $data['status'] ?? 'pending']);
+        return $this->db->insert(
+            "INSERT INTO jobs (company_id, title, description, job_type, work_mode, location, salary_min, salary_max, openings, skills_required, experience_required, qualification, eligibility_cgpa, eligibility_branches, passing_year, eligibility_backlogs, selection_process, application_deadline, joining_date, contact_person, contact_email, contact_phone, website, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            [
+                $data['company_id'],
+                $data['title'],
+                $data['description'] ?? '',
+                $data['job_type'] ?? 'full-time',
+                $data['work_mode'] ?? 'onsite',
+                $data['location'] ?? '',
+                $data['salary_min'] ?? 0,
+                $data['salary_max'] ?? 0,
+                $data['openings'] ?? 1,
+                $data['skills_required'] ?? '',
+                $data['experience_required'] ?? '',
+                $data['qualification'] ?? '',
+                $data['eligibility_cgpa'] ?? 0,
+                $data['eligibility_branches'] ?? '',
+                $data['passing_year'] ?? '',
+                $data['eligibility_backlogs'] ?? 0,
+                $data['selection_process'] ?? '',
+                $data['application_deadline'] ?? null,
+                $data['joining_date'] ?? null,
+                $data['contact_person'] ?? '',
+                $data['contact_email'] ?? '',
+                $data['contact_phone'] ?? '',
+                $data['website'] ?? '',
+                $data['status'] ?? 'pending'
+            ]
+        );
     }
 
     public function update(int $id, array $data): int {

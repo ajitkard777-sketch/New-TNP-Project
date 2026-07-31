@@ -40,7 +40,7 @@ class AdminController {
         $totalInterviews = (int)$this->db->fetchColumn("SELECT COUNT(*) FROM interviews");
         $scheduledInterviews = (int)$this->db->fetchColumn("SELECT COUNT(*) FROM interviews WHERE status = 'scheduled' AND interview_date >= CURDATE()");
         $appliedStudentsCount = (int)$this->db->fetchColumn("SELECT COUNT(DISTINCT student_id) FROM applications");
-        $trainingEnrolledCount = (int)$this->db->fetchColumn("SELECT COUNT(DISTINCT student_id) FROM training_registrations");
+        $trainingEnrolledCount = (int)$this->db->fetchColumn("SELECT COUNT(*) FROM training_registrations");
         $higherStudiesCount = (int)$this->db->fetchColumn("SELECT COUNT(DISTINCT student_id) FROM higher_study_applications");
         $branchStats = $this->studentModel->getBranchStats();
         $recentActivities = $this->db->fetchAll("SELECT al.*, u.email FROM activity_logs al LEFT JOIN users u ON al.user_id = u.id ORDER BY al.created_at DESC LIMIT 10");
@@ -101,8 +101,8 @@ class AdminController {
             $companyObj = $this->db->fetchOne("SELECT id FROM companies WHERE company_name = ?", [$data['placed_company'] ?? '']);
             $this->db->insert("INSERT INTO placements (student_id, company_id, package, placement_date, status) VALUES (?, ?, ?, ?, 'confirmed')",
                 [$id, $companyObj['id'] ?? null, $placedPackage, $data['placed_date'] ?? date('Y-m-d')]);
-            $this->db->insert("INSERT INTO notifications (user_id, title, message, type, category) VALUES (?, ?, ?, ?, ?)",
-                [$student['user_id'], 'Congratulations! You are placed!', "You have been placed at {$data['placed_company']} with a package of " . formatPackage($placedPackage), 'success', 'placement']);
+            $this->db->insert("INSERT INTO notifications (user_id, title, message, type, category, link) VALUES (?, ?, ?, ?, ?, ?)",
+                [$student['user_id'], 'Congratulations! You are placed!', "You have been placed at {$data['placed_company']} with a package of " . formatPackage($placedPackage), 'success', 'placement', url('/student/profile')]);
         }
         setFlash('success', 'Student marked as placed!');
         redirect('/admin/students');
@@ -136,8 +136,8 @@ class AdminController {
         $company = $this->companyModel->findById($id);
         if ($company) {
             $this->db->update("UPDATE users SET status = 'active' WHERE id = ?", [$company['user_id']]);
-            $this->db->insert("INSERT INTO notifications (user_id, title, message, type, category) VALUES (?, ?, ?, ?, ?)",
-                [$company['user_id'], 'Registration Approved!', 'Your company registration has been approved. You can now post jobs.', 'success', 'system']);
+            $this->db->insert("INSERT INTO notifications (user_id, title, message, type, category, link) VALUES (?, ?, ?, ?, ?, ?)",
+                [$company['user_id'], 'Registration Approved!', 'Your company registration has been approved. You can now post jobs.', 'success', 'system', url('/company/post-job')]);
             // Send email
             $user = $this->db->fetchOne("SELECT email FROM users WHERE id = ?", [$company['user_id']]);
             if ($user) {
@@ -190,8 +190,8 @@ class AdminController {
         if ($job) {
             $company = $this->companyModel->findById($job['company_id']);
             if ($company) {
-                $this->db->insert("INSERT INTO notifications (user_id, title, message, type, category) VALUES (?, ?, ?, ?, ?)",
-                    [$company['user_id'], 'Job Approved', "Your job posting '{$job['title']}' has been approved and is now live.", 'success', 'job']);
+                $this->db->insert("INSERT INTO notifications (user_id, title, message, type, category, link) VALUES (?, ?, ?, ?, ?, ?)",
+                    [$company['user_id'], 'Job Approved', "Your job posting '{$job['title']}' has been approved and is now live.", 'success', 'job', url('/company/jobs')]);
                 // Send email
                 $user = $this->db->fetchOne("SELECT email FROM users WHERE id = ?", [$company['user_id']]);
                 if ($user) {
@@ -199,8 +199,8 @@ class AdminController {
                 }
             }
             // Global notification for students
-            $this->db->insert("INSERT INTO notifications (user_id, title, message, type, category, is_global) VALUES (NULL, ?, ?, ?, ?, 1)",
-                ['New Job: ' . $job['title'], $job['company_name'] . ' is hiring for ' . $job['title'], 'info', 'job']);
+            $this->db->insert("INSERT INTO notifications (user_id, title, message, type, category, is_global, link) VALUES (NULL, ?, ?, ?, ?, 1, ?)",
+                ['New Job: ' . $job['title'], $job['company_name'] . ' is hiring for ' . $job['title'], 'info', 'job', url('/student/jobs')]);
         }
         setFlash('success', 'Job approved and live!');
         redirect('/admin/jobs');
@@ -288,6 +288,141 @@ class AdminController {
         require_once VIEWS_PATH . '/admin/trainings.php';
     }
 
+    public function trainingEnrollments(): void {
+        $pageTitle = 'Training Enrollments';
+        $search = sanitize($_GET['search'] ?? '');
+        $status = sanitize($_GET['status'] ?? '');
+        $branch = sanitize($_GET['branch'] ?? '');
+        $trainingId = (int)($_GET['training_id'] ?? 0);
+        $page = max(1, (int)($_GET['page'] ?? 1));
+
+        // Sorting
+        $allowedSorts = [
+            'date'     => 'tr.created_at',
+            'name'     => 's.first_name',
+            'branch'   => 's.branch',
+            'training' => 't.title',
+            'status'   => 'tr.status',
+        ];
+        $sortBy  = isset($_GET['sort']) && array_key_exists($_GET['sort'], $allowedSorts) ? $_GET['sort'] : 'date';
+        $sortDir = (isset($_GET['order']) && strtolower($_GET['order']) === 'asc') ? 'ASC' : 'DESC';
+        $orderSql = $allowedSorts[$sortBy] . ' ' . $sortDir;
+
+        $params = [];
+        $where = "1=1";
+
+        if ($search) {
+            $where .= " AND (s.first_name LIKE ? OR s.last_name LIKE ? OR s.enrollment_no LIKE ? OR s.registration_no LIKE ? OR t.title LIKE ? OR u.email LIKE ?)";
+            $params = array_merge($params, ["%$search%", "%$search%", "%$search%", "%$search%", "%$search%", "%$search%"]);
+        }
+
+        if ($status) {
+            if ($status === 'pending' || $status === 'registered') {
+                $where .= " AND (tr.status = 'pending' OR tr.status = 'registered')";
+            } elseif ($status === 'approved' || $status === 'attended') {
+                $where .= " AND (tr.status = 'approved' OR tr.status = 'attended')";
+            } elseif ($status === 'rejected' || $status === 'dropped') {
+                $where .= " AND (tr.status = 'rejected' OR tr.status = 'dropped')";
+            } else {
+                $where .= " AND tr.status = ?";
+                $params[] = $status;
+            }
+        }
+
+        if ($branch) {
+            $where .= " AND s.branch = ?";
+            $params[] = $branch;
+        }
+
+        if ($trainingId > 0) {
+            $where .= " AND tr.training_id = ?";
+            $params[] = $trainingId;
+        }
+
+        $totalSql = "SELECT COUNT(*) FROM training_registrations tr
+                     JOIN trainings t ON tr.training_id = t.id
+                     JOIN students s ON tr.student_id = s.id
+                     JOIN users u ON s.user_id = u.id
+                     WHERE $where";
+        $total = (int)$this->db->fetchColumn($totalSql, $params);
+        $pagination = getPagination($total, $page);
+
+        $sql = "SELECT tr.id, tr.status, tr.certificate_issued, tr.admin_remarks, tr.created_at as applied_at,
+                       t.id as training_id, t.title as training_title, t.trainer_name, t.training_type, t.mode, t.venue,
+                       s.id as student_id, s.first_name, s.last_name,
+                       s.enrollment_no, s.registration_no, s.branch, s.passing_year, s.admission_year,
+                       s.degree, s.phone, s.resume_path, s.resume_original_name, s.profile_photo,
+                       u.email, u.id as user_id
+                FROM training_registrations tr
+                JOIN trainings t ON tr.training_id = t.id
+                JOIN students s ON tr.student_id = s.id
+                JOIN users u ON s.user_id = u.id
+                WHERE $where
+                ORDER BY $orderSql
+                LIMIT ? OFFSET ?";
+
+        $queryParams = array_merge($params, [$pagination['per_page'], $pagination['offset']]);
+        $enrollments = $this->db->fetchAll($sql, $queryParams);
+
+        // For CSV/PDF export — fetch all matching rows (no limit)
+        if (!empty($_GET['export']) && in_array($_GET['export'], ['csv', 'pdf'])) {
+            $exportSql = "SELECT tr.id, tr.status, tr.certificate_issued, tr.admin_remarks, tr.created_at as applied_at,
+                           t.title as training_title, t.trainer_name, t.training_type, t.mode,
+                           s.first_name, s.last_name, s.enrollment_no, s.registration_no,
+                           s.branch, s.degree, s.passing_year, s.phone, s.resume_path,
+                           u.email
+                    FROM training_registrations tr
+                    JOIN trainings t ON tr.training_id = t.id
+                    JOIN students s ON tr.student_id = s.id
+                    JOIN users u ON s.user_id = u.id
+                    WHERE $where
+                    ORDER BY $orderSql";
+            $exportRows = $this->db->fetchAll($exportSql, $params);
+
+            if ($_GET['export'] === 'csv') {
+                header('Content-Type: text/csv; charset=UTF-8');
+                header('Content-Disposition: attachment; filename="training_enrollments_' . date('Y-m-d') . '.csv"');
+                header('Pragma: no-cache');
+                $fp = fopen('php://output', 'w');
+                fputcsv($fp, ['App ID', 'Student Name', 'Roll No (Enrollment)', 'Registration No', 'Branch', 'Degree', 'Passing Year', 'Email', 'Phone', 'Training Program', 'Provider', 'Type', 'Mode', 'Enrollment Date', 'Status']);
+                foreach ($exportRows as $r) {
+                    $statusMap = ['pending'=>'Pending','registered'=>'Pending','approved'=>'Approved','attended'=>'Approved','rejected'=>'Rejected','dropped'=>'Rejected','completed'=>'Completed'];
+                    fputcsv($fp, [
+                        '#TR-' . $r['id'],
+                        trim($r['first_name'] . ' ' . $r['last_name']),
+                        $r['enrollment_no'] ?? '',
+                        $r['registration_no'] ?? '',
+                        $r['branch'] ?? '',
+                        $r['degree'] ?? '',
+                        $r['passing_year'] ?? '',
+                        $r['email'] ?? '',
+                        $r['phone'] ?? '',
+                        $r['training_title'] ?? '',
+                        $r['trainer_name'] ?? '',
+                        ucfirst($r['training_type'] ?? ''),
+                        ucfirst($r['mode'] ?? ''),
+                        date('d M Y', strtotime($r['applied_at'])),
+                        $statusMap[strtolower($r['status'])] ?? ucfirst($r['status']),
+                    ]);
+                }
+                fclose($fp);
+                exit;
+            }
+        }
+
+        // Fetch all training programs for dropdown
+        $allTrainings = $this->db->fetchAll("SELECT id, title FROM trainings ORDER BY title ASC");
+
+        // Metrics (global, unfiltered)
+        $totalApplications = (int)$this->db->fetchColumn("SELECT COUNT(*) FROM training_registrations");
+        $pendingCount   = (int)$this->db->fetchColumn("SELECT COUNT(*) FROM training_registrations WHERE status IN ('pending', 'registered')");
+        $approvedCount  = (int)$this->db->fetchColumn("SELECT COUNT(*) FROM training_registrations WHERE status IN ('approved', 'attended')");
+        $rejectedCount  = (int)$this->db->fetchColumn("SELECT COUNT(*) FROM training_registrations WHERE status IN ('rejected', 'dropped')");
+        $completedCount = (int)$this->db->fetchColumn("SELECT COUNT(*) FROM training_registrations WHERE status = 'completed'");
+
+        require_once VIEWS_PATH . '/admin/training-enrollments.php';
+    }
+
     public function createTraining(): void {
         CsrfMiddleware::requireValidToken();
         $data = sanitizeArray($_POST);
@@ -314,11 +449,11 @@ class AdminController {
              WHERE tr.id = ?",
             [$id]
         );
-        if (!$reg) { setFlash('danger', 'Enrollment not found.'); redirect('/admin/trainings'); return; }
+        if (!$reg) { setFlash('danger', 'Enrollment not found.'); redirect('/admin/training-enrollments'); return; }
         $remarks = sanitize($_POST['admin_remarks'] ?? '');
-        $this->db->update("UPDATE training_registrations SET status = 'attended', admin_remarks = ? WHERE id = ?", [$remarks, $id]);
-        $this->db->insert("INSERT INTO notifications (user_id, title, message, type, category) VALUES (?, ?, ?, 'success', 'training')",
-            [$reg['user_id'], 'Training Enrollment Approved', "Your registration for '{$reg['training_title']}' has been approved."]);
+        $this->db->update("UPDATE training_registrations SET status = 'approved', admin_remarks = ? WHERE id = ?", [$remarks, $id]);
+        $this->db->insert("INSERT INTO notifications (user_id, title, message, type, category, link) VALUES (?, ?, ?, 'success', 'training', ?)",
+            [$reg['user_id'], 'Training Enrollment Approved', "Your registration for '{$reg['training_title']}' has been approved.", url('/student/trainings')]);
 
         $emailSent = false;
         if (!empty($reg['email']) && filter_var($reg['email'], FILTER_VALIDATE_EMAIL)) {
@@ -327,7 +462,7 @@ class AdminController {
         }
 
         setFlash('success', 'Enrollment approved.');
-        redirect('/admin/trainings');
+        redirect($_SERVER['HTTP_REFERER'] ?? '/admin/training-enrollments');
     }
 
     public function rejectTrainingEnrollment($id): void {
@@ -341,12 +476,12 @@ class AdminController {
              WHERE tr.id = ?",
             [$id]
         );
-        if (!$reg) { setFlash('danger', 'Enrollment not found.'); redirect('/admin/trainings'); return; }
+        if (!$reg) { setFlash('danger', 'Enrollment not found.'); redirect('/admin/training-enrollments'); return; }
         $remarks = sanitize($_POST['admin_remarks'] ?? '');
-        $this->db->update("UPDATE training_registrations SET status = 'dropped', admin_remarks = ? WHERE id = ?", [$remarks, $id]);
+        $this->db->update("UPDATE training_registrations SET status = 'rejected', admin_remarks = ? WHERE id = ?", [$remarks, $id]);
         $this->db->update("UPDATE trainings SET registered_count = GREATEST(0, registered_count - 1) WHERE id = ?", [$reg['tid']]);
-        $this->db->insert("INSERT INTO notifications (user_id, title, message, type, category) VALUES (?, ?, ?, 'danger', 'training')",
-            [$reg['user_id'], 'Training Enrollment Rejected', "Your registration for '{$reg['training_title']}' has been rejected." . ($remarks ? " Reason: $remarks" : '')]);
+        $this->db->insert("INSERT INTO notifications (user_id, title, message, type, category, link) VALUES (?, ?, ?, 'danger', 'training', ?)",
+            [$reg['user_id'], 'Training Enrollment Rejected', "Your registration for '{$reg['training_title']}' has been rejected." . ($remarks ? " Reason: $remarks" : ''), url('/student/trainings')]);
 
         $emailSent = false;
         if (!empty($reg['email']) && filter_var($reg['email'], FILTER_VALIDATE_EMAIL)) {
@@ -355,7 +490,7 @@ class AdminController {
         }
 
         setFlash('success', 'Enrollment rejected.');
-        redirect('/admin/trainings');
+        redirect($_SERVER['HTTP_REFERER'] ?? '/admin/training-enrollments');
     }
 
     public function issueTrainingCertificate($id): void {
@@ -368,10 +503,10 @@ class AdminController {
              WHERE tr.id = ?",
             [$id]
         );
-        if (!$reg) { setFlash('danger', 'Enrollment not found.'); redirect('/admin/trainings'); return; }
+        if (!$reg) { setFlash('danger', 'Enrollment not found.'); redirect('/admin/training-enrollments'); return; }
         $this->db->update("UPDATE training_registrations SET certificate_issued = 1, status = 'completed' WHERE id = ?", [$id]);
-        $this->db->insert("INSERT INTO notifications (user_id, title, message, type, category) VALUES (?, ?, ?, 'success', 'training')",
-            [$reg['user_id'], 'Certificate Issued!', "Your certificate for '{$reg['training_title']}' has been issued. Congratulations!"]);
+        $this->db->insert("INSERT INTO notifications (user_id, title, message, type, category, link) VALUES (?, ?, ?, 'success', 'training', ?)",
+            [$reg['user_id'], 'Certificate Issued!', "Your certificate for '{$reg['training_title']}' has been issued. Congratulations!", url('/student/trainings')]);
 
         $emailSent = false;
         if (!empty($reg['email']) && filter_var($reg['email'], FILTER_VALIDATE_EMAIL)) {
@@ -379,8 +514,8 @@ class AdminController {
             $emailSent = Mailer::sendTrainingCertificate($reg['email'], $studentName, $reg['training_title']);
         }
 
-        setFlash('success', 'Certificate issued successfully!');
-        redirect('/admin/trainings');
+        setFlash('success', 'Enrollment marked completed and certificate issued.');
+        redirect($_SERVER['HTTP_REFERER'] ?? '/admin/training-enrollments');
     }
 
     // ============ Higher Studies ============
@@ -415,8 +550,8 @@ class AdminController {
         if (!$app) { setFlash('danger', 'Application not found.'); redirect('/admin/higher-studies'); return; }
         $remarks = sanitize($_POST['admin_remarks'] ?? '');
         $this->db->update("UPDATE higher_study_applications SET status = 'approved', admin_remarks = ? WHERE id = ?", [$remarks, $id]);
-        $this->db->insert("INSERT INTO notifications (user_id, title, message, type, category) VALUES (?, ?, ?, 'success', 'higher-studies')",
-            [$app['user_id'], 'Higher Studies Application Approved', "Your application to {$app['uni_name']} has been approved! " . ($remarks ? "Remarks: $remarks" : '')]);
+        $this->db->insert("INSERT INTO notifications (user_id, title, message, type, category, link) VALUES (?, ?, ?, 'success', 'higher-studies', ?)",
+            [$app['user_id'], 'Higher Studies Application Approved', "Your application to {$app['uni_name']} has been approved! " . ($remarks ? "Remarks: $remarks" : ''), url('/student/higher-studies')]);
         
         $emailSent = false;
         if (!empty($app['email']) && filter_var($app['email'], FILTER_VALIDATE_EMAIL)) {
@@ -443,8 +578,8 @@ class AdminController {
         if (!$app) { setFlash('danger', 'Application not found.'); redirect('/admin/higher-studies'); return; }
         $remarks = sanitize($_POST['admin_remarks'] ?? '');
         $this->db->update("UPDATE higher_study_applications SET status = 'rejected', admin_remarks = ? WHERE id = ?", [$remarks, $id]);
-        $this->db->insert("INSERT INTO notifications (user_id, title, message, type, category) VALUES (?, ?, ?, 'danger', 'higher-studies')",
-            [$app['user_id'], 'Higher Studies Application Rejected', "Your application to {$app['uni_name']} was not approved. " . ($remarks ? "Reason: $remarks" : '')]);
+        $this->db->insert("INSERT INTO notifications (user_id, title, message, type, category, link) VALUES (?, ?, ?, 'danger', 'higher-studies', ?)",
+            [$app['user_id'], 'Higher Studies Application Rejected', "Your application to {$app['uni_name']} was not approved. " . ($remarks ? "Reason: $remarks" : ''), url('/student/higher-studies')]);
 
         $emailSent = false;
         if (!empty($app['email']) && filter_var($app['email'], FILTER_VALIDATE_EMAIL)) {
@@ -482,15 +617,23 @@ class AdminController {
         $app = $this->db->fetchOne("SELECT a.*, j.company_id, j.title as job_title FROM applications a JOIN jobs j ON a.job_id = j.id WHERE a.id = ?", [$appId]);
         if (!$app) { setFlash('danger', 'Application not found.'); redirect('/admin/interviews'); return; }
 
+        // Validate Meeting Link (Mandatory & must be valid URL)
+        $linkRes = Validator::meetingLink($data['meeting_link'] ?? '');
+        if (!$linkRes['valid']) {
+            setFlash('danger', $linkRes['message']);
+            redirect('/admin/interviews');
+            return;
+        }
+
         $this->db->insert("INSERT INTO interviews (student_id, company_id, job_id, round, interview_date, interview_time, mode, venue, meeting_link, instructions, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'scheduled')",
-            [$app['student_id'], $app['company_id'], $app['job_id'], $data['round'] ?? 'Round 1', $data['interview_date'], $data['interview_time'], $data['mode'] ?? 'offline', $data['venue'] ?? null, $data['meeting_link'] ?? null, $data['instructions'] ?? null]);
+            [$app['student_id'], $app['company_id'], $app['job_id'], $data['round'] ?? 'Round 1', $data['interview_date'], $data['interview_time'], 'online', $data['venue'] ?? null, trim($data['meeting_link']), $data['instructions'] ?? null]);
 
         $this->jobModel->updateApplicationStatus($appId, 'interview');
 
         $student = $this->db->fetchOne("SELECT user_id FROM students WHERE id = ?", [$app['student_id']]);
         if ($student) {
-            $this->db->insert("INSERT INTO notifications (user_id, title, message, type, category) VALUES (?, ?, ?, ?, ?)",
-                [$student['user_id'], 'Interview Scheduled by Admin', "Interview for {$app['job_title']} on " . formatDate($data['interview_date']), 'info', 'interview']);
+            $this->db->insert("INSERT INTO notifications (user_id, title, message, type, category, link) VALUES (?, ?, ?, ?, ?, ?)",
+                [$student['user_id'], 'Interview Scheduled by Admin', "Interview for {$app['job_title']} on " . formatDate($data['interview_date']), 'info', 'interview', url('/student/interviews')]);
         }
 
         setFlash('success', 'Interview scheduled successfully by Admin!');
@@ -503,15 +646,26 @@ class AdminController {
         if (!$interview) { setFlash('danger', 'Interview not found.'); redirect('/admin/interviews'); return; }
 
         $data = sanitizeArray($_POST);
+
+        // Validate Meeting Link (Mandatory & must be valid URL)
+        $linkRes = Validator::meetingLink($data['meeting_link'] ?? '');
+        if (!$linkRes['valid']) {
+            setFlash('danger', $linkRes['message']);
+            redirect('/admin/interviews');
+            return;
+        }
+
+        $mode = in_array($data['mode'] ?? '', ['online', 'offline'], true) ? $data['mode'] : ($interview['mode'] ?? 'online');
+
         $this->db->update(
             "UPDATE interviews SET round = ?, interview_date = ?, interview_time = ?, mode = ?, venue = ?, meeting_link = ?, instructions = ?, status = 'rescheduled' WHERE id = ?",
             [
                 $data['round'] ?? $interview['round'],
                 $data['interview_date'] ?? $interview['interview_date'],
                 $data['interview_time'] ?? $interview['interview_time'],
-                $data['mode'] ?? $interview['mode'],
+                $mode,
                 $data['venue'] ?? null,
-                $data['meeting_link'] ?? null,
+                trim($data['meeting_link']),
                 $data['instructions'] ?? null,
                 $id
             ]
@@ -519,11 +673,11 @@ class AdminController {
 
         $student = $this->db->fetchOne("SELECT user_id FROM students WHERE id = ?", [$interview['student_id']]);
         if ($student) {
-            $this->db->insert("INSERT INTO notifications (user_id, title, message, type, category) VALUES (?, ?, ?, ?, ?)",
-                [$student['user_id'], 'Interview Rescheduled', "Your interview has been rescheduled for " . formatDate($data['interview_date']), 'info', 'interview']);
+            $this->db->insert("INSERT INTO notifications (user_id, title, message, type, category, link) VALUES (?, ?, ?, ?, ?, ?)",
+                [$student['user_id'], 'Interview Rescheduled', "Your interview has been rescheduled for " . formatDate($data['interview_date']), 'info', 'interview', url('/student/interviews')]);
         }
 
-        setFlash('success', 'Interview updated successfully.');
+        setFlash('success', 'Interview rescheduled successfully.');
         redirect('/admin/interviews');
     }
 
@@ -536,8 +690,8 @@ class AdminController {
 
         $student = $this->db->fetchOne("SELECT user_id FROM students WHERE id = ?", [$interview['student_id']]);
         if ($student) {
-            $this->db->insert("INSERT INTO notifications (user_id, title, message, type, category) VALUES (?, ?, ?, ?, ?)",
-                [$student['user_id'], 'Interview Cancelled', "Your interview scheduled for " . formatDate($interview['interview_date']) . " has been cancelled.", 'warning', 'interview']);
+            $this->db->insert("INSERT INTO notifications (user_id, title, message, type, category, link) VALUES (?, ?, ?, ?, ?, ?)",
+                [$student['user_id'], 'Interview Cancelled', "Your interview scheduled for " . formatDate($interview['interview_date']) . " has been cancelled.", 'warning', 'interview', url('/student/interviews')]);
         }
 
         setFlash('success', 'Interview cancelled.');
@@ -556,8 +710,8 @@ class AdminController {
         
         $student = $this->db->fetchOne("SELECT user_id FROM students WHERE id = ?", [$interview['student_id']]);
         if ($student) {
-            $this->db->insert("INSERT INTO notifications (user_id, title, message, type, category) VALUES (?, ?, ?, ?, ?)",
-                [$student['user_id'], 'Interview Result Updated', "Result for your interview: " . ucfirst($result), $result === 'passed' ? 'success' : 'danger', 'interview']);
+            $this->db->insert("INSERT INTO notifications (user_id, title, message, type, category, link) VALUES (?, ?, ?, ?, ?, ?)",
+                [$student['user_id'], 'Interview Result Updated', "Result for your interview: " . ucfirst($result), $result === 'passed' ? 'success' : 'danger', 'interview', url('/student/interviews')]);
         }
 
         setFlash('success', 'Interview result updated.');
@@ -586,7 +740,7 @@ class AdminController {
         $users = [];
         if ($target === 'all') {
             $this->db->insert("INSERT INTO notifications (user_id, title, message, type, category, is_global) VALUES (NULL, ?, ?, ?, 'announcement', 1)", [$data['title'], $data['message'], $data['type'] ?? 'info']);
-            $users = $this->db->fetchAll("SELECT id, email, COALESCE(CONCAT(s.first_name, ' ', s.last_name), c.company_name, u.email) as name FROM users u LEFT JOIN students s ON u.id = s.user_id LEFT JOIN companies c ON u.id = c.user_id WHERE u.status = 'active'");
+            $users = $this->db->fetchAll("SELECT u.id, u.email, COALESCE(CONCAT(s.first_name, ' ', s.last_name), c.company_name, u.email) as name FROM users u LEFT JOIN students s ON u.id = s.user_id LEFT JOIN companies c ON u.id = c.user_id WHERE u.status = 'active'");
         } elseif ($target === 'students') {
             $users = $this->db->fetchAll("SELECT u.id, u.email, CONCAT(s.first_name, ' ', s.last_name) as name FROM users u JOIN students s ON u.id = s.user_id WHERE u.status = 'active'");
             foreach ($users as $u) { $this->db->insert("INSERT INTO notifications (user_id, title, message, type, category) VALUES (?, ?, ?, ?, 'announcement')", [$u['id'], $data['title'], $data['message'], $data['type'] ?? 'info']); }

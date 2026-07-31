@@ -89,32 +89,92 @@ class StudentController {
     public function updateProfile(): void {
         CsrfMiddleware::requireValidToken();
         $data = sanitizeArray($_POST);
+        $errors = [];
+
+        // Phone — required
+        $rawPhone = trim($_POST['phone'] ?? '');
+        if (!empty($rawPhone)) {
+            $phoneResult = Validator::phone($rawPhone);
+            if (!$phoneResult['valid']) $errors[] = $phoneResult['message'];
+        }
+
+        // Pincode — optional but must be 6 digits if provided
+        $rawPincode = trim($_POST['pincode'] ?? '');
+        $pincodeResult = Validator::pincode($rawPincode);
+        if (!$pincodeResult['valid']) $errors[] = $pincodeResult['message'];
+
+        // City — optional
+        $rawCity = trim($_POST['city'] ?? '');
+        $cityResult = Validator::city($rawCity);
+        if (!$cityResult['valid']) $errors[] = $cityResult['message'];
+
+        // State — optional
+        $rawState = trim($_POST['state'] ?? '');
+        $stateResult = Validator::state($rawState);
+        if (!$stateResult['valid']) $errors[] = $stateResult['message'];
+
+        // Address — optional
+        $rawAddress = trim($_POST['address'] ?? '');
+        $addressResult = Validator::address($rawAddress);
+        if (!$addressResult['valid']) $errors[] = $addressResult['message'];
+
+        // Skills — optional, max 300 chars, deduped
+        $rawSkills = trim($_POST['skills'] ?? '');
+        $skillsResult = Validator::skills($rawSkills);
+        if (!$skillsResult['valid']) $errors[] = $skillsResult['message'];
+
+        // Bio — optional, min 20 if provided
+        $rawBio = trim($_POST['bio'] ?? '');
+        $bioResult = Validator::bio($rawBio);
+        if (!$bioResult['valid']) $errors[] = $bioResult['message'];
+
+        // LinkedIn — optional URL
+        $rawLinkedin = trim($_POST['linkedin'] ?? '');
+        $linkedinResult = Validator::optionalUrl($rawLinkedin, 'LinkedIn URL');
+        if (!$linkedinResult['valid']) $errors[] = $linkedinResult['message'];
+
+        // GitHub — optional URL
+        $rawGithub = trim($_POST['github'] ?? '');
+        $githubResult = Validator::optionalUrl($rawGithub, 'GitHub URL');
+        if (!$githubResult['valid']) $errors[] = $githubResult['message'];
+
+        // Portfolio — optional URL
+        $rawPortfolio = trim($_POST['portfolio'] ?? '');
+        $portfolioResult = Validator::optionalUrl($rawPortfolio, 'Portfolio URL');
+        if (!$portfolioResult['valid']) $errors[] = $portfolioResult['message'];
+
+        if (!empty($errors)) {
+            setFlash('danger', implode('<br>', $errors));
+            redirect('/student/profile/edit');
+            return;
+        }
+
         $updateData = [
             'first_name' => $data['first_name'] ?? $this->student['first_name'],
-            'last_name' => $data['last_name'] ?? $this->student['last_name'],
-            'phone' => $data['phone'] ?? $this->student['phone'],
-            'dob' => $data['dob'] ?: null,
-            'gender' => $data['gender'] ?: null,
-            'address' => $data['address'] ?? null,
-            'city' => $data['city'] ?? null,
-            'state' => $data['state'] ?? null,
-            'pincode' => $data['pincode'] ?? null,
-            'branch' => $data['branch'] ?? $this->student['branch'],
-            'enrollment_no' => $data['enrollment_no'] ?? $this->student['enrollment_no'],
-            'admission_year' => $data['admission_year'] ?: null,
-            'passing_year' => $data['passing_year'] ?: null,
-            'tenth_percentage' => $data['tenth_percentage'] ?: null,
-            'twelfth_percentage' => $data['twelfth_percentage'] ?: null,
-            'diploma_percentage' => $data['diploma_percentage'] ?: null,
-            'degree' => $data['degree'] ?? 'B.Tech',
-            'cgpa' => $data['cgpa'] ?: null,
-            'backlogs' => $data['backlogs'] ?? 0,
+            'last_name'  => $data['last_name']  ?? $this->student['last_name'],
+            'phone'      => $rawPhone ?: null,
+            'dob'        => $data['dob'] ?: null,
+            'gender'     => $data['gender'] ?: null,
+            'address'    => $rawAddress ?: null,
+            'city'       => $rawCity ?: null,
+            'state'      => $rawState ?: null,
+            'pincode'    => $rawPincode ?: null,
+            'branch'     => $data['branch'] ?? $this->student['branch'],
+            'enrollment_no'       => $data['enrollment_no'] ?? $this->student['enrollment_no'],
+            'admission_year'      => $data['admission_year'] ?: null,
+            'passing_year'        => $data['passing_year'] ?: null,
+            'tenth_percentage'    => $data['tenth_percentage'] ?: null,
+            'twelfth_percentage'  => $data['twelfth_percentage'] ?: null,
+            'diploma_percentage'  => $data['diploma_percentage'] ?: null,
+            'degree'     => $data['degree'] ?? 'B.Tech',
+            'cgpa'       => $data['cgpa'] ?: null,
+            'backlogs'   => $data['backlogs'] ?? 0,
             'active_backlogs' => $data['active_backlogs'] ?? 0,
-            'skills' => $data['skills'] ?? null,
-            'bio' => $data['bio'] ?? null,
-            'linkedin' => $data['linkedin'] ?? null,
-            'github' => $data['github'] ?? null,
-            'portfolio' => $data['portfolio'] ?? null,
+            'skills'     => $skillsResult['normalized'] ?: null,
+            'bio'        => $rawBio ?: null,
+            'linkedin'   => $rawLinkedin ?: null,
+            'github'     => $rawGithub ?: null,
+            'portfolio'  => $rawPortfolio ?: null,
         ];
 
         // Validate CGPA
@@ -258,6 +318,24 @@ class StudentController {
         }
 
         $file = $_FILES['document'];
+
+        // --- File type validation (extension + MIME) ---
+        $allowedExtensions = ['pdf', 'doc', 'docx'];
+        $allowedMimes      = [
+            'application/pdf',
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        ];
+        $ext  = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        $mime = mime_content_type($file['tmp_name']);
+
+        if (!in_array($ext, $allowedExtensions, true) || !in_array($mime, $allowedMimes, true)) {
+            setFlash('danger', 'Invalid file type. Only PDF, DOC, and DOCX files are allowed.');
+            redirect('/student/profile/edit');
+            return;
+        }
+        // ------------------------------------------------
+
         if ($file['size'] > MAX_FILE_SIZE) {
             setFlash('danger', 'File size exceeds 5MB limit.');
             redirect('/student/profile/edit');
@@ -270,7 +348,7 @@ class StudentController {
 
         $docType = sanitize($_POST['document_type'] ?? 'other');
         $this->db->insert("INSERT INTO documents (user_id, document_type, original_name, file_path, file_size, mime_type, description) VALUES (?, ?, ?, ?, ?, ?, ?)",
-            [$_SESSION['user_id'], $docType, $file['name'], 'documents/' . $fileName, $file['size'], mime_content_type($file['tmp_name']), sanitize($_POST['document_description'] ?? '')]);
+            [$_SESSION['user_id'], $docType, $file['name'], 'documents/' . $fileName, $file['size'], $mime, sanitize($_POST['document_description'] ?? '')]);
 
         setFlash('success', 'Document uploaded successfully!');
         redirect('/student/profile/edit');
@@ -392,13 +470,6 @@ class StudentController {
             setFlash('danger', 'You do not meet the CGPA requirement for this job.'); redirect('/student/jobs'); return;
         }
 
-        if ($job['eligibility_branches']) {
-            $branches = array_map('trim', explode(',', $job['eligibility_branches']));
-            if (!in_array($this->student['branch'], $branches)) {
-                setFlash('danger', 'Your branch is not eligible for this job.'); redirect('/student/jobs'); return;
-            }
-        }
-
         if ($job['eligibility_backlogs'] < $this->student['active_backlogs']) {
             setFlash('danger', 'You have more active backlogs than allowed.'); redirect('/student/jobs'); return;
         }
@@ -407,8 +478,8 @@ class StudentController {
             [$this->student['id'], $jobId, $this->student['resume_path']]);
 
         // 1. Student In-app Notification & Confirmation Email
-        $this->db->insert("INSERT INTO notifications (user_id, title, message, type, category) VALUES (?, ?, ?, ?, ?)",
-            [$_SESSION['user_id'], 'Application Submitted', "You have successfully applied for {$job['title']}.", 'success', 'job']);
+        $this->db->insert("INSERT INTO notifications (user_id, title, message, type, category, link) VALUES (?, ?, ?, ?, ?, ?)",
+            [$_SESSION['user_id'], 'Application Submitted', "You have successfully applied for {$job['title']}.", 'success', 'job', url('/student/applications')]);
 
         $userEmail = $this->db->fetchOne("SELECT email FROM users WHERE id = ?", [$_SESSION['user_id']]);
         $emailSent = false;
@@ -574,8 +645,8 @@ class StudentController {
             ]
         );
 
-        $this->db->insert("INSERT INTO notifications (user_id, title, message, type, category) VALUES (?, ?, ?, 'info', 'higher-studies')",
-            [$_SESSION['user_id'], 'Higher Studies Application Submitted', "Your application to {$uni['name']} has been submitted and is under review."]);
+        $this->db->insert("INSERT INTO notifications (user_id, title, message, type, category, link) VALUES (?, ?, ?, 'info', 'higher-studies', ?)",
+            [$_SESSION['user_id'], 'Higher Studies Application Submitted', "Your application to {$uni['name']} has been submitted and is under review.", url('/student/higher-studies')]);
 
         logActivity('apply_higher_study', 'higher_studies', "Applied to: {$uni['name']}");
         setFlash('success', 'Application submitted successfully! The admin will review it shortly.');
@@ -645,9 +716,13 @@ class StudentController {
         $pageTitle = 'Interview Schedule';
         $student = $this->student;
         $interviews = $this->db->fetchAll(
-            "SELECT i.*, j.title as job_title, c.company_name, c.logo
-             FROM interviews i JOIN jobs j ON i.job_id = j.id JOIN companies c ON i.company_id = c.id
-             WHERE i.student_id = ? ORDER BY i.interview_date DESC",
+            "SELECT i.*, j.title as job_title, j.location as job_location, j.job_type, j.work_mode, j.salary_min, j.salary_max,
+                    c.company_name, c.logo, c.website as company_website, c.contact_email, c.contact_phone
+             FROM interviews i 
+             JOIN jobs j ON i.job_id = j.id 
+             JOIN companies c ON i.company_id = c.id
+             WHERE i.student_id = ? 
+             ORDER BY i.interview_date ASC, i.interview_time ASC",
             [$student['id']]
         );
         require_once VIEWS_PATH . '/student/interviews.php';
@@ -719,7 +794,33 @@ class StudentController {
     public function addProject(): void {
         CsrfMiddleware::requireValidToken();
         $data = sanitizeArray($_POST);
-        if (empty($data['title'])) { setFlash('danger', 'Project title is required.'); redirect('/student/profile/edit'); return; }
+        $errors = [];
+
+        // Title required
+        $titleResult = Validator::text($data['title'] ?? '', 'Project title', 2, 150, true);
+        if (!$titleResult['valid']) $errors[] = $titleResult['message'];
+
+        // Project URL — required, must be valid http/https
+        $rawUrl = trim($_POST['project_url'] ?? '');
+        $urlResult = Validator::projectUrl($rawUrl);
+        if (!$urlResult['valid']) $errors[] = $urlResult['message'];
+
+        // Technologies — optional, max 300 chars
+        if (!empty($data['technologies']) && strlen($data['technologies']) > 300) {
+            $errors[] = 'Technologies must not exceed 300 characters.';
+        }
+
+        // Description — optional, max 1000 chars
+        if (!empty($data['description']) && strlen($data['description']) > 1000) {
+            $errors[] = 'Project description must not exceed 1000 characters.';
+        }
+
+        if (!empty($errors)) {
+            setFlash('danger', implode('<br>', $errors));
+            redirect('/student/profile/edit');
+            return;
+        }
+
         $this->studentModel->addProject($this->student['id'], $data);
         setFlash('success', 'Project added!');
         redirect('/student/profile/edit');
@@ -734,7 +835,22 @@ class StudentController {
     public function addCertification(): void {
         CsrfMiddleware::requireValidToken();
         $data = sanitizeArray($_POST);
-        if (empty($data['title'])) { setFlash('danger', 'Certificate title is required.'); redirect('/student/profile/edit'); return; }
+        $errors = [];
+
+        $titleResult = Validator::text($data['title'] ?? '', 'Certificate title', 2, 150, true);
+        if (!$titleResult['valid']) $errors[] = $titleResult['message'];
+
+        // Credential URL — optional but must be valid if provided
+        $rawCredUrl = trim($_POST['credential_url'] ?? '');
+        $credUrlResult = Validator::optionalUrl($rawCredUrl, 'Credential URL');
+        if (!$credUrlResult['valid']) $errors[] = $credUrlResult['message'];
+
+        if (!empty($errors)) {
+            setFlash('danger', implode('<br>', $errors));
+            redirect('/student/profile/edit');
+            return;
+        }
+
         $this->studentModel->addCertification($this->student['id'], $data);
         setFlash('success', 'Certification added!');
         redirect('/student/profile/edit');
@@ -749,7 +865,29 @@ class StudentController {
     public function addLanguage(): void {
         CsrfMiddleware::requireValidToken();
         $data = sanitizeArray($_POST);
-        if (empty($data['language'])) { setFlash('danger', 'Language is required.'); redirect('/student/profile/edit'); return; }
+        $errors = [];
+
+        // Validate language name
+        $langResult = Validator::languageName($data['language'] ?? '');
+        if (!$langResult['valid']) $errors[] = $langResult['message'];
+
+        // Prevent duplicates
+        if ($langResult['valid']) {
+            $existing = $this->db->fetchColumn(
+                "SELECT COUNT(*) FROM student_languages WHERE student_id = ? AND LOWER(language) = LOWER(?)",
+                [$this->student['id'], trim($data['language'] ?? '')]
+            );
+            if ($existing > 0) {
+                $errors[] = 'You have already added "' . htmlspecialchars(trim($data['language'])) . '" as a language.';
+            }
+        }
+
+        if (!empty($errors)) {
+            setFlash('danger', implode('<br>', $errors));
+            redirect('/student/profile/edit');
+            return;
+        }
+
         $this->studentModel->addLanguage($this->student['id'], $data);
         setFlash('success', 'Language added!');
         redirect('/student/profile/edit');
@@ -764,7 +902,20 @@ class StudentController {
     public function addAchievement(): void {
         CsrfMiddleware::requireValidToken();
         $data = sanitizeArray($_POST);
-        if (empty($data['title'])) { setFlash('danger', 'Achievement title is required.'); redirect('/student/profile/edit'); return; }
+        $errors = [];
+
+        $titleResult = Validator::text($data['title'] ?? '', 'Achievement title', 2, 150, true);
+        if (!$titleResult['valid']) $errors[] = $titleResult['message'];
+
+        $descResult = Validator::achievement($data['description'] ?? '');
+        if (!$descResult['valid']) $errors[] = $descResult['message'];
+
+        if (!empty($errors)) {
+            setFlash('danger', implode('<br>', $errors));
+            redirect('/student/profile/edit');
+            return;
+        }
+
         $this->studentModel->addAchievement($this->student['id'], $data);
         setFlash('success', 'Achievement added!');
         redirect('/student/profile/edit');

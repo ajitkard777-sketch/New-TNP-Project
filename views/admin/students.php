@@ -15,7 +15,7 @@
     <form method="GET" class="row g-3 align-items-end">
         <div class="col-md-4"><label class="form-label">Search</label><input type="text" class="form-control" name="search" value="<?= htmlspecialchars($search) ?>" placeholder="Name, email, enrollment..."></div>
         <div class="col-md-3"><label class="form-label">Branch</label><select class="form-select" name="branch"><option value="">All Branches</option><?php foreach (BRANCHES as $b): ?><option value="<?= $b ?>" <?= $branch === $b ? 'selected' : '' ?>><?= $b ?></option><?php endforeach; ?></select></div>
-        <div class="col-md-3"><label class="form-label">Status</label><select class="form-select" name="status"><option value="">All</option><option value="active" <?= $status === 'active' ? 'selected' : '' ?>>Active</option><option value="inactive" <?= $status === 'inactive' ? 'selected' : '' ?>>Inactive</option><option value="placed" <?= $status === 'placed' ? 'selected' : '' ?>>Placed</option></select></div>
+        <div class="col-md-3"><label class="form-label">Status</label><select class="form-select" name="status"><option value="">All</option><option value="active" <?= $status === 'active' ? 'selected' : '' ?>>Active</option><option value="inactive" <?= $status === 'inactive' ? 'selected' : '' ?>>Inactive</option><option value="placed" <?= $status === 'placed' ? 'selected' : '' ?>>Placed</option><option value="applied" <?= $status === 'applied' ? 'selected' : '' ?>>Applied for Jobs</option></select></div>
         <div class="col-md-2"><button type="submit" class="btn btn-primary w-100"><i class="fas fa-search me-1"></i>Search</button></div>
     </form>
 </div></div>

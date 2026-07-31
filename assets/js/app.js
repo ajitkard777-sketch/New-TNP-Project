@@ -300,13 +300,23 @@ const TPMS = {
         if (btn && dropdown) {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                dropdown.classList.toggle('show');
+                const isShown = dropdown.classList.toggle('show');
+                btn.setAttribute('aria-expanded', isShown ? 'true' : 'false');
                 document.querySelector('.search-results-dropdown')?.classList.remove('show');
             });
 
             document.addEventListener('click', (e) => {
                 if (!dropdown.contains(e.target) && !btn.contains(e.target)) {
                     dropdown.classList.remove('show');
+                    btn.setAttribute('aria-expanded', 'false');
+                }
+            });
+
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && dropdown.classList.contains('show')) {
+                    dropdown.classList.remove('show');
+                    btn.setAttribute('aria-expanded', 'false');
+                    btn.focus();
                 }
             });
 
@@ -319,7 +329,6 @@ const TPMS = {
 
         $.get(this.baseUrl + '/notifications/fetch', (response) => {
             if (response.success) {
-                // Support both 'count' field and deriving from array length
                 const count = (typeof response.count !== 'undefined')
                     ? response.count
                     : (response.notifications ? response.notifications.filter(n => !n.is_read).length : 0);
@@ -351,10 +360,12 @@ const TPMS = {
             return;
         }
 
-        list.innerHTML = notifications.slice(0, 8).map(n => `
+        list.innerHTML = notifications.slice(0, 8).map(n => {
+            const jsonStr = this.escapeHtml(JSON.stringify(n));
+            return `
             <div class="notification-item ${n.is_read ? '' : 'unread'}" data-id="${n.id}">
-                <a href="${this.escapeHtml(n.link || '#')}" class="notification-item-link"
-                   onclick="TPMS.markNotificationRead(${n.id}, this)">
+                <a href="javascript:void(0)" class="notification-item-link"
+                   onclick='TPMS.openNotificationFullView(${jsonStr}, event)'>
                     <div class="n-icon bg-${this.getNotificationColor(n.type)}-soft">
                         <i class="fas fa-${this.getNotificationIcon(n.type)} text-${this.getNotificationColor(n.type)}"></i>
                     </div>
@@ -368,28 +379,129 @@ const TPMS = {
                     onclick="TPMS.markNotificationRead(${n.id}, null, true); this.closest('.notification-item').classList.remove('unread'); this.remove();">
                     <i class="fas fa-check"></i></button>` : ''}
             </div>
-        `).join('');
+            `;
+        }).join('');
     },
 
-    markNotificationRead(id, linkEl, preventNav = false) {
-        if (typeof $ !== 'undefined') {
-            $.post(this.baseUrl + '/notifications/mark-read/' + id, () => {
-                // Decrement badge immediately
-                const badge = document.querySelector('.notification-count');
-                if (badge) {
-                    let current = parseInt(badge.textContent) || 0;
-                    if (current > 0) current--;
-                    badge.textContent = current > 99 ? '99+' : current;
-                    badge.style.display = current > 0 ? 'inline-flex' : 'none';
-                }
-                const dot = document.querySelector('.badge-dot');
-                const badgeVal = parseInt(document.querySelector('.notification-count')?.textContent) || 0;
-                if (dot) dot.style.display = badgeVal > 0 ? 'block' : 'none';
-            });
+    openNotificationFullView(notifData, event = null) {
+        if (event) event.preventDefault();
+
+        // Close notification dropdown if open
+        document.querySelector('.notification-dropdown')?.classList.remove('show');
+        document.querySelector('.notification-toggle')?.setAttribute('aria-expanded', 'false');
+
+        let n = notifData;
+        if (typeof notifData === 'string') {
+            try { n = JSON.parse(notifData); } catch(e) {}
         }
+
+        if (!n || !n.id) return;
+
+        // Mark as read immediately if unread
+        if (!n.is_read) {
+            this.markNotificationRead(n.id, null, true);
+            document.querySelectorAll(`.notification-item[data-id="${n.id}"]`).forEach(el => {
+                el.classList.remove('unread');
+                el.querySelector('.notif-mark-read-btn')?.remove();
+            });
+            n.is_read = 1;
+        }
+
+        // Populate Modal Fields
+        const modalEl = document.getElementById('notificationDetailModal');
+        if (!modalEl) return;
+
+        const titleEl = document.getElementById('notifModalTitle');
+        const msgEl = document.getElementById('notifModalMessage');
+        const categoryEl = document.getElementById('notifModalCategory');
+        const timeEl = document.getElementById('notifModalTime');
+        const iconContainer = document.getElementById('notifModalIconContainer');
+        const iconEl = document.getElementById('notifModalIcon');
+        const actionBtn = document.getElementById('notifModalActionBtn');
+        const actionText = document.getElementById('notifModalActionText');
+
+        if (titleEl) titleEl.textContent = n.title || 'Notification Details';
+        if (msgEl) msgEl.textContent = n.message || '';
+        if (timeEl) timeEl.innerHTML = `<i class="far fa-clock me-1"></i>${n.time_ago || 'Just now'}`;
+
+        const category = (n.category || 'system').toUpperCase();
+        if (categoryEl) categoryEl.textContent = category.replace('-', ' ');
+
+        // Styling by type / category
+        const color = this.getNotificationColor(n.type);
+        const icon = this.getNotificationIcon(n.type);
+
+        if (iconContainer) {
+            iconContainer.className = `p-3 rounded-circle d-flex align-items-center justify-content-center bg-${color}-soft`;
+        }
+        if (iconEl) {
+            iconEl.className = `fas fa-${icon} text-${color} fs-5`;
+        }
+
+        // Action Button setup
+        const link = n.link || n.target_url || '';
+        const isSelfLink = !link || link === '#' || link === 'javascript:void(0)' || link.endsWith('/notifications');
+
+        if (actionBtn) {
+            if (link && !isSelfLink) {
+                actionBtn.href = link;
+                actionBtn.classList.remove('d-none');
+                
+                const catLower = (n.category || '').toLowerCase();
+                let label = 'Go to Details';
+                if (catLower === 'job') label = 'View Job Details';
+                else if (catLower === 'interview') label = 'View Interview Schedule';
+                else if (catLower === 'training') label = 'View Training';
+                else if (catLower === 'higher-studies') label = 'View Higher Studies';
+                else if (catLower === 'placement') label = 'View Placement';
+                else if (catLower === 'approval') label = 'View Pending Approvals';
+
+                if (actionText) actionText.textContent = label;
+            } else {
+                actionBtn.classList.add('d-none');
+            }
+        }
+
+        // Open Modal using Bootstrap
+        if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+            const bsModal = bootstrap.Modal.getOrCreateInstance(modalEl);
+            bsModal.show();
+        } else if (typeof $ !== 'undefined') {
+            $(modalEl).modal('show');
+        }
+    },
+
+    markNotificationRead(id, linkEl, preventNav = false, event = null) {
+        const targetUrl = this.baseUrl + '/notifications/mark-read/' + id;
+        
+        // Use sendBeacon for high reliability during navigation, fallback to $.post
+        if (navigator.sendBeacon) {
+            const formData = new FormData();
+            formData.append('csrf_token', this.csrfToken);
+            navigator.sendBeacon(targetUrl, formData);
+        } else if (typeof $ !== 'undefined') {
+            $.post(targetUrl);
+        }
+
+        // Decrement badge count immediately
+        const badge = document.querySelector('.notification-count');
+        if (badge) {
+            let current = parseInt(badge.textContent) || 0;
+            if (current > 0) current--;
+            badge.textContent = current > 99 ? '99+' : current;
+            badge.style.display = current > 0 ? 'inline-flex' : 'none';
+        }
+        const dot = document.querySelector('.badge-dot');
+        const badgeVal = parseInt(document.querySelector('.notification-count')?.textContent) || 0;
+        if (dot) dot.style.display = badgeVal > 0 ? 'block' : 'none';
+
         if (linkEl && !preventNav) {
-            // Navigation happens naturally via the <a> href
             document.querySelector('.notification-dropdown')?.classList.remove('show');
+            const href = linkEl.getAttribute('href');
+            if (href && href !== '#' && href !== 'javascript:void(0)') {
+                if (event) event.preventDefault();
+                setTimeout(() => { window.location.href = href; }, 60);
+            }
         }
     },
 
@@ -476,6 +588,21 @@ const TPMS = {
         document.addEventListener('click', () => {
             document.querySelectorAll('.custom-dropdown.show').forEach(d => d.classList.remove('show'));
         });
+
+        // Ensure all Bootstrap dropdowns use Popper fixed strategy to escape clipping by overflow containers
+        if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown) {
+            document.addEventListener('show.bs.dropdown', (e) => {
+                const toggle = e.target;
+                if (toggle && toggle.matches('[data-bs-toggle="dropdown"]')) {
+                    bootstrap.Dropdown.getOrCreateInstance(toggle, {
+                        popperConfig: (defaultConfig) => ({
+                            ...defaultConfig,
+                            strategy: 'fixed'
+                        })
+                    });
+                }
+            });
+        }
     },
 
     // ========================

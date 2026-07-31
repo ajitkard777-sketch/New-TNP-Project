@@ -11,15 +11,17 @@ class NotificationController {
 
     public function fetchUnread(): void {
         $userId = $_SESSION['user_id'];
+        $role   = $_SESSION['user_role'] ?? 'student';
+
         $notifications = $this->db->fetchAll(
             "SELECT * FROM notifications WHERE (user_id = ? OR is_global = 1) AND is_read = 0 ORDER BY created_at DESC LIMIT 10",
             [$userId]
         );
 
-        // Add time_ago and ensure link field exists
         foreach ($notifications as &$n) {
             $n['time_ago'] = $this->timeAgo($n['created_at'] ?? null);
-            $n['link'] = $n['link'] ?? $this->buildNotificationLink($n);
+            // Prefer stored link, then build dynamically
+            $n['link'] = (!empty($n['link'])) ? $n['link'] : $this->buildNotificationLink($n, $role);
         }
         unset($n);
 
@@ -57,24 +59,60 @@ class NotificationController {
     }
 
     /**
-     * Build a relevant link based on notification category/type
+     * Build a contextual navigation link based on category and reference_id
      */
-    private function buildNotificationLink(array $n): string {
-        $role = $_SESSION['user_role'] ?? 'student';
-        $category = $n['category'] ?? '';
+    private function buildNotificationLink(array $n, string $role): string {
+        $category    = $n['category'] ?? 'system';
+        $referenceId = (int)($n['reference_id'] ?? 0);
 
-        $linkMap = [
-            'job'        => "/{$role}/jobs",
-            'interview'  => "/{$role}/interviews",
-            'placement'  => "/{$role}/profile",
-            'training'   => "/{$role}/trainings",
-            'system'     => "/{$role}/dashboard",
-            'approval'   => $role === 'admin' ? '/admin/approvals' : "/{$role}/dashboard",
-        ];
+        $baseUrl = defined('BASE_URL') ? BASE_URL : '';
 
-        $path = $linkMap[$category] ?? "/{$role}/notifications";
+        switch ($category) {
+            case 'job':
+                // Company: see applicants for their job  |  Student: browse jobs
+                if ($role === 'company') {
+                    return $referenceId
+                        ? $baseUrl . "/company/applications/{$referenceId}"
+                        : $baseUrl . "/company/jobs";
+                }
+                return $baseUrl . "/student/jobs";
 
-        return defined('BASE_URL') ? BASE_URL . $path : $path;
+            case 'interview':
+                // All roles have an interviews page
+                if ($role === 'admin') {
+                    return $baseUrl . "/admin/interviews";
+                }
+                if ($role === 'company') {
+                    return $baseUrl . "/company/interviews";
+                }
+                return $baseUrl . "/student/interviews";
+
+            case 'placement':
+                return $role === 'admin'
+                    ? $baseUrl . "/admin/placements"
+                    : $baseUrl . "/student/profile";
+
+            case 'training':
+                return $role === 'admin'
+                    ? $baseUrl . "/admin/trainings"
+                    : $baseUrl . "/student/trainings";
+
+            case 'higher-studies':
+                return $role === 'admin'
+                    ? $baseUrl . "/admin/higher-studies"
+                    : $baseUrl . "/student/higher-studies";
+
+            case 'approval':
+                return $role === 'admin'
+                    ? $baseUrl . "/admin/approvals"
+                    : $baseUrl . "/{$role}/dashboard";
+
+            case 'announcement':
+                return $baseUrl . "/{$role}/notifications";
+
+            default: // 'system' and anything else
+                return $baseUrl . "/{$role}/notifications";
+        }
     }
 
     /**

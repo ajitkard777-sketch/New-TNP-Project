@@ -6,11 +6,6 @@
     </div>
 </div>
 
-<div class="row g-4 mb-4">
-    <div class="col-md-4"><div class="stat-card gradient-success"><div class="stat-card-icon bg-success-soft"><i class="fas fa-trophy"></i></div><div class="stat-card-value"><?= $stats['total'] ?></div><div class="stat-card-label">Total Placements</div></div></div>
-    <div class="col-md-4"><div class="stat-card gradient-primary"><div class="stat-card-icon bg-primary-soft"><i class="fas fa-arrow-up"></i></div><div class="stat-card-value"><?= $stats['highest'] ? number_format($stats['highest'], 2) : '0' ?></div><div class="stat-card-label">Highest Package (LPA)</div></div></div>
-    <div class="col-md-4"><div class="stat-card gradient-info"><div class="stat-card-icon bg-info-soft"><i class="fas fa-chart-line"></i></div><div class="stat-card-value"><?= $stats['average'] ? number_format($stats['average'], 2) : '0' ?></div><div class="stat-card-label">Average Package (LPA)</div></div></div>
-</div>
 
 <!-- Search & Filter Form -->
 <div class="card mb-4"><div class="card-body">

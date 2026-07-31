@@ -81,7 +81,7 @@
 <!-- Academic & Engagement Analytics Cards -->
 <div class="row g-4 mb-4">
     <div class="col-lg-4 col-md-4 col-12 d-flex">
-        <a href="<?= url('/admin/students') ?>" class="stat-card-link w-100">
+        <a href="<?= url('/admin/students?status=applied') ?>" class="stat-card-link w-100">
             <div class="stat-card">
                 <div class="d-flex align-items-center gap-3">
                     <div class="stat-card-icon text-primary bg-light mb-0 flex-shrink-0" style="width:48px;height:48px;border-radius:12px;"><i class="fas fa-paper-plane"></i></div>
@@ -94,20 +94,20 @@
         </a>
     </div>
     <div class="col-lg-4 col-md-4 col-12 d-flex">
-        <a href="<?= url('/admin/trainings') ?>" class="stat-card-link w-100">
+        <a href="<?= url('/admin/trainings') ?>#enrollmentsTab" class="stat-card-link w-100">
             <div class="stat-card">
                 <div class="d-flex align-items-center gap-3">
                     <div class="stat-card-icon text-violet bg-light mb-0 flex-shrink-0" style="width:48px;height:48px;border-radius:12px;"><i class="fas fa-chalkboard-teacher"></i></div>
                     <div class="min-w-0 flex-grow-1">
                         <div class="stat-card-value" style="font-size:1.4rem;"><?= $trainingEnrolledCount ?></div>
-                        <div class="stat-card-label text-truncate text-muted fw-medium" title="Students Enrolled in Training">Training Enrolled</div>
+                        <div class="stat-card-label text-truncate text-muted fw-medium" title="Students Enrolled in Training">Training Enrollments</div>
                     </div>
                 </div>
             </div>
         </a>
     </div>
     <div class="col-lg-4 col-md-4 col-12 d-flex">
-        <a href="<?= url('/admin/higher-studies') ?>" class="stat-card-link w-100">
+        <a href="<?= url('/admin/higher-studies?tab=applications') ?>" class="stat-card-link w-100">
             <div class="stat-card">
                 <div class="d-flex align-items-center gap-3">
                     <div class="stat-card-icon text-danger bg-light mb-0 flex-shrink-0" style="width:48px;height:48px;border-radius:12px;"><i class="fas fa-graduation-cap"></i></div>

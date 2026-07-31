@@ -70,7 +70,6 @@
                     $eligible = true;
                     $reason = '';
                     if ($job['eligibility_cgpa'] > 0 && ($student['cgpa'] ?? 0) < $job['eligibility_cgpa']) { $eligible = false; $reason = 'CGPA ' . $job['eligibility_cgpa'] . '+ required'; }
-                    if ($job['eligibility_branches'] && !in_array($student['branch'] ?? '', array_map('trim', explode(',', $job['eligibility_branches'])))) { $eligible = false; $reason = 'Branch not eligible'; }
                     ?>
                     <?php if ($eligible): ?>
                     <a href="<?= url('/student/apply/' . $job['id']) ?>" class="btn btn-primary btn-sm" data-confirm="Apply for <?= htmlspecialchars($job['title']) ?>?"><i class="fas fa-paper-plane me-1"></i> Apply</a>

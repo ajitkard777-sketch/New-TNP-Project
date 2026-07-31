@@ -33,7 +33,7 @@
             </div>
             <?php endif; ?>
 
-            <form class="auth-form" action="<?= url('/register/student') ?>" method="POST" data-ajax="true" data-validate>
+            <form class="auth-form" action="<?= url('/register/student') ?>" method="POST" data-ajax="true" data-validate data-tpms-validate>
                 <?= CsrfMiddleware::tokenField() ?>
 
                 <div class="row">
@@ -61,7 +61,12 @@
                     <div class="col-md-6">
                         <div class="form-group">
                             <label class="form-label" for="phone">Phone Number *</label>
-                            <input type="text" class="form-control" id="phone" name="phone" placeholder="10-digit number" maxlength="10" required>
+                            <input type="text" class="form-control" id="phone" name="phone"
+                                   placeholder="10-digit number" maxlength="10" required
+                                   inputmode="numeric" pattern="[0-9]{10}"
+                                   data-validate-rule="phone"
+                                   data-validate-label="Phone number">
+                            <div class="invalid-feedback"></div>
                         </div>
                     </div>
                 </div>
@@ -112,7 +117,7 @@
                     <div class="col-md-4">
                         <div class="form-group">
                             <label class="form-label" for="dob">Date of Birth</label>
-                            <input type="date" class="form-control" id="dob" name="dob">
+                            <input type="date" class="form-control" id="dob" name="dob" max="<?= date('Y-m-d') ?>">
                         </div>
                     </div>
                     <div class="col-md-4">
@@ -189,6 +194,7 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="<?= asset('js/app.js') ?>"></script>
 <script src="<?= asset('js/auth.js') ?>"></script>
+<script src="<?= asset('js/validation.js') ?>"></script>
 <script>
 // Auto-compute passing year from admission year
 document.getElementById('admission_year')?.addEventListener('change', function() {

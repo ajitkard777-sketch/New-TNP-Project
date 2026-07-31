@@ -110,6 +110,58 @@ function uploadUrl(string $path): string {
 }
 
 /**
+ * Resolve target URL for a notification dynamically
+ */
+function getNotificationUrl(array $n, ?string $role = null): string {
+    if (!empty($n['link'])) {
+        // Ensure standard relative or full URL
+        if (strpos($n['link'], 'http://') === 0 || strpos($n['link'], 'https://') === 0) {
+            return $n['link'];
+        }
+        if (strpos($n['link'], BASE_URL) === 0) {
+            return $n['link'];
+        }
+        return url(ltrim($n['link'], '/'));
+    }
+    $role = $role ?? ($_SESSION['user_role'] ?? 'student');
+    $category = $n['category'] ?? 'system';
+    $refId = (int)($n['reference_id'] ?? 0);
+
+    switch ($category) {
+        case 'job':
+            if ($role === 'company') {
+                return $refId ? url("/company/applications/{$refId}") : url("/company/jobs");
+            }
+            if ($role === 'admin') {
+                return url("/admin/jobs");
+            }
+            return url("/student/jobs");
+
+        case 'interview':
+            if ($role === 'admin') return url("/admin/interviews");
+            if ($role === 'company') return url("/company/interviews");
+            return url("/student/interviews");
+
+        case 'placement':
+            return ($role === 'admin') ? url("/admin/placements") : url("/student/profile");
+
+        case 'training':
+            return ($role === 'admin') ? url("/admin/trainings") : url("/student/trainings");
+
+        case 'higher-studies':
+            return ($role === 'admin') ? url("/admin/higher-studies") : url("/student/higher-studies");
+
+        case 'approval':
+            return ($role === 'admin') ? url("/admin/approvals") : url("/{$role}/dashboard");
+
+        case 'announcement':
+        case 'system':
+        default:
+            return url("/{$role}/notifications");
+    }
+}
+
+/**
  * Format date
  */
 function formatDate(string $date, string $format = 'd M Y'): string {
@@ -486,4 +538,386 @@ function formatFileSize(int $bytes): string {
  */
 if (!defined('DB_NAME')) {
     define('DB_NAME', 'team1');
+}
+
+/**
+ * TPMS - Centralized Validator Class
+ * All validation rules live here — used by controllers (server-side)
+ * and mirrored in assets/js/validation.js (client-side).
+ */
+class Validator {
+
+    /**
+     * Validate a 10-digit Indian phone number.
+     * Accepts digits only, must be exactly 10 digits.
+     */
+    public static function phone(string $value): array {
+        $value = trim($value);
+        if ($value === '') {
+            return ['valid' => false, 'message' => 'Phone number is required.'];
+        }
+        if (!ctype_digit($value)) {
+            return ['valid' => false, 'message' => 'Phone number must contain digits only (no spaces, dashes, or symbols).'];
+        }
+        if (strlen($value) !== 10) {
+            return ['valid' => false, 'message' => 'Phone number must be exactly 10 digits.'];
+        }
+        return ['valid' => true, 'message' => ''];
+    }
+
+    /**
+     * Validate a 6-digit Indian PIN code.
+     */
+    public static function pincode(string $value): array {
+        $value = trim($value);
+        if ($value === '') {
+            return ['valid' => true, 'message' => '']; // optional field
+        }
+        if (!ctype_digit($value)) {
+            return ['valid' => false, 'message' => 'PIN code must contain digits only.'];
+        }
+        if (strlen($value) !== 6) {
+            return ['valid' => false, 'message' => 'PIN code must be exactly 6 digits.'];
+        }
+        return ['valid' => true, 'message' => ''];
+    }
+
+    /**
+     * Validate a city name.
+     * Allows: letters (including Unicode), spaces, hyphens, apostrophes.
+     * Length: 2–50 characters.
+     */
+    public static function city(string $value, bool $required = false): array {
+        $value = trim($value);
+        if ($value === '') {
+            if ($required) return ['valid' => false, 'message' => 'City is required.'];
+            return ['valid' => true, 'message' => ''];
+        }
+        if (mb_strlen($value, 'UTF-8') < 2) {
+            return ['valid' => false, 'message' => 'City name must be at least 2 characters.'];
+        }
+        if (mb_strlen($value, 'UTF-8') > 50) {
+            return ['valid' => false, 'message' => 'City name must not exceed 50 characters.'];
+        }
+        if (!preg_match("/^[\p{L}\s\-']+$/u", $value)) {
+            return ['valid' => false, 'message' => 'City can only contain letters, spaces, hyphens, and apostrophes (no numbers or special characters).'];
+        }
+        return ['valid' => true, 'message' => ''];
+    }
+
+    /**
+     * Validate a state name.
+     * Allows: letters (including Unicode), spaces, hyphens, apostrophes.
+     * Length: 2–50 characters.
+     */
+    public static function state(string $value, bool $required = false): array {
+        $value = trim($value);
+        if ($value === '') {
+            if ($required) return ['valid' => false, 'message' => 'State is required.'];
+            return ['valid' => true, 'message' => ''];
+        }
+        if (mb_strlen($value, 'UTF-8') < 2) {
+            return ['valid' => false, 'message' => 'State name must be at least 2 characters.'];
+        }
+        if (mb_strlen($value, 'UTF-8') > 50) {
+            return ['valid' => false, 'message' => 'State name must not exceed 50 characters.'];
+        }
+        if (!preg_match("/^[\p{L}\s\-']+$/u", $value)) {
+            return ['valid' => false, 'message' => 'State can only contain letters, spaces, hyphens, and apostrophes (no numbers or special characters).'];
+        }
+        return ['valid' => true, 'message' => ''];
+    }
+
+    /**
+     * Validate a country name.
+     * Allows: letters (including Unicode), spaces, hyphens, apostrophes.
+     * Length: 2–50 characters.
+     */
+    public static function country(string $value, bool $required = false): array {
+        $value = trim($value);
+        if ($value === '') {
+            if ($required) return ['valid' => false, 'message' => 'Country is required.'];
+            return ['valid' => true, 'message' => ''];
+        }
+        if (mb_strlen($value, 'UTF-8') < 2) {
+            return ['valid' => false, 'message' => 'Country name must be at least 2 characters.'];
+        }
+        if (mb_strlen($value, 'UTF-8') > 50) {
+            return ['valid' => false, 'message' => 'Country name must not exceed 50 characters.'];
+        }
+        if (!preg_match("/^[\p{L}\s\-']+$/u", $value)) {
+            return ['valid' => false, 'message' => 'Country can only contain letters, spaces, hyphens, and apostrophes (no numbers or special characters).'];
+        }
+        return ['valid' => true, 'message' => ''];
+    }
+
+    /**
+     * Validate an address field.
+     * Min 10, max 250 characters after trimming.
+     */
+    public static function address(string $value): array {
+        $value = trim($value);
+        if ($value === '') {
+            return ['valid' => true, 'message' => '']; // optional field
+        }
+        if (strlen($value) < 10) {
+            return ['valid' => false, 'message' => 'Address must be at least 10 characters.'];
+        }
+        if (strlen($value) > 250) {
+            return ['valid' => false, 'message' => 'Address must not exceed 250 characters.'];
+        }
+        return ['valid' => true, 'message' => ''];
+    }
+
+    /**
+     * Validate a URL (required).
+     * Must start with http:// or https://.
+     */
+    public static function projectUrl(string $value): array {
+        $value = trim($value);
+        if ($value === '') {
+            return ['valid' => false, 'message' => 'Project URL is required (e.g. https://github.com/user/project).'];
+        }
+        if (!preg_match('/^https?:\/\/.+/i', $value)) {
+            return ['valid' => false, 'message' => 'Project URL must start with http:// or https://.'];
+        }
+        if (!filter_var($value, FILTER_VALIDATE_URL)) {
+            return ['valid' => false, 'message' => 'Please enter a valid URL (e.g. https://github.com/user/project).'];
+        }
+        return ['valid' => true, 'message' => ''];
+    }
+
+    /**
+     * Validate a Meeting Link (required).
+     * Must start with http:// or https://.
+     */
+    public static function meetingLink(string $value): array {
+        $value = trim($value);
+        if ($value === '') {
+            return ['valid' => false, 'message' => 'Meeting link is required (e.g. https://meet.google.com/abc-defg-hij).'];
+        }
+        if (!preg_match('/^https?:\/\/.+/i', $value)) {
+            return ['valid' => false, 'message' => 'Meeting link must start with http:// or https://.'];
+        }
+        if (!filter_var($value, FILTER_VALIDATE_URL)) {
+            return ['valid' => false, 'message' => 'Please enter a valid meeting URL (e.g. https://meet.google.com/abc-defg-hij).'];
+        }
+        return ['valid' => true, 'message' => ''];
+    }
+
+    /**
+     * Validate an optional URL field (blank is allowed, but if provided must be valid).
+     */
+    public static function optionalUrl(string $value, string $fieldLabel = 'URL'): array {
+        $value = trim($value);
+        if ($value === '') {
+            return ['valid' => true, 'message' => ''];
+        }
+        if (!preg_match('/^https?:\/\/.+/i', $value)) {
+            return ['valid' => false, 'message' => "{$fieldLabel} must start with http:// or https://."];
+        }
+        if (!filter_var($value, FILTER_VALIDATE_URL)) {
+            return ['valid' => false, 'message' => "Please enter a valid {$fieldLabel}."];
+        }
+        return ['valid' => true, 'message' => ''];
+    }
+
+    /**
+     * Validate and normalize a skills string (comma-separated).
+     * Max 300 characters, deduplicated (case-insensitive).
+     * Returns ['valid', 'message', 'normalized'] — normalized is the cleaned value.
+     */
+    public static function skills(string $value): array {
+        $value = trim($value);
+        if ($value === '') {
+            return ['valid' => true, 'message' => '', 'normalized' => ''];
+        }
+        if (strlen($value) > 300) {
+            return ['valid' => false, 'message' => 'Skills must not exceed 300 characters.', 'normalized' => $value];
+        }
+        // Deduplicate
+        $parts = array_map('trim', explode(',', $value));
+        $parts = array_filter($parts, fn($p) => $p !== '');
+        $seen  = [];
+        $unique = [];
+        foreach ($parts as $skill) {
+            $key = strtolower($skill);
+            if (!in_array($key, $seen)) {
+                $seen[] = $key;
+                $unique[] = $skill;
+            }
+        }
+        $normalized = implode(', ', $unique);
+        return ['valid' => true, 'message' => '', 'normalized' => $normalized];
+    }
+
+    /**
+     * Validate a bio / about me field.
+     * Required, min 20, max 500 characters.
+     */
+    public static function bio(string $value): array {
+        $value = trim($value);
+        if ($value === '') {
+            return ['valid' => true, 'message' => '']; // optional — not required by registration
+        }
+        if (strlen($value) < 20) {
+            return ['valid' => false, 'message' => 'Bio must be at least 20 characters.'];
+        }
+        if (strlen($value) > 500) {
+            return ['valid' => false, 'message' => 'Bio must not exceed 500 characters.'];
+        }
+        return ['valid' => true, 'message' => ''];
+    }
+
+    /**
+     * Validate an achievement description.
+     * Max 500 characters.
+     */
+    public static function achievement(string $value): array {
+        $value = trim($value);
+        if (strlen($value) > 500) {
+            return ['valid' => false, 'message' => 'Achievement description must not exceed 500 characters.'];
+        }
+        return ['valid' => true, 'message' => ''];
+    }
+
+    /**
+     * Validate a language name.
+     * Letters, spaces, hyphens only; 2–50 characters.
+     */
+    public static function languageName(string $value): array {
+        $value = trim($value);
+        if ($value === '') {
+            return ['valid' => false, 'message' => 'Language name is required.'];
+        }
+        if (strlen($value) < 2) {
+            return ['valid' => false, 'message' => 'Language name must be at least 2 characters.'];
+        }
+        if (strlen($value) > 50) {
+            return ['valid' => false, 'message' => 'Language name must not exceed 50 characters.'];
+        }
+        if (!preg_match("/^[\p{L}\s\-]+$/u", $value)) {
+            return ['valid' => false, 'message' => 'Language name can only contain letters, spaces, and hyphens.'];
+        }
+        return ['valid' => true, 'message' => ''];
+    }
+
+    /**
+     * Validate a general short text field (name, title, etc.).
+     * @param int $min Minimum length (default 1)
+     * @param int $max Maximum length (default 150)
+     */
+    public static function text(string $value, string $label, int $min = 1, int $max = 150, bool $required = true): array {
+        $value = trim($value);
+        if ($value === '') {
+            if ($required) {
+                return ['valid' => false, 'message' => "{$label} is required."];
+            }
+            return ['valid' => true, 'message' => ''];
+        }
+        if (strlen($value) < $min) {
+            return ['valid' => false, 'message' => "{$label} must be at least {$min} characters."];
+        }
+        if (strlen($value) > $max) {
+            return ['valid' => false, 'message' => "{$label} must not exceed {$max} characters."];
+        }
+        return ['valid' => true, 'message' => ''];
+    }
+
+    /**
+     * Validate an email address (required).
+     */
+    public static function email(string $value, string $label = 'Email'): array {
+        $value = trim($value);
+        if ($value === '') {
+            return ['valid' => false, 'message' => "{$label} is required."];
+        }
+        if (!filter_var($value, FILTER_VALIDATE_EMAIL)) {
+            return ['valid' => false, 'message' => "Please enter a valid {$label} address."];
+        }
+        return ['valid' => true, 'message' => ''];
+    }
+
+    /**
+     * Validate a date string (Y-m-d).
+     */
+    public static function date(string $value, string $label = 'Date', bool $mustBeFuture = true): array {
+        $value = trim($value);
+        if ($value === '') {
+            return ['valid' => false, 'message' => "{$label} is required."];
+        }
+        $d = DateTime::createFromFormat('Y-m-d', $value);
+        if (!($d && $d->format('Y-m-d') === $value)) {
+            return ['valid' => false, 'message' => "Please enter a valid date for {$label}."];
+        }
+        if ($mustBeFuture) {
+            $today = new DateTime('today');
+            if ($d < $today) {
+                return ['valid' => false, 'message' => "{$label} cannot be in the past."];
+            }
+        }
+        return ['valid' => true, 'message' => ''];
+    }
+
+    /**
+     * Validate a numeric value (float/int).
+     */
+    public static function numeric(mixed $value, string $label, float $min = 0, ?float $max = null): array {
+        if ($value === null || trim((string)$value) === '') {
+            return ['valid' => false, 'message' => "{$label} is required."];
+        }
+        if (!is_numeric($value)) {
+            return ['valid' => false, 'message' => "{$label} must be a valid number."];
+        }
+        $num = (float)$value;
+        if ($num < $min) {
+            return ['valid' => false, 'message' => "{$label} cannot be less than {$min}."];
+        }
+        if ($max !== null && $num > $max) {
+            return ['valid' => false, 'message' => "{$label} cannot exceed {$max}."];
+        }
+        return ['valid' => true, 'message' => ''];
+    }
+
+    /**
+     * Validate an integer value.
+     */
+    public static function integer(mixed $value, string $label, int $min = 0): array {
+        if ($value === null || trim((string)$value) === '') {
+            return ['valid' => false, 'message' => "{$label} is required."];
+        }
+        if (!filter_var($value, FILTER_VALIDATE_INT) && $value !== '0' && $value !== 0) {
+            return ['valid' => false, 'message' => "{$label} must be a valid whole number."];
+        }
+        $num = (int)$value;
+        if ($num < $min) {
+            return ['valid' => false, 'message' => "{$label} must be at least {$min}."];
+        }
+        return ['valid' => true, 'message' => ''];
+    }
+
+    /**
+     * Sanitize a single input value: trim + htmlspecialchars + strip dangerous tags.
+     * Use instead of raw sanitize() when you also want to strip_tags.
+     */
+    public static function sanitizeInput(string $value): string {
+        $value = trim($value);
+        $value = strip_tags($value);
+        return htmlspecialchars($value, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    }
+
+    /**
+     * Run multiple validations and collect errors.
+     * @param array $rules  [ 'field' => result_array, ... ]  (results from static methods above)
+     * @return array        Flat list of error strings (empty = all valid)
+     */
+    public static function collectErrors(array $rules): array {
+        $errors = [];
+        foreach ($rules as $result) {
+            if (!$result['valid']) {
+                $errors[] = $result['message'];
+            }
+        }
+        return $errors;
+    }
 }

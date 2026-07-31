@@ -256,6 +256,7 @@ switch ($page) {
                 break;
             case 'interviews': $controller->interviews(); break;
             case 'interview-result': $controller->updateInterviewResult($param); break;
+            case 'notifications': $controller->notifications(); break;
             default: $controller->dashboard(); break;
         }
         break;
@@ -287,6 +288,8 @@ switch ($page) {
             case 'delete-job': $controller->deleteJob($param); break;
             case 'placements': $controller->placements(); break;
             case 'trainings': $controller->trainings(); break;
+            case 'training-enrollments': $controller->trainingEnrollments(); break;
+            case 'export-training-enrollments': $controller->trainingEnrollments(); break; // export handled internally via ?export=csv
             case 'create-training': $controller->createTraining(); break;
             case 'delete-training': $controller->deleteTraining($param); break;
             case 'higher-studies': $controller->higherStudies(); break;
@@ -295,6 +298,7 @@ switch ($page) {
             case 'reject-higher-study': $controller->rejectHigherStudy($param); break;
             case 'approve-training-enrollment': $controller->approveTrainingEnrollment($param); break;
             case 'reject-training-enrollment': $controller->rejectTrainingEnrollment($param); break;
+            case 'complete-training-enrollment': $controller->issueTrainingCertificate($param); break;
             case 'issue-certificate': $controller->issueTrainingCertificate($param); break;
             case 'interviews': $controller->interviews(); break;
             case 'schedule-interview': $controller->scheduleInterview(); break;

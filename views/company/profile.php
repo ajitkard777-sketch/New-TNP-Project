@@ -21,7 +21,7 @@
         <div class="card">
             <div class="card-header"><h6><i class="fas fa-edit me-2 text-primary"></i>Edit Profile</h6></div>
             <div class="card-body">
-                <form action="<?= url('/company/profile') ?>" method="POST" enctype="multipart/form-data" data-validate>
+                <form action="<?= url('/company/profile') ?>" method="POST" enctype="multipart/form-data" data-validate data-tpms-validate>
                     <?= CsrfMiddleware::tokenField() ?>
                     <div class="row g-3">
                         <div class="col-md-6"><label class="form-label">Company Name *</label><input type="text" class="form-control" name="company_name" value="<?= htmlspecialchars($company['company_name'] ?? '') ?>" required></div>
@@ -35,9 +35,30 @@
                         <div class="col-md-4"><label class="form-label">Established Year</label><input type="number" class="form-control" name="established_year" value="<?= $company['established_year'] ?? '' ?>" min="1900" max="<?= date('Y') ?>"></div>
                         <div class="col-md-4"><label class="form-label">Company Logo</label><input type="file" class="form-control" name="logo" accept="image/*"></div>
                         <div class="col-12"><label class="form-label">Address</label><input type="text" class="form-control" name="address" value="<?= htmlspecialchars($company['address'] ?? '') ?>"></div>
-                        <div class="col-md-4"><label class="form-label">City</label><input type="text" class="form-control" name="city" value="<?= htmlspecialchars($company['city'] ?? '') ?>"></div>
-                        <div class="col-md-4"><label class="form-label">State</label><input type="text" class="form-control" name="state" value="<?= htmlspecialchars($company['state'] ?? '') ?>"></div>
-                        <div class="col-md-4"><label class="form-label">Country</label><input type="text" class="form-control" name="country" value="<?= htmlspecialchars($company['country'] ?? 'India') ?>"></div>
+                        <div class="col-md-4">
+                            <label class="form-label">City</label>
+                            <input type="text" class="form-control" name="city" id="company_city"
+                                   placeholder="e.g. Pune" maxlength="50"
+                                   value="<?= htmlspecialchars($company['city'] ?? '') ?>"
+                                   data-validate-rule="city" data-validate-label="City">
+                            <div class="invalid-feedback"></div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">State</label>
+                            <input type="text" class="form-control" name="state" id="company_state"
+                                   placeholder="e.g. Maharashtra" maxlength="50"
+                                   value="<?= htmlspecialchars($company['state'] ?? '') ?>"
+                                   data-validate-rule="state" data-validate-label="State">
+                            <div class="invalid-feedback"></div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Country</label>
+                            <input type="text" class="form-control" name="country" id="company_country"
+                                   placeholder="e.g. India" maxlength="50"
+                                   value="<?= htmlspecialchars($company['country'] ?? 'India') ?>"
+                                   data-validate-rule="country" data-validate-label="Country">
+                            <div class="invalid-feedback"></div>
+                        </div>
                         <div class="col-12"><label class="form-label">Description</label><textarea class="form-control" name="description" rows="3"><?= htmlspecialchars($company['description'] ?? '') ?></textarea></div>
                     </div>
                     <div class="mt-4"><button type="submit" class="btn btn-primary"><i class="fas fa-save me-2"></i>Save Changes</button></div>

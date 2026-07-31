@@ -9,11 +9,11 @@
             <i class="fas fa-bars"></i>
         </button>
 
-        <div class="navbar-brand-header">
+        <a class="navbar-brand-header" href="#" onclick="event.preventDefault();location.reload();" title="Refresh page" style="text-decoration:none;color:inherit;cursor:pointer;">
             <span class="brand-acronym">TPMS</span>
             <span class="brand-divider">|</span>
             <span class="brand-fullname">Training &amp; Placement Management System</span>
-        </div>
+        </a>
 
         <div class="global-search">
             <i class="fas fa-search"></i>

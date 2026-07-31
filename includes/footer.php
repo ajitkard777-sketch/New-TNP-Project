@@ -71,6 +71,7 @@ if (typeof Chart !== 'undefined') {
 <?php if (AuthMiddleware::isLoggedIn()): ?>
     <?php require_once ROOT_PATH . '/views/includes/chat-fab.php'; ?>
     <?php require_once ROOT_PATH . '/views/includes/ai-widget.php'; ?>
+    <?php require_once ROOT_PATH . '/views/includes/notification-modal.php'; ?>
 <?php endif; ?>
 </body>
 </html>

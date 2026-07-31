@@ -66,7 +66,7 @@
                 </div>
                 <?php endforeach; ?>
                 
-                <form action="<?= url('/student/upload-document') ?>" method="POST" enctype="multipart/form-data" class="mt-3">
+                <form action="<?= url('/student/upload-document') ?>" method="POST" enctype="multipart/form-data" class="mt-3" id="documentUploadForm">
                     <?= CsrfMiddleware::tokenField() ?>
                     <select name="document_type" class="form-select form-select-sm mb-2">
                         <option value="certificate">Certificate</option>
@@ -74,16 +74,45 @@
                         <option value="id_proof">ID Proof</option>
                         <option value="other">Other</option>
                     </select>
-                    <input type="file" name="document" class="form-control form-control-sm mb-2" required>
-                    <button type="submit" class="btn btn-warning btn-sm w-100"><i class="fas fa-upload me-1"></i> Upload Document</button>
+                    <input type="file" name="document" id="documentFileInput" accept=".pdf,.doc,.docx" class="form-control form-control-sm mb-2" required>
+                    <div id="doc-file-error" class="text-danger small mt-1" style="display:none;"><i class="fas fa-exclamation-circle me-1"></i>Only PDF, DOC, and DOCX files are allowed.</div>
+                    <button type="submit" id="documentUploadBtn" class="btn btn-warning btn-sm w-100"><i class="fas fa-upload me-1"></i> Upload Document</button>
+                    <small class="text-muted d-block mt-2">Allowed: PDF, DOC, DOCX. Max 5MB.</small>
                 </form>
+                <script>
+                (function() {
+                    var input  = document.getElementById('documentFileInput');
+                    var error  = document.getElementById('doc-file-error');
+                    var btn    = document.getElementById('documentUploadBtn');
+                    var form   = document.getElementById('documentUploadForm');
+                    var allowed = ['pdf','doc','docx'];
+                    function validate() {
+                        if (!input.files || !input.files[0]) { error.style.display='none'; btn.disabled=false; return true; }
+                        var ext = input.files[0].name.split('.').pop().toLowerCase();
+                        if (allowed.indexOf(ext) === -1) {
+                            error.style.display = 'block';
+                            input.classList.add('is-invalid');
+                            btn.disabled = true;
+                            return false;
+                        }
+                        error.style.display = 'none';
+                        input.classList.remove('is-invalid');
+                        btn.disabled = false;
+                        return true;
+                    }
+                    input.addEventListener('change', validate);
+                    form.addEventListener('submit', function(e) {
+                        if (!validate()) { e.preventDefault(); return false; }
+                    });
+                })();
+                </script>
             </div>
         </div>
     </div>
 
     <!-- Right: Edit Form -->
     <div class="col-lg-8">
-        <form action="<?= url('/student/profile/edit') ?>" method="POST" data-validate>
+        <form action="<?= url('/student/profile/edit') ?>" method="POST" data-validate data-tpms-validate>
             <?= CsrfMiddleware::tokenField() ?>
             
             <!-- Nav Tabs -->
@@ -101,8 +130,8 @@
                             <div class="row g-3">
                                 <div class="col-md-6"><label class="form-label">First Name *</label><input type="text" class="form-control" name="first_name" value="<?= htmlspecialchars($student['first_name'] ?? '') ?>" required></div>
                                 <div class="col-md-6"><label class="form-label">Last Name *</label><input type="text" class="form-control" name="last_name" value="<?= htmlspecialchars($student['last_name'] ?? '') ?>" required></div>
-                                <div class="col-md-6"><label class="form-label">Phone</label><input type="text" class="form-control" name="phone" value="<?= htmlspecialchars($student['phone'] ?? '') ?>" maxlength="10"></div>
-                                <div class="col-md-6"><label class="form-label">Date of Birth</label><input type="date" class="form-control" name="dob" value="<?= $student['dob'] ?? '' ?>"></div>
+                                <div class="col-md-6"><label class="form-label">Phone</label><input type="text" class="form-control" name="phone" id="edit_phone" value="<?= htmlspecialchars($student['phone'] ?? '') ?>" maxlength="10" inputmode="numeric" placeholder="10-digit number" data-validate-rule="phone" data-validate-label="Phone number"><div class="invalid-feedback"></div></div>
+                                <div class="col-md-6"><label class="form-label">Date of Birth</label><input type="date" class="form-control" name="dob" value="<?= $student['dob'] ?? '' ?>" max="<?= date('Y-m-d') ?>"></div>
                                 <div class="col-md-6"><label class="form-label">Gender</label>
                                     <select class="form-select" name="gender">
                                         <option value="">Select</option>
@@ -111,13 +140,22 @@
                                         <option value="other" <?= ($student['gender'] ?? '') === 'other' ? 'selected' : '' ?>>Other</option>
                                     </select>
                                 </div>
-                                <div class="col-md-6"><label class="form-label">Pincode</label><input type="text" class="form-control" name="pincode" value="<?= htmlspecialchars($student['pincode'] ?? '') ?>" maxlength="6"></div>
-                                <div class="col-12"><label class="form-label">Address</label><textarea class="form-control" name="address" rows="2"><?= htmlspecialchars($student['address'] ?? '') ?></textarea></div>
-                                <div class="col-md-6"><label class="form-label">City</label><input type="text" class="form-control" name="city" value="<?= htmlspecialchars($student['city'] ?? '') ?>"></div>
-                                <div class="col-md-6"><label class="form-label">State</label><input type="text" class="form-control" name="state" value="<?= htmlspecialchars($student['state'] ?? '') ?>"></div>
-                                <div class="col-md-4"><label class="form-label">LinkedIn</label><input type="url" class="form-control" name="linkedin" value="<?= htmlspecialchars($student['linkedin'] ?? '') ?>" placeholder="https://linkedin.com/in/..."></div>
-                                <div class="col-md-4"><label class="form-label">GitHub</label><input type="url" class="form-control" name="github" value="<?= htmlspecialchars($student['github'] ?? '') ?>" placeholder="https://github.com/..."></div>
-                                <div class="col-md-4"><label class="form-label">Portfolio</label><input type="url" class="form-control" name="portfolio" value="<?= htmlspecialchars($student['portfolio'] ?? '') ?>"></div>
+                                <div class="col-md-6"><label class="form-label">Pincode</label><input type="text" class="form-control" name="pincode" id="edit_pincode" value="<?= htmlspecialchars($student['pincode'] ?? '') ?>" maxlength="6" inputmode="numeric" placeholder="6-digit PIN" data-validate-rule="pincode" data-validate-label="PIN code"><div class="invalid-feedback"></div></div>
+                                <div class="col-12">
+                                    <label class="form-label">Address <small class="text-muted">(10–250 characters)</small></label>
+                                    <textarea class="form-control" name="address" id="edit_address" rows="2"
+                                              data-validate-rule="address" data-validate-label="Address"
+                                              data-maxlength="250" data-maxlength-target="address_counter"><?= htmlspecialchars($student['address'] ?? '') ?></textarea>
+                                    <div class="d-flex justify-content-between">
+                                        <div class="invalid-feedback"></div>
+                                        <small class="text-muted ms-auto" id="address_counter"><?= mb_strlen($student['address'] ?? '') ?>/250</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6"><label class="form-label">City</label><input type="text" class="form-control" name="city" id="edit_city" value="<?= htmlspecialchars($student['city'] ?? '') ?>" data-validate-rule="city" data-validate-label="City name"><div class="invalid-feedback"></div></div>
+                                <div class="col-md-6"><label class="form-label">State</label><input type="text" class="form-control" name="state" id="edit_state" value="<?= htmlspecialchars($student['state'] ?? '') ?>" data-validate-rule="state" data-validate-label="State name"><div class="invalid-feedback"></div></div>
+                                <div class="col-md-4"><label class="form-label">LinkedIn</label><input type="url" class="form-control" name="linkedin" id="edit_linkedin" value="<?= htmlspecialchars($student['linkedin'] ?? '') ?>" placeholder="https://linkedin.com/in/..." data-validate-rule="optionalUrl" data-validate-label2="LinkedIn URL"><div class="invalid-feedback"></div></div>
+                                <div class="col-md-4"><label class="form-label">GitHub</label><input type="url" class="form-control" name="github" id="edit_github" value="<?= htmlspecialchars($student['github'] ?? '') ?>" placeholder="https://github.com/..." data-validate-rule="optionalUrl" data-validate-label2="GitHub URL"><div class="invalid-feedback"></div></div>
+                                <div class="col-md-4"><label class="form-label">Portfolio</label><input type="url" class="form-control" name="portfolio" id="edit_portfolio" value="<?= htmlspecialchars($student['portfolio'] ?? '') ?>" data-validate-rule="optionalUrl" data-validate-label2="Portfolio URL"><div class="invalid-feedback"></div></div>
                             </div>
                         </div>
                     </div>
@@ -155,13 +193,28 @@
                     <div class="card">
                         <div class="card-body">
                             <div class="mb-3">
-                                <label class="form-label">Skills (comma separated)</label>
-                                <input type="text" class="form-control" name="skills" value="<?= htmlspecialchars($student['skills'] ?? '') ?>" placeholder="e.g. Java, Python, React, MySQL">
-                                <small class="form-text">Separate skills with commas</small>
+                                <label class="form-label">Skills (comma separated) <small class="text-muted">max 300 chars</small></label>
+                                <input type="text" class="form-control" name="skills" id="edit_skills"
+                                       value="<?= htmlspecialchars($student['skills'] ?? '') ?>"
+                                       placeholder="e.g. Java, Python, React, MySQL"
+                                       data-validate-rule="skills"
+                                       data-maxlength="300" data-maxlength-target="skills_counter">
+                                <div class="d-flex justify-content-between">
+                                    <small class="form-text">Separate skills with commas. Duplicates will be removed automatically.</small>
+                                    <small class="text-muted" id="skills_counter"><?= mb_strlen($student['skills'] ?? '') ?>/300</small>
+                                </div>
+                                <div class="invalid-feedback"></div>
                             </div>
                             <div class="mb-3">
-                                <label class="form-label">About / Bio</label>
-                                <textarea class="form-control" name="bio" rows="4" placeholder="Tell us about yourself..."><?= htmlspecialchars($student['bio'] ?? '') ?></textarea>
+                                <label class="form-label">About / Bio <small class="text-muted">(20–500 characters)</small></label>
+                                <textarea class="form-control" name="bio" id="edit_bio" rows="4"
+                                          placeholder="Tell us about yourself..."
+                                          data-validate-rule="bio"
+                                          data-maxlength="500" data-maxlength-target="bio_counter"><?= htmlspecialchars($student['bio'] ?? '') ?></textarea>
+                                <div class="d-flex justify-content-between">
+                                    <div class="invalid-feedback"></div>
+                                    <small class="text-muted ms-auto" id="bio_counter"><?= mb_strlen($student['bio'] ?? '') ?>/500</small>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -265,11 +318,30 @@
     <form action="<?= url('/student/add-project') ?>" method="POST">
         <?= CsrfMiddleware::tokenField() ?>
         <div class="modal-body">
-            <div class="mb-3"><label class="form-label">Title *</label><input type="text" class="form-control" name="title" required></div>
-            <div class="mb-3"><label class="form-label">Description</label><textarea class="form-control" name="description" rows="2"></textarea></div>
-            <div class="mb-3"><label class="form-label">Technologies</label><input type="text" class="form-control" name="technologies" placeholder="React, Node.js, MongoDB"></div>
-            <div class="mb-3"><label class="form-label">Project URL</label><input type="url" class="form-control" name="project_url"></div>
-            <div class="row"><div class="col-6"><label class="form-label">Start Date</label><input type="date" class="form-control" name="start_date"></div><div class="col-6"><label class="form-label">End Date</label><input type="date" class="form-control" name="end_date"></div></div>
+            <div class="mb-3">
+                <label class="form-label">Title *</label>
+                <input type="text" class="form-control" name="title" id="project_title" required
+                       data-validate-rule="text" data-validate-label="Project title" data-validate-min="2" data-validate-max="150">
+                <div class="invalid-feedback"></div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Description <small class="text-muted">(max 1000)</small></label>
+                <textarea class="form-control" name="description" rows="2" data-validate-rule="text" data-validate-label="Description" data-validate-min="1" data-validate-max="1000" data-validate-required="false"></textarea>
+                <div class="invalid-feedback"></div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Technologies <small class="text-muted">(max 300)</small></label>
+                <input type="text" class="form-control" name="technologies" id="project_technologies" placeholder="React, Node.js, MongoDB"
+                       data-validate-rule="text" data-validate-label="Technologies" data-validate-min="1" data-validate-max="300" data-validate-required="false">
+                <div class="invalid-feedback"></div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Project URL *</label>
+                <input type="url" class="form-control" name="project_url" id="project_url" placeholder="https://github.com/user/project"
+                       data-validate-rule="projectUrl" data-validate-label="Project URL">
+                <div class="invalid-feedback"></div>
+            </div>
+            <div class="row"><div class="col-6"><label class="form-label">Start Date</label><input type="date" class="form-control" name="start_date" max="<?= date('Y-m-d') ?>"></div><div class="col-6"><label class="form-label">End Date</label><input type="date" class="form-control" name="end_date" max="<?= date('Y-m-d') ?>"></div></div>
         </div>
         <div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-primary">Add Project</button></div>
     </form>
@@ -281,10 +353,20 @@
     <form action="<?= url('/student/add-certification') ?>" method="POST">
         <?= CsrfMiddleware::tokenField() ?>
         <div class="modal-body">
-            <div class="mb-3"><label class="form-label">Title *</label><input type="text" class="form-control" name="title" required></div>
+            <div class="mb-3">
+                <label class="form-label">Title *</label>
+                <input type="text" class="form-control" name="title" id="cert_title" required
+                       data-validate-rule="text" data-validate-label="Certificate title" data-validate-min="2" data-validate-max="150">
+                <div class="invalid-feedback"></div>
+            </div>
             <div class="mb-3"><label class="form-label">Issuing Organization</label><input type="text" class="form-control" name="issuing_org"></div>
-            <div class="row"><div class="col-6"><label class="form-label">Issue Date</label><input type="date" class="form-control" name="issue_date"></div><div class="col-6"><label class="form-label">Credential ID</label><input type="text" class="form-control" name="credential_id"></div></div>
-            <div class="mb-3 mt-3"><label class="form-label">Credential URL</label><input type="url" class="form-control" name="credential_url"></div>
+            <div class="row"><div class="col-6"><label class="form-label">Issue Date</label><input type="date" class="form-control" name="issue_date" max="<?= date('Y-m-d') ?>"></div><div class="col-6"><label class="form-label">Credential ID</label><input type="text" class="form-control" name="credential_id"></div></div>
+            <div class="mb-3 mt-3">
+                <label class="form-label">Credential URL</label>
+                <input type="url" class="form-control" name="credential_url" id="cert_url" placeholder="https://..."
+                       data-validate-rule="optionalUrl" data-validate-label2="Credential URL">
+                <div class="invalid-feedback"></div>
+            </div>
         </div>
         <div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-primary">Add Certification</button></div>
     </form>
@@ -296,7 +378,12 @@
     <form action="<?= url('/student/add-language') ?>" method="POST">
         <?= CsrfMiddleware::tokenField() ?>
         <div class="modal-body">
-            <div class="mb-3"><label class="form-label">Language *</label><input type="text" class="form-control" name="language" required></div>
+            <div class="mb-3">
+                <label class="form-label">Language *</label>
+                <input type="text" class="form-control" name="language" id="language_name" required
+                       data-validate-rule="language" data-validate-label="Language name">
+                <div class="invalid-feedback"></div>
+            </div>
             <div class="mb-3"><label class="form-label">Proficiency</label>
                 <select class="form-select" name="proficiency"><option value="beginner">Beginner</option><option value="intermediate" selected>Intermediate</option><option value="advanced">Advanced</option><option value="native">Native</option></select>
             </div>
@@ -311,9 +398,19 @@
     <form action="<?= url('/student/add-achievement') ?>" method="POST">
         <?= CsrfMiddleware::tokenField() ?>
         <div class="modal-body">
-            <div class="mb-3"><label class="form-label">Title *</label><input type="text" class="form-control" name="title" required></div>
-            <div class="mb-3"><label class="form-label">Description</label><textarea class="form-control" name="description" rows="2"></textarea></div>
-            <div class="mb-3"><label class="form-label">Date</label><input type="date" class="form-control" name="date"></div>
+            <div class="mb-3">
+                <label class="form-label">Title *</label>
+                <input type="text" class="form-control" name="title" id="ach_title" required
+                       data-validate-rule="text" data-validate-label="Achievement title" data-validate-min="2" data-validate-max="150">
+                <div class="invalid-feedback"></div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Description <small class="text-muted">(max 500)</small></label>
+                <textarea class="form-control" name="description" rows="2"
+                          data-validate-rule="achievement" data-validate-label="Description"></textarea>
+                <div class="invalid-feedback"></div>
+            </div>
+            <div class="mb-3"><label class="form-label">Date</label><input type="date" class="form-control" name="date" max="<?= date('Y-m-d') ?>"></div>
         </div>
         <div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-primary">Add</button></div>
     </form>
@@ -327,6 +424,16 @@ function previewImage(input, previewId) {
         reader.readAsDataURL(input.files[0]);
     }
 }
+</script>
+
+<script src="<?= asset('js/validation.js') ?>"></script>
+<script>
+// Initialize validation on all modal forms as well
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.modal form').forEach(function(f) {
+        TPMSValidation.initForm(f);
+    });
+});
 </script>
 
 <?php require_once ROOT_PATH . '/includes/footer.php'; ?>

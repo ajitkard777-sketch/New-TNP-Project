@@ -82,6 +82,10 @@
     }
 
     function openPanel() {
+        // Capture current scroll position BEFORE opening so focus() cannot move it
+        var savedScrollX = window.pageXOffset || window.scrollX || 0;
+        var savedScrollY = window.pageYOffset || window.scrollY || 0;
+
         state.isOpen = true;
         panel.classList.add('ai-panel-open');
         panel.setAttribute('aria-hidden', 'false');
@@ -95,15 +99,28 @@
             scrollToBottom();
         }
 
-        setTimeout(() => textarea.focus(), 300);
+        // Focus textarea but immediately restore scroll so the page does not jump
+        setTimeout(function() {
+            textarea.focus({ preventScroll: true });
+            window.scrollTo(savedScrollX, savedScrollY);
+        }, 300);
     }
 
     function closePanel() {
+        // Capture scroll before closing to prevent any layout reflow from moving it
+        var savedScrollX = window.pageXOffset || window.scrollX || 0;
+        var savedScrollY = window.pageYOffset || window.scrollY || 0;
+
         state.isOpen = false;
         panel.classList.remove('ai-panel-open');
         panel.setAttribute('aria-hidden', 'true');
         toggleBtn.setAttribute('aria-expanded', 'false');
         toggleBtn.classList.remove('ai-fab-active');
+
+        // Restore scroll in next frame in case CSS transition causes reflow
+        requestAnimationFrame(function() {
+            window.scrollTo(savedScrollX, savedScrollY);
+        });
     }
 
     // ─── Textarea auto-resize + char count ───────────────────────

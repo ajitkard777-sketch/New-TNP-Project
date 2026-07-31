@@ -4,7 +4,7 @@
 <div class="card mb-4"><div class="card-body"><form method="GET" class="row g-3 align-items-end">
     <div class="col-md-5"><input type="text" class="form-control" name="search" value="<?= htmlspecialchars($search) ?>" placeholder="Job title, company..."></div>
     <div class="col-md-4"><select class="form-select" name="status"><option value="">All Status</option><option value="pending" <?= $status === 'pending' ? 'selected' : '' ?>>Pending</option><option value="active" <?= $status === 'active' ? 'selected' : '' ?>>Active</option><option value="closed" <?= $status === 'closed' ? 'selected' : '' ?>>Closed</option></select></div>
-    <div class="col-md-3"><button type="submit" class="btn btn-primary w-100"><i class="fas fa-search me-1"></i>Filter</button></div>
+    <div class="col-md-3"><button type="submit" class="btn btn-primary w-100"><i class="fas fa-search me-1"></i>Search</button></div>
 </form></div></div>
 
 <div class="card"><div class="card-body p-0"><div class="table-responsive">

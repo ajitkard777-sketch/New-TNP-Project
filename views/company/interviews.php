@@ -6,42 +6,6 @@
     </div>
 </div>
 
-<!-- Summary Cards -->
-<?php
-$scheduled = array_filter($interviews, fn($i) => $i['status'] === 'scheduled' || $i['status'] === 'rescheduled');
-$completed = array_filter($interviews, fn($i) => $i['status'] === 'completed');
-$passed    = array_filter($interviews, fn($i) => $i['result'] === 'passed');
-?>
-<div class="row g-3 mb-4">
-    <div class="col-6 col-md-3">
-        <div class="stat-card gradient-primary">
-            <div class="stat-card-icon bg-primary-soft"><i class="fas fa-calendar-alt"></i></div>
-            <div class="stat-card-value"><?= count($interviews) ?></div>
-            <div class="stat-card-label">Total Scheduled</div>
-        </div>
-    </div>
-    <div class="col-6 col-md-3">
-        <div class="stat-card gradient-info">
-            <div class="stat-card-icon bg-info-soft"><i class="fas fa-clock"></i></div>
-            <div class="stat-card-value"><?= count($scheduled) ?></div>
-            <div class="stat-card-label">Upcoming / Active</div>
-        </div>
-    </div>
-    <div class="col-6 col-md-3">
-        <div class="stat-card gradient-success">
-            <div class="stat-card-icon bg-success-soft"><i class="fas fa-check-circle"></i></div>
-            <div class="stat-card-value"><?= count($passed) ?></div>
-            <div class="stat-card-label">Passed</div>
-        </div>
-    </div>
-    <div class="col-6 col-md-3">
-        <div class="stat-card gradient-warning">
-            <div class="stat-card-icon bg-warning-soft"><i class="fas fa-user-check"></i></div>
-            <div class="stat-card-value"><?= count($completed) ?></div>
-            <div class="stat-card-label">Completed</div>
-        </div>
-    </div>
-</div>
 
 <?php if (empty($interviews)): ?>
 <div class="card">
@@ -115,15 +79,26 @@ $passed    = array_filter($interviews, fn($i) => $i['result'] === 'passed');
                         </td>
                         <td>
                             <div class="dropdown">
-                                <button class="btn btn-sm btn-light dropdown-toggle" data-bs-toggle="dropdown">Manage</button>
-                                <ul class="dropdown-menu dropdown-menu-end">
-                                    <li><h6 class="dropdown-header">Mark Result</h6></li>
-                                    <li><a class="dropdown-item" href="#" onclick="updateResult(<?= $i['id'] ?>,'passed')"><i class="fas fa-check-circle text-success me-2"></i>Passed</a></li>
-                                    <li><a class="dropdown-item" href="#" onclick="updateResult(<?= $i['id'] ?>,'failed')"><i class="fas fa-times-circle text-danger me-2"></i>Failed</a></li>
+                                <button class="btn btn-sm btn-light border dropdown-toggle fw-semibold" style="padding: 5px 10px; font-size: 0.78rem;" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}'>
+                                    Action
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end shadow-lg" style="border-radius: 10px; font-size: 0.82rem; min-width: 200px;">
+                                    <?php if (!empty($i['student_id'])): ?>
+                                    <li><a class="dropdown-item py-2" href="<?= url('/company/view-applicant/' . $i['student_id']) ?>"><i class="fas fa-user text-primary me-2"></i>View Profile</a></li>
+                                    <li><a class="dropdown-item py-2" href="<?= url('/company/serve-resume/' . $i['student_id']) ?>" target="_blank"><i class="fas fa-file-pdf text-danger me-2"></i>View Resume</a></li>
+                                    <li><a class="dropdown-item py-2" href="<?= url('/company/serve-resume/' . $i['student_id'] . '?download=1') ?>"><i class="fas fa-download text-success me-2"></i>Download Resume</a></li>
+                                    <?php if (!empty($i['user_id'])): ?>
+                                    <li><a class="dropdown-item py-2" href="<?= url('/chat?user_id=' . (int)$i['user_id']) ?>"><i class="fas fa-comment-dots text-info me-2"></i>Send Message</a></li>
+                                    <?php endif; ?>
                                     <li><hr class="dropdown-divider"></li>
-                                    <li><a class="dropdown-item" href="#" onclick="openEditModal(<?= htmlspecialchars(json_encode($i)) ?>)"><i class="fas fa-edit text-primary me-2"></i>Reschedule / Edit</a></li>
+                                    <?php endif; ?>
+                                    <li class="dropdown-header text-uppercase fw-bold text-muted" style="font-size:0.68rem;">Interview Result</li>
+                                    <li><a class="dropdown-item py-2" href="#" onclick="updateResult(<?= $i['id'] ?>,'passed');return false;"><i class="fas fa-check-circle text-success me-2"></i>Mark Passed</a></li>
+                                    <li><a class="dropdown-item py-2" href="#" onclick="updateResult(<?= $i['id'] ?>,'failed');return false;"><i class="fas fa-times-circle text-danger me-2"></i>Mark Failed</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item py-2" href="#" onclick="openEditModal(<?= htmlspecialchars(json_encode($i)) ?>);return false;"><i class="fas fa-edit text-primary me-2"></i>Reschedule Interview</a></li>
                                     <?php if ($i['status'] !== 'cancelled'): ?>
-                                    <li><a class="dropdown-item text-danger" href="#" onclick="cancelInterview(<?= $i['id'] ?>)"><i class="fas fa-ban me-2"></i>Cancel Interview</a></li>
+                                    <li><a class="dropdown-item py-2 text-danger" href="#" onclick="cancelInterview(<?= $i['id'] ?>);return false;"><i class="fas fa-ban me-2"></i>Cancel Interview</a></li>
                                     <?php endif; ?>
                                 </ul>
                             </div>
@@ -145,7 +120,7 @@ $passed    = array_filter($interviews, fn($i) => $i['result'] === 'passed');
                 <h5 class="modal-title">Reschedule / Edit Interview</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form id="editInterviewForm" method="POST">
+            <form id="editInterviewForm" method="POST" data-tpms-validate>
                 <?= CsrfMiddleware::tokenField() ?>
                 <div class="modal-body">
                     <div class="row g-3">
@@ -162,7 +137,7 @@ $passed    = array_filter($interviews, fn($i) => $i['result'] === 'passed');
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Date *</label>
-                            <input type="date" class="form-control" name="interview_date" id="editDate" required>
+                            <input type="date" class="form-control" name="interview_date" id="editDate" min="<?= date('Y-m-d') ?>" required>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Time *</label>
@@ -173,8 +148,9 @@ $passed    = array_filter($interviews, fn($i) => $i['result'] === 'passed');
                             <input type="text" class="form-control" name="venue" id="editVenue" placeholder="Room/Building/Address">
                         </div>
                         <div class="col-12">
-                            <label class="form-label fw-semibold">Meeting Link (Online)</label>
-                            <input type="url" class="form-control" name="meeting_link" id="editLink" placeholder="https://meet.google.com/...">
+                            <label class="form-label fw-semibold">Meeting Link *</label>
+                            <input type="url" class="form-control" name="meeting_link" id="editLink" placeholder="https://meet.google.com/..." required data-validate-rule="meetingLink" data-validate-label="Meeting Link">
+                            <div class="invalid-feedback"></div>
                         </div>
                         <div class="col-12">
                             <label class="form-label fw-semibold">Instructions</label>
@@ -213,15 +189,19 @@ function cancelInterview(id) {
 }
 
 function openEditModal(interview) {
-    document.getElementById('editInterviewForm').action = TPMS.baseUrl + '/company/edit-interview/' + interview.id;
-    document.getElementById('editRound').value = interview.round || 'Round 1';
-    document.getElementById('editMode').value = interview.mode || 'offline';
-    document.getElementById('editDate').value = interview.interview_date || '';
-    document.getElementById('editTime').value = interview.interview_time || '';
-    document.getElementById('editVenue').value = interview.venue || '';
-    document.getElementById('editLink').value = interview.meeting_link || '';
-    document.getElementById('editInstructions').value = interview.instructions || '';
-    new bootstrap.Modal(document.getElementById('editInterviewModal')).show();
+    var form = document.getElementById('editInterviewForm');
+    if (form) form.action = TPMS.baseUrl + '/company/edit-interview/' + interview.id;
+    if (document.getElementById('editRound')) document.getElementById('editRound').value = interview.round || 'Round 1';
+    if (document.getElementById('editMode')) document.getElementById('editMode').value = interview.mode || 'offline';
+    if (document.getElementById('editDate')) document.getElementById('editDate').value = interview.interview_date || '';
+    if (document.getElementById('editTime')) document.getElementById('editTime').value = interview.interview_time || '';
+    if (document.getElementById('editVenue')) document.getElementById('editVenue').value = interview.venue || '';
+    if (document.getElementById('editLink')) document.getElementById('editLink').value = interview.meeting_link || '';
+    if (document.getElementById('editInstructions')) document.getElementById('editInstructions').value = interview.instructions || '';
+    var modalEl = document.getElementById('editInterviewModal');
+    if (modalEl && typeof bootstrap !== 'undefined') {
+        bootstrap.Modal.getOrCreateInstance(modalEl).show();
+    }
 }
 
 $(function(){

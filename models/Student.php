@@ -25,6 +25,8 @@ class Student {
         if ($branch) { $where .= " AND s.branch = ?"; $params[] = $branch; }
         if ($status === 'placed') {
             $where .= " AND s.is_placed = 1";
+        } elseif ($status === 'applied') {
+            $where .= " AND (SELECT COUNT(*) FROM applications a WHERE a.student_id = s.id) > 0";
         } elseif ($status) {
             $where .= " AND u.status = ?";
             $params[] = $status;
@@ -41,6 +43,8 @@ class Student {
         if ($branch) { $where .= " AND s.branch = ?"; $params[] = $branch; }
         if ($status === 'placed') {
             $where .= " AND s.is_placed = 1";
+        } elseif ($status === 'applied') {
+            $where .= " AND (SELECT COUNT(*) FROM applications a WHERE a.student_id = s.id) > 0";
         } elseif ($status) {
             $where .= " AND u.status = ?";
             $params[] = $status;

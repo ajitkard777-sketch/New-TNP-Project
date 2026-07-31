@@ -6,10 +6,17 @@
     </div>
 </div>
 
-<ul class="nav nav-tabs mb-4">
-    <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#available"><i class="fas fa-chalkboard-teacher me-1"></i>Available Trainings</a></li>
+<?php
+$isRegisteredTab = ($_GET['tab'] ?? '') === 'registered';
+?>
+<ul class="nav nav-tabs mb-4" id="trainingTabs">
     <li class="nav-item">
-        <a class="nav-link" data-bs-toggle="tab" href="#registered">
+        <a class="nav-link <?= !$isRegisteredTab ? 'active' : '' ?>" data-bs-toggle="tab" href="#available">
+            <i class="fas fa-chalkboard-teacher me-1"></i>Available Trainings
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link <?= $isRegisteredTab ? 'active' : '' ?>" data-bs-toggle="tab" href="#registered">
             <i class="fas fa-clipboard-list me-1"></i>My Registrations
             <?php if (!empty($myTrainings)): ?><span class="badge bg-primary ms-1"><?= count($myTrainings) ?></span><?php endif; ?>
         </a>
@@ -18,7 +25,7 @@
 
 <div class="tab-content">
     <!-- Available Trainings -->
-    <div class="tab-pane fade show active" id="available">
+    <div class="tab-pane fade <?= !$isRegisteredTab ? 'show active' : '' ?>" id="available">
         <?php if (empty($trainings)): ?>
         <div class="card"><div class="card-body empty-state"><i class="fas fa-chalkboard-teacher"></i><h5>No Trainings Available</h5><p>Check back later for upcoming training programs.</p></div></div>
         <?php else: ?>
@@ -61,7 +68,7 @@
     </div>
 
     <!-- My Registrations -->
-    <div class="tab-pane fade" id="registered">
+    <div class="tab-pane fade <?= $isRegisteredTab ? 'show active' : '' ?>" id="registered">
         <?php if (empty($myTrainings)): ?>
         <div class="card"><div class="card-body empty-state"><i class="fas fa-clipboard-list"></i><h5>No Registrations Yet</h5><p>Register for available trainings above.</p></div></div>
         <?php else: ?>
@@ -120,4 +127,18 @@
         <?php endif; ?>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const tabParam = urlParams.get('tab');
+    if (tabParam === 'registered' || window.location.hash === '#registered') {
+        const registeredTabBtn = document.querySelector('a[href="#registered"]');
+        if (registeredTabBtn) {
+            const tab = new bootstrap.Tab(registeredTabBtn);
+            tab.show();
+        }
+    }
+});
+</script>
 <?php require_once ROOT_PATH . '/includes/footer.php'; ?>

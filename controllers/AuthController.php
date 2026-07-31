@@ -212,19 +212,32 @@ class AuthController {
         if (empty($data['password'])) $errors[] = 'Password is required.';
         if (!isStrongPassword($data['password'] ?? '')) $errors[] = 'Password must be at least 8 characters with uppercase, lowercase, number, and special character.';
         if ($data['password'] !== ($data['confirm_password'] ?? '')) $errors[] = 'Passwords do not match.';
-        if (empty($data['phone'])) $errors[] = 'Phone number is required.';
         if (empty($data['branch'])) $errors[] = 'Branch is required.';
+
+        // Phone validation — required, exactly 10 digits
+        $phoneResult = Validator::phone($data['phone'] ?? '');
+        if (!$phoneResult['valid']) $errors[] = $phoneResult['message'];
+
+        // Optional city/state validation
+        if (!empty($data['city'])) {
+            $cityResult = Validator::city($data['city']);
+            if (!$cityResult['valid']) $errors[] = $cityResult['message'];
+        }
+        if (!empty($data['state'])) {
+            $stateResult = Validator::state($data['state']);
+            if (!$stateResult['valid']) $errors[] = $stateResult['message'];
+        }
 
         // Check duplicate email
         if ($this->userModel->emailExists($data['email'] ?? '')) {
             $errors[] = 'Email already registered.';
         }
 
-        // Check duplicate phone
-        if (!empty($data['phone'])) {
+        // Check duplicate phone (only if phone format is valid)
+        if ($phoneResult['valid'] && !empty($data['phone'])) {
             $existing = $this->db->fetchColumn(
                 "SELECT COUNT(*) FROM students WHERE phone = ?",
-                [$data['phone']]
+                [trim($data['phone'])]
             );
             if ($existing > 0) {
                 $errors[] = 'Phone number already registered.';
@@ -347,7 +360,16 @@ class AuthController {
         if (!isStrongPassword($data['password'] ?? '')) $errors[] = 'Password must be at least 8 characters with uppercase, lowercase, number, and special character.';
         if ($data['password'] !== ($data['confirm_password'] ?? '')) $errors[] = 'Passwords do not match.';
         if (empty($data['contact_person'])) $errors[] = 'Contact person name is required.';
-        if (empty($data['contact_phone'])) $errors[] = 'Contact phone is required.';
+
+        // Phone validation — required, exactly 10 digits
+        $phoneResult = Validator::phone($data['contact_phone'] ?? '');
+        if (!$phoneResult['valid']) $errors[] = $phoneResult['message'];
+
+        // Website URL validation — optional but must be valid if provided
+        if (!empty($data['website'])) {
+            $websiteResult = Validator::optionalUrl($data['website'], 'Website URL');
+            if (!$websiteResult['valid']) $errors[] = $websiteResult['message'];
+        }
 
         if ($this->userModel->emailExists($data['email'] ?? '')) {
             $errors[] = 'Email already registered.';

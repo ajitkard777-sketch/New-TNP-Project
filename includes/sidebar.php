@@ -40,6 +40,7 @@ if ($currentRole === 'company') {
             ['icon' => 'fas fa-th-large', 'label' => 'Dashboard', 'url' => '/company/dashboard', 'key' => 'dashboard'],
             ['icon' => 'fas fa-comments', 'label' => 'Chat & Messages', 'url' => '/chat', 'key' => 'chat'],
             ['icon' => 'fas fa-building', 'label' => 'Company Profile', 'url' => '/company/profile', 'key' => 'profile'],
+            ['icon' => 'fas fa-bell', 'label' => 'Notifications', 'url' => '/company/notifications', 'key' => 'notifications'],
         ],
         'RECRUITMENT' => [
             ['icon' => 'fas fa-plus-circle', 'label' => 'Post New Job', 'url' => '/company/post-job', 'key' => 'post-job'],
@@ -68,7 +69,6 @@ if ($currentRole === 'admin') {
                 'submenu' => [
                     ['icon' => 'fas fa-user-graduate', 'label' => 'Students', 'url' => '/admin/students', 'key' => 'students'],
                     ['icon' => 'fas fa-building', 'label' => 'Companies', 'url' => '/admin/companies', 'key' => 'companies'],
-                    ['icon' => 'fas fa-chalkboard-teacher', 'label' => 'Faculty', 'url' => '/admin/faculty', 'key' => 'faculty'],
                 ]
             ],
             [

@@ -20,12 +20,15 @@
 </div>
 <?php endif; ?>
 
+<?php
+$isMyAppsTab = ($_GET['tab'] ?? '') === 'myapps';
+?>
 <ul class="nav nav-tabs mb-4" id="hsTab">
-    <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#universities"><i class="fas fa-university me-1"></i>Universities</a></li>
+    <li class="nav-item"><a class="nav-link <?= !$isMyAppsTab ? 'active' : '' ?>" data-bs-toggle="tab" href="#universities"><i class="fas fa-university me-1"></i>Universities</a></li>
     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#exams"><i class="fas fa-file-alt me-1"></i>Entrance Exams</a></li>
     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#scholarships"><i class="fas fa-award me-1"></i>Scholarships</a></li>
     <li class="nav-item">
-        <a class="nav-link" data-bs-toggle="tab" href="#myapps">
+        <a class="nav-link <?= $isMyAppsTab ? 'active' : '' ?>" data-bs-toggle="tab" href="#myapps">
             <i class="fas fa-paper-plane me-1"></i>My Applications
             <?php if (!empty($myApplications)): ?><span class="badge bg-primary ms-1"><?= count($myApplications) ?></span><?php endif; ?>
         </a>
@@ -34,7 +37,7 @@
 
 <div class="tab-content">
     <!-- Universities Tab -->
-    <div class="tab-pane fade show active" id="universities">
+    <div class="tab-pane fade <?= !$isMyAppsTab ? 'show active' : '' ?>" id="universities">
         <?php if (empty($universities)): ?>
         <div class="card"><div class="card-body empty-state"><i class="fas fa-university"></i><h5>No Universities Available</h5><p>Check back later for university listings.</p></div></div>
         <?php else: ?>
@@ -118,11 +121,11 @@
                                     </div>
                                     <div class="col-md-6">
                                         <label class="form-label">Application Date</label>
-                                        <input type="date" class="form-control" name="application_date" value="<?= date('Y-m-d') ?>">
+                                        <input type="date" class="form-control" name="application_date" value="<?= date('Y-m-d') ?>" max="<?= date('Y-m-d') ?>">
                                     </div>
                                     <div class="col-md-6">
                                         <label class="form-label">Expected Joining Date</label>
-                                        <input type="date" class="form-control" name="expected_joining_date">
+                                        <input type="date" class="form-control" name="expected_joining_date" min="<?= date('Y-m-d') ?>">
                                     </div>
                                     <div class="col-12">
                                         <label class="form-label">Remarks / Notes</label>
@@ -190,7 +193,7 @@
     </div>
 
     <!-- My Applications Tab -->
-    <div class="tab-pane fade" id="myapps">
+    <div class="tab-pane fade <?= $isMyAppsTab ? 'show active' : '' ?>" id="myapps">
         <?php if (empty($myApplications)): ?>
         <div class="card"><div class="card-body empty-state"><i class="fas fa-graduation-cap"></i><h5>No Applications Yet</h5><p>Browse universities above and click <strong>Apply Now</strong> to start.</p></div></div>
         <?php else: ?>
@@ -241,8 +244,8 @@
                                         <div class="col-12"><label class="form-label">Course Name</label><input type="text" class="form-control" name="course_name" value="<?= htmlspecialchars($ma['course_name'] ?? '') ?>"><input type="hidden" name="course_id" value="<?= $ma['course_id'] ?? '' ?>"></div>
                                         <div class="col-md-6"><label class="form-label">Entrance Exam</label><input type="text" class="form-control" name="entrance_exam" value="<?= htmlspecialchars($ma['entrance_exam'] ?? '') ?>"></div>
                                         <div class="col-md-6"><label class="form-label">Exam Score / Rank</label><input type="text" class="form-control" name="exam_score" value="<?= htmlspecialchars($ma['exam_score'] ?? '') ?>"></div>
-                                        <div class="col-md-6"><label class="form-label">Application Date</label><input type="date" class="form-control" name="application_date" value="<?= $ma['application_date'] ?? '' ?>"></div>
-                                        <div class="col-md-6"><label class="form-label">Expected Joining Date</label><input type="date" class="form-control" name="expected_joining_date" value="<?= $ma['expected_joining_date'] ?? '' ?>"></div>
+                                        <div class="col-md-6"><label class="form-label">Application Date</label><input type="date" class="form-control" name="application_date" value="<?= $ma['application_date'] ?? '' ?>" max="<?= date('Y-m-d') ?>"></div>
+                                        <div class="col-md-6"><label class="form-label">Expected Joining Date</label><input type="date" class="form-control" name="expected_joining_date" value="<?= $ma['expected_joining_date'] ?? '' ?>" min="<?= date('Y-m-d') ?>"></div>
                                         <div class="col-12"><label class="form-label">Remarks</label><textarea class="form-control" name="notes" rows="3"><?= htmlspecialchars($ma['notes'] ?? '') ?></textarea></div>
                                     </div></div>
                                     <div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>Save Changes</button></div>
@@ -277,6 +280,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 card.style.display = text.includes(term) ? '' : 'none';
             });
         });
+    }
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const tabParam = urlParams.get('tab');
+    if (tabParam === 'myapps' || window.location.hash === '#myapps') {
+        const myAppsTabBtn = document.querySelector('a[href="#myapps"]');
+        if (myAppsTabBtn) {
+            const tab = new bootstrap.Tab(myAppsTabBtn);
+            tab.show();
+        }
     }
 });
 </script>
