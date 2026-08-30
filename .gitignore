@@ -1,0 +1,22 @@
+# Environment - NEVER commit this
+.env
+
+# Logs
+logs/
+*.log
+
+# Uploaded user files (ephemeral on Railway anyway)
+uploads/*
+!uploads/.gitkeep
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+
+# Scratch/temp
+scratch/
